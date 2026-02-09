@@ -1,0 +1,160 @@
+/* =========================================
+   ESTILOS GERAIS & UTILITÁRIOS
+   ========================================= */
+
+:root { 
+    --color-primary: #EA1D2C; 
+    --color-primary-dark: #b91c29; 
+}
+
+body { 
+    background-color: #F3F4F6 !important;
+    color: #334155; 
+    -webkit-font-smoothing: antialiased;
+    background-image: linear-gradient(180deg, color-mix(in srgb, var(--color-primary), transparent 100%) 0%, #F3F4F6 500px) !important;
+    background-attachment: fixed;
+}
+
+/* Scrollbars Personalizadas */
+.hide-scroll::-webkit-scrollbar { display: none; }
+.hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+
+.custom-scrollbar::-webkit-scrollbar { width: 4px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #ddd; border-radius: 10px; }
+
+/* Utilitários de Interface */
+.chip-common { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; user-select: none; }
+.active-scale:active { transform: scale(0.95); }
+.chip-disabled { opacity: 0.25; pointer-events: none; background: #f1f5f9; border-color: #e2e8f0; text-decoration: line-through; color: #94a3b8; }
+
+/* =========================================
+   COMPONENTES
+   ========================================= */
+
+/* Cards de Produto */
+.product-card { 
+    background: white; border-radius: 12px; overflow: hidden; transition: all 0.3s ease; border: 1px solid transparent;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.product-card:hover { transform: translateY(-4px); box-shadow: 0 10px 20px -5px rgba(0,0,0,0.1); border-color: var(--color-primary); }
+.heart-active { fill: var(--color-primary); color: var(--color-primary); animation: heartBeat 0.4s forwards; }
+
+/* Timer / Countdown */
+.countdown-text {
+    font-variant-numeric: tabular-nums;
+    min-width: 80px;
+    display: inline-block;
+}
+.timer-accent {
+    background-color: #fdf2f0; 
+    color: #d48377;
+    border: 1px solid #f9e4e0;
+    font-weight: 700;
+}
+
+/* Miniaturas */
+.thumb-active { border-color: var(--color-primary); opacity: 1; }
+.thumb-inactive { border-color: transparent; opacity: 0.6; }
+
+/* Carrossel Hero */
+#heroGridContainer {
+    background-color: transparent !important;
+    padding-left: 1vw; padding-right: 1vw; scroll-padding: 0 4vw; 
+}
+.hero-card { box-shadow: none !important; border: none !important; }
+
+/* =========================================
+   MODAIS & OVERLAYS
+   ========================================= */
+
+/* Modal Detalhes */
+#modalDetails .bg-white {
+    margin-top: env(safe-area-inset-top, 20px);
+    max-height: calc(100vh - 80px) !important;
+}
+.modal-close-btn { pointer-events: auto !important; z-index: 9999 !important; }
+
+/* Modal Zoom */
+#modalImageZoom {
+    touch-action: pinch-zoom;
+    user-select: none;
+    -webkit-user-select: none;
+    background-color: rgba(0, 0, 0, 0.95);
+}
+#zoomedImg {
+    transition: opacity 0.2s ease-in-out;
+    max-width: 100%; max-height: 100%; object-contain: contain;
+}
+
+/* Filtros */
+#filterModalDrawer { z-index: 1000; }
+#filterOverlay { z-index: 990; }
+
+/* =========================================
+   HEADER ESTILO APP (Mercado Livre Like)
+   ========================================= */
+
+header.glass-header {
+    background-color: var(--color-primary) !important;
+    background-image: none !important;
+    border-bottom: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+header.glass-header h1, header.glass-header span, header.glass-header #storeNameDisplay {
+    color: #FFFFFF !important;
+}
+
+/* Botões Circulares do Header */
+#headerFavBtn, header button[onclick="openCartModal()"] {
+    background-color: #FFFFFF !important;
+    border: none !important;
+    width: 44px !important; height: 44px !important;
+    display: flex !important; align-items: center; justify-content: center;
+    border-radius: 50% !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+    padding: 0 !important;
+    position: relative; transition: transform 0.2s ease;
+}
+#headerFavBtn:active, header button[onclick="openCartModal()"]:active { transform: scale(0.9); }
+
+/* Ícones do Header */
+#headerFavBtn i, header button[onclick="openCartModal()"] i, header button[onclick="openCartModal()"] svg {
+    color: var(--color-primary) !important; stroke: var(--color-primary) !important;
+    width: 20px !important; height: 20px !important;
+}
+
+/* Badges */
+#cartBadge, #favBadgeDesktop {
+    background-color: #334155 !important;
+    color: #FFFFFF !important;
+    border: 2px solid #FFFFFF !important;
+    font-size: 10px !important; font-weight: 800 !important;
+    height: 18px !important; width: 18px !important;
+    top: -2px !important; right: -2px !important;
+}
+
+/* Barra de Busca */
+header.glass-header .bg-slate-100 { background-color: #FFFFFF !important; border-radius: 12px !important; }
+header.glass-header .bg-slate-100 i { color: #94a3b8 !important; }
+header.glass-header input { color: #334155 !important; }
+
+/* =========================================
+   CORREÇÕES MODO ESCURO (Dark Mode)
+   ========================================= */
+
+@media (prefers-color-scheme: dark) {
+    body { background-color: #F3F4F6 !important; color: #334155 !important; }
+    
+    .product-card, footer, #modalDetails .bg-white, #modalCart .bg-white, 
+    #filterDrawer, #modalDelivery .bg-white {
+        background-color: #FFFFFF !important; color: #334155 !important;
+    }
+    
+    header.glass-header { background-color: var(--color-primary) !important; }
+    img { filter: none !important; }
+    input, select, textarea { background-color: #FFFFFF !important; color: #334155 !important; }
+}

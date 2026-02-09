@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="facebook-domain-verification" content="iwnyy7sgy9l6coj4nnqge630wn2wis" />
+    <meta name="color-scheme" content="light">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" id="theme-color-meta" content="#EA1D2C">
+    <title id="pageTitle">Carregando Loja...</title>
+    
+    <meta name="description" id="meta-desc" content="Confira nossa vitrine online!">
+    <meta property="og:title" id="og-title" content="Loja Online">
+    <meta property="og:description" id="og-desc" content="Qualidade e confiança em cada detalhe.">
+    <meta property="og:image" id="og-img" content="">
+    <meta property="og:type" content="website">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <link rel="stylesheet" href="css/styles.css">
+    
+    <script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                fontFamily: { sans: ['Inter', 'sans-serif'], display: ['Outfit', 'sans-serif'] },
+                colors: { primary: 'var(--color-primary)', primaryDark: 'var(--color-primary-dark)' },
+                animation: { 
+                    'fade-in': 'fadeIn 0.5s ease-out', 
+                    'slide-up': 'slideUp 0.4s ease-out forwards',
+                    'bounce-short': 'bounceShort 0.5s ease-in-out 1',
+                    'zoom-in': 'zoomIn 0.3s ease-out forwards',
+                    'heart-beat': 'heartBeat 0.3s ease-in-out',
+                    'floating': 'floating 3s ease-in-out infinite',
+                    'fade-in-right': 'fadeInRight 0.6s ease-out forwards'
+                },
+                keyframes: {
+                    fadeIn: { from: { opacity: 0 }, to: { opacity: 1 } },
+                    slideUp: { from: { opacity: 0, transform: 'translateY(20px)' }, to: { opacity: 1, transform: 'translateY(0)' } },
+                    bounceShort: { '0%, 100%': { transform: 'scale(1)' }, '50%': { transform: 'scale(1.2)' } },
+                    heartBeat: { '0%': { transform: 'scale(1)' }, '50%': { transform: 'scale(1.3)' }, '100%': { transform: 'scale(1)' } },
+                    zoomIn: { from: { transform: 'scale(0.95)', opacity: 0 }, to: { transform: 'scale(1)', opacity: 1 } },
+                    floating: {
+                        '0%, 100%': { transform: 'translateY(0) rotate(3deg)' },
+                        '50%': { transform: 'translateY(-8px) rotate(5deg)' },
+                    },
+                    fadeInRight: {
+                        from: { opacity: 0, transform: 'translateX(-20px)' },
+                        to: { opacity: 1, transform: 'translateX(0)' }
+                    }
+                }
+            }
+        }
+    }
+    </script>
+</head>
+<body class="flex flex-col min-h-screen relative bg-[#F3F4F6] text-[#334155]">
+
+    <div id="errorScreen" class="fixed inset-0 z-[10000] bg-slate-900 hidden flex flex-col items-center justify-center p-6 text-center">
+        <div class="bg-slate-800 p-6 rounded-full mb-6 shadow-2xl">
+            <i data-lucide="store" class="w-16 h-16 text-slate-400"></i>
+        </div>
+        <h1 id="errorTitle" class="text-3xl font-bold text-white mb-3">Loja Indisponível</h1>
+        <p id="errorMsg" class="text-slate-400 max-w-md">Não foi possível carregar as informações.</p>
+        <button onclick="window.location.reload()" class="mt-8 px-6 py-2 bg-primary text-white rounded-full font-bold">Tentar novamente</button>
+    </div>
+
+    <div id="modalConfirmFinal" class="fixed inset-0 z-[110] hidden flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
+        <div class="bg-white rounded-[2rem] p-8 w-full max-w-sm relative z-10 shadow-2xl text-center animate-slide-up">
+            <div class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="message-circle" class="w-8 h-8"></i>
+            </div>
+            <h3 class="font-bold text-lg text-slate-900 mb-2">Quase lá!</h3>
+            <p class="text-sm text-slate-500 leading-relaxed mb-6">
+                Envie a mensagem sem alterar nada. <br>
+                <b>Aguarde nossa confirmação antes de pagar.</b>
+            </p>
+            <a id="btnFinalWhatsapp" href="#" target="_blank" onclick="window.closeConfirmFinal()" class="block w-full py-4 bg-primary text-white font-bold rounded-2xl shadow-lg active-scale uppercase tracking-widest text-xs">
+                Entendi, Ir para WhatsApp
+            </a>
+        </div>
+    </div>
+    
+    <div id="toastContainer" class="fixed bottom-6 left-0 right-0 z-[9999] flex flex-col items-center gap-2 pointer-events-none px-4"></div>
+
+    <div id="initialLoader" class="fixed inset-0 bg-white z-[9999] flex flex-col items-center justify-center transition-opacity duration-500">
+        <div class="w-12 h-12 border-4 border-slate-100 border-t-primary rounded-full animate-spin"></div>
+        <p class="mt-4 text-xs font-bold text-slate-400 animate-pulse uppercase tracking-widest">Sincronizando Vitrine...</p>
+    </div>
+
+    <header class="sticky top-0 z-50 glass-header">
+        <div class="container mx-auto px-4 lg:px-8 max-w-7xl h-20 md:h-24 flex items-center justify-between gap-4">
+            
+            <div class="flex items-center gap-4 cursor-pointer active-scale shrink-0" onclick="window.resetAllFilters(); window.scrollTo({top:0, behavior:'smooth'})">
+                <div id="logoContainer" class="hidden w-12 h-12 md:w-14 md:h-14 rounded-full overflow-hidden bg-white border border-slate-200 shadow-sm flex-shrink-0">
+                    <img id="storeLogoImg" src="" class="w-full h-full object-cover" alt="Logo">
+                </div>
+                <div class="flex flex-col justify-center">
+                    <h1 id="storeNameDisplay" class="font-display font-bold text-lg md:text-2xl text-slate-800 leading-tight truncate max-w-[220px] md:max-w-md">Carregando...</h1>
+                    <span class="text-[9px] font-bold text-slate-400 uppercase tracking-tighter md:hidden">Vitrine Online</span>
+                </div>
+            </div>
+
+            <div class="flex-1 max-w-2xl hidden md:flex items-center bg-slate-100 rounded-full px-1 border border-transparent focus-within:border-primary/20 focus-within:bg-white focus-within:ring-1 focus-within:ring-primary/50 transition-all">
+                <div class="relative flex-grow">
+                   <input type="text" id="desktopSearch" autocomplete="off" oninput="window.handleSearchInput(this.value)" placeholder="O que você procura?" class="w-full bg-transparent border-none py-2.5 pl-10 pr-2 text-sm focus:ring-0">
+                    <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2"></i>
+                </div>
+                <button onclick="window.openFilterDrawer()" class="relative p-2 m-1 rounded-full hover:bg-slate-200 bg-white shadow-sm border border-slate-200 text-slate-600">
+                    <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
+                    <span id="filterBadgeDesktop" class="absolute -top-1 -right-1 bg-primary text-white text-[9px] font-black h-4 w-4 flex items-center justify-center rounded-full border-2 border-white transform scale-0 transition-transform duration-300">0</span>
+                </button>
+            </div>
+
+            <div class="flex items-center gap-1 md:gap-3 shrink-0">
+                <button onclick="window.toggleFavoritesView()" id="headerFavBtn" class="flex items-center justify-center p-2.5 rounded-full hover:bg-slate-50 active-scale bg-white border border-slate-200 relative transition-colors">
+                    <i data-lucide="heart" class="w-5 h-5 text-slate-700" id="headerHeartIcon"></i>
+                    <span id="favBadgeDesktop" class="absolute -top-1 -right-1 bg-primary text-white text-[10px] font-bold h-4 w-4 flex items-center justify-center rounded-full border-2 border-white transform scale-0 transition-transform duration-300">0</span>
+                </button>
+                <button onclick="window.openCartModal()" class="flex items-center gap-2 p-2.5 rounded-full bg-primary hover:brightness-90 active-scale group relative border border-primary shadow-md transition-all">
+                    <i data-lucide="shopping-cart" class="w-5 h-5 text-white"></i>
+                    <span id="cartBadge" class="absolute -top-1 -right-1 bg-white text-primary text-[10px] font-black h-4 w-4 flex items-center justify-center rounded-full border-2 border-primary transform scale-0 transition-transform duration-300 shadow-sm">0</span>
+                </button>
+            </div>
+        </div>
+        
+        <div class="md:hidden px-4 pb-4">
+            <div class="flex items-center w-full bg-slate-100 rounded-xl pr-1 border border-transparent focus-within:bg-white focus-within:border-primary/20 transition-all">
+                <div class="relative flex-1">
+                  <input type="text" id="mobileSearch" autocomplete="off" oninput="window.handleSearchInput(this.value)" placeholder="Buscar produtos..." class="w-full bg-transparent border-none py-3 pl-10 pr-2 text-sm focus:ring-0">
+                    <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2"></i>
+                </div>
+                <button onclick="window.openFilterDrawer()" class="relative p-2 m-1 rounded-lg bg-white shadow-sm border border-slate-200 text-slate-600">
+                    <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
+                    <span id="filterBadgeMobile" class="absolute -top-1 -right-1 bg-primary text-white text-[9px] font-black h-4 w-4 flex items-center justify-center rounded-full border-2 border-white transform scale-0 transition-transform duration-300">0</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main id="app" class="flex-grow container mx-auto px-2 md:px-8 max-w-7xl pt-4 hidden opacity-0 transition-opacity duration-700">
+        <div class="relative w-full pt-0 overflow-hidden px-2 md:px-0">
+            <div id="heroGridContainer" class="flex overflow-x-auto snap-x snap-mandatory gap-6 mb-0 hide-scroll h-52 md:h-64 scroll-smooth bg-transparent"></div>
+            <div id="carouselDots" class="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex justify-center gap-1.5 px-3 py-1.5 bg-black/20 backdrop-blur-md rounded-full"></div>
+        </div>
+
+        <nav class="sticky top-[140px] md:top-[96px] z-30 mb-6 -mx-2 px-2 md:mx-0 md:px-0 bg-[#F3F4F6]/95 backdrop-blur-sm">
+            <div id="categoryContainer" class="flex items-center gap-2 overflow-x-auto hide-scroll py-3 pl-1"></div>
+        </nav>
+         
+        <div id="magicSections" class="pb-4 space-y-10"></div> 
+        <div id="catalogContainer" class="pb-20 space-y-10 min-h-[50vh]"></div>
+        
+        <div id="emptyState" class="hidden flex flex-col items-center justify-center py-20 text-center animate-fade-in">
+            <div class="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center mb-4 text-slate-400"><i data-lucide="search-x" class="w-8 h-8"></i></div>
+            <h3 class="font-bold text-slate-800">Nenhum produto encontrado</h3>
+            <button onclick="window.resetAllFilters()" class="mt-4 text-primary text-sm font-bold">Limpar filtros</button>
+        </div>
+    </main>
+
+    <footer class="bg-white border-t border-slate-200 py-10 mt-auto">
+        <div class="container mx-auto px-4 max-w-7xl flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="text-center md:text-left">
+                <h5 class="font-display font-bold text-xl text-slate-900 mb-1" id="footerStoreName">Loja</h5>
+                <p id="footerDescription" class="text-slate-500 text-sm">Qualidade e confiança.</p>
+            </div>
+            <div class="flex gap-4 text-sm font-semibold text-slate-600">
+                <button onclick="window.openDeliveryModal()" class="hover:text-primary flex items-center gap-1"><i data-lucide="truck" class="w-4 h-4"></i> Entrega</button>
+                <a id="footerWaLink" href="#" target="_blank" class="hover:text-primary flex items-center gap-1"><i data-lucide="message-circle" class="w-4 h-4"></i> WhatsApp</a>
+            </div>
+        </div>
+    </footer>
+
+    <div id="modalDetails" class="fixed inset-0 z-[60] hidden flex items-end md:items-center justify-center pointer-events-none p-0 md:p-4">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm pointer-events-auto" onclick="window.closeModalDetails()"></div>
+        <div class="bg-white w-full max-w-2xl md:rounded-2xl rounded-t-[2.5rem] shadow-2xl pointer-events-auto relative flex flex-col max-h-[92vh] md:max-h-[85vh] overflow-hidden animate-slide-up">
+            
+            <div class="sticky top-0 right-0 z-50 flex justify-end gap-2 p-4 h-0 overflow-visible">
+                <button onclick="window.shareProduct()" class="bg-white/90 hover:bg-white p-2 rounded-full shadow-lg backdrop-blur-sm border border-slate-100 active-scale">
+                    <i data-lucide="share-2" class="w-5 h-5 text-slate-700"></i>
+                </button>
+                <button onclick="window.closeModalDetails()" class="bg-white/90 hover:bg-white p-2 rounded-full shadow-lg backdrop-blur-sm border border-slate-100 active-scale">
+                    <i data-lucide="x" class="w-5 h-5 text-slate-700"></i>
+                </button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto custom-scrollbar pt-2">
+                <div class="relative bg-white pb-4">
+                    <div id="mainImageContainer" style="touch-action: pan-y;" class="h-72 md:h-96 w-full flex items-center justify-center p-4 relative group cursor-zoom-in overflow-hidden touch-pan-y" onclick="window.openImageZoom()">
+                        <img id="detailImg" class="max-w-full max-h-full object-contain transition-all duration-300 select-none" src="">
+                        <div id="imageCounter" class="absolute bottom-4 left-4 bg-black/60 text-white text-[10px] px-2 py-1 rounded-full font-bold">1 / 1</div>
+                    </div>
+                    <div id="detailThumbnails" class="flex gap-3 px-6 py-2 overflow-x-auto items-center hide-scroll snap-x scroll-smooth outline-none min-h-[60px]"></div>
+                </div>
+
+                <div class="px-6 pb-32"> 
+                    <div class="flex justify-between items-start mb-2">
+                         <span id="detailCat" class="text-[10px] font-extrabold text-primary uppercase tracking-widest pt-1"></span>
+                         <button id="modalHeartBtn" onclick="window.toggleFavoriteCurrentDetail()" class="p-2 -mr-2 -mt-2 rounded-full hover:bg-slate-50 active-scale">
+                            <i data-lucide="heart" class="w-6 h-6 text-slate-300"></i>
+                         </button>
+                    </div>
+
+                    <div id="modalTimer" class="hidden timer-accent p-2 rounded-lg mb-4 flex items-center gap-2">
+                        <i data-lucide="clock" class="w-4 h-4"></i>
+                        <span id="modalTimerText" class="text-xs font-bold"></span>
+                    </div>
+                    
+                    <h2 id="detailName" class="font-display text-2xl md:text-3xl font-bold text-slate-900 mb-1"></h2>
+                    
+                    <div id="detailSkuContainer" class="mb-4">
+                        <span class="text-[10px] font-mono bg-slate-100 text-slate-500 px-2 py-0.5 rounded uppercase tracking-wider">SKU: <span id="detailSku"></span></span>
+                    </div>
+                    
+                    <p id="detailDesc" class="text-slate-500 text-sm leading-relaxed mb-8"></p>
+                    
+                    <div class="space-y-6 border-t border-slate-100 pt-6">
+                        <div id="sizesWrapper" class="hidden">
+                            <span class="text-xs font-bold text-slate-800 uppercase mb-3 block">Tamanho</span>
+                            <div id="detailSizesContainer" class="flex flex-wrap gap-2"></div>
+                        </div>
+                        <div id="colorsWrapper" class="hidden">
+                            <span class="text-xs font-bold text-slate-800 uppercase mb-3 block">Cor</span>
+                            <div id="detailColorsContainer" class="flex flex-wrap gap-2"></div>
+                        </div>
+                    </div>
+
+                    <div id="relatedProductsSection" class="mt-10 pt-8 border-t border-slate-100 hidden">
+                        <h4 class="font-bold text-slate-800 mb-4 text-sm uppercase tracking-wide">Relacionados</h4>
+                        <div id="relatedGrid" class="flex overflow-x-auto gap-3 pb-4 hide-scroll -mx-2 px-2"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-4 border-t flex items-center justify-between bg-white/95 backdrop-blur-md z-20 absolute bottom-0 w-full shadow-[0_-4px_10px_-1px_rgba(0,0,0,0.08)]">
+                <div class="flex flex-col">
+                    <span id="detailOldPrice" class="text-xs text-slate-400 line-through"></span>
+                    <span id="detailPrice" class="text-2xl md:text-3xl font-display font-black text-slate-900 tracking-tight"></span>
+                </div>
+                <div class="flex gap-2">
+                    <div class="flex items-center bg-slate-100 rounded-xl px-1 h-12">
+                        <button onclick="window.adjustDetailQty(-1)" class="w-8 h-full font-bold text-lg text-slate-500">-</button>
+                        <span id="detailQtyDisplay" class="font-bold w-6 text-center text-sm">1</span>
+                        <button onclick="window.adjustDetailQty(1)" class="w-8 h-full font-bold text-lg text-slate-500">+</button>
+                    </div>
+                    <button id="detailAddBtn" class="bg-primary hover:bg-primaryDark text-white font-bold px-4 md:px-8 h-12 rounded-xl active-scale shadow-lg disabled:opacity-40 transition-all text-sm md:text-base">
+                        Adicionar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="filterModal" class="fixed inset-0 z-[150] hidden">
+        <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onclick="window.closeFilterDrawer()"></div>
+        <div id="filterDrawer" class="absolute inset-y-0 right-0 max-w-xs w-full bg-white flex flex-col transform translate-x-full transition-transform duration-300 shadow-2xl">
+            <div class="p-5 border-b flex justify-between items-center">
+                <h3 class="font-bold text-slate-800">Filtrar</h3>
+                <button onclick="window.closeFilterDrawer()" class="p-2 hover:bg-slate-100 rounded-full">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <div class="p-5 space-y-8 flex-1 overflow-y-auto custom-scrollbar">
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase mb-3 block">Preço Máximo</label>
+                    <input id="filterMaxPrice" type="number" placeholder="Até R$..." 
+                           oninput="state.filters.maxPrice = this.value ? parseFloat(this.value) : null; window.renderCatalog(); window.updateFilterBadge();" 
+                           class="w-full border border-slate-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-primary/20">
+                    </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase mb-3 block">Tamanhos</label>
+                    <div id="filterSizesContainer" class="flex flex-wrap gap-2"></div>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase mb-3 block">Cores</label>
+                    <div id="filterColorsContainer" class="flex flex-wrap gap-2"></div>
+                </div>
+            </div>
+            
+            <div class="p-5 border-t bg-slate-50 flex flex-col gap-2">
+                <button onclick="window.closeFilterDrawer()" class="w-full bg-primary text-white font-bold py-4 rounded-2xl shadow-lg active-scale">
+                    Ver Resultados
+                </button>
+                <button onclick="window.resetAllFilters(); window.closeFilterDrawer();" class="w-full text-slate-500 font-bold py-2 text-sm">
+                    Limpar Filtros
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalImageZoom" class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-black/95 backdrop-blur-md opacity-0 transition-opacity duration-300 cursor-zoom-out" onclick="window.closeImageZoom()">
+        <button class="absolute top-4 right-4 text-white/80 p-3"><i data-lucide="x" class="w-10 h-10"></i></button>
+        <img id="zoomedImg" class="max-w-full max-h-full object-contain transform scale-95 transition-transform duration-300">
+    </div>
+
+    <div id="modalCart" class="fixed inset-0 z-[60] hidden">
+        <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onclick="window.closeCartModal()"></div>
+        <div id="cartDrawer" class="absolute inset-y-0 right-0 max-w-md w-full bg-white shadow-2xl flex flex-col transform translate-x-full transition-transform duration-300">
+            
+            <div class="p-5 border-b flex justify-between items-center bg-white z-10">
+                <div class="flex items-center gap-2">
+                    <button id="btnBackStep" onclick="window.goToStep1()" class="hidden p-2 -ml-2 hover:bg-slate-100 rounded-full transition-colors">
+                        <i data-lucide="arrow-left" class="w-5 h-5 text-slate-600"></i>
+                    </button>
+                    <h3 id="cartTitle" class="font-bold text-lg">Minha Sacola</h3>
+                </div>
+                <button onclick="window.closeCartModal()"><i data-lucide="x" class="w-6 h-6 text-slate-400"></i></button>
+            </div>
+
+            <div id="step1" class="flex-1 overflow-y-auto flex flex-col">
+                <div id="cartList" class="p-4 space-y-3 bg-slate-50 flex-1"></div>
+                
+                <div id="cartEmptyMsg" class="hidden text-center text-slate-400 py-10 px-6">
+                    <i data-lucide="shopping-bag" class="w-12 h-12 mx-auto mb-4 opacity-20"></i>
+                    <p>Sua sacola está vazia.</p>
+                </div>
+
+                <div id="footerStep1" class="p-5 border-t bg-white shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
+                    <div class="flex justify-between text-xl font-display font-black text-slate-900 mb-4">
+                        <span>Subtotal</span>
+                        <span class="subtotal-display">R$ 0,00</span>
+                    </div>
+                    <button onclick="window.goToStep2()" class="w-full bg-primary hover:brightness-90 text-white font-bold py-4 rounded-2xl shadow-lg active-scale flex justify-center items-center gap-2 transition-all">
+                        Continuar para Entrega <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div id="step2" class="hidden flex-1 overflow-y-auto bg-slate-50 flex flex-col">
+                <div class="p-5 space-y-4 flex-1">
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                        <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Dados do Pedido</h4>
+                        
+                        <input type="text" id="checkName" placeholder="Seu Nome Completo" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-primary/20">
+                        
+                        <input type="tel" id="checkPhone" placeholder="Seu WhatsApp com DDD" oninput="this.value = this.value.replace(/\D/g,'')" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-primary/20">
+                        
+                        <div class="flex flex-col gap-2">
+                            <div class="flex gap-2">
+                                <select id="checkPayment" onchange="window.toggleChangeField(this.value)" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-primary/20">
+                                    <option value="" disabled selected>Pagamento</option>
+                                    <option value="Pix">Pix</option>
+                                    <option value="Cartão">Cartão</option>
+                                    <option value="Dinheiro">Dinheiro</option>
+                                </select>
+                                <select id="cartDeliverySelect" onchange="window.toggleAddressFields()" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm outline-none"></select>
+                            </div>
+
+                            <div id="changeField" class="hidden animate-fade-in bg-amber-50 p-3 rounded-xl border border-amber-100">
+                                <label class="text-[9px] font-black text-amber-600 uppercase tracking-widest ml-1">Troco para quanto?</label>
+                                <div class="relative mt-1">
+                                    <span class="absolute left-3 top-2.5 text-amber-600 text-sm font-bold">R$</span>
+                                    <input type="number" id="checkChange" placeholder="Ex: 100,00" class="w-full bg-white border border-amber-200 rounded-lg p-2 pl-10 text-sm outline-none focus:ring-2 focus:ring-amber-400/20">
+                                </div>
+                            </div>
+
+                            <div id="cardInstallmentsField" class="hidden animate-fade-in bg-blue-50 p-3 rounded-xl border border-blue-100 mt-2">
+                                <label class="text-[9px] font-black text-blue-600 uppercase tracking-widest ml-1">Parcelamento</label>
+                                <select id="checkInstallments" class="w-full bg-white border border-blue-200 rounded-lg p-2 text-sm outline-none mt-1"></select>
+                            </div>
+
+                            <div id="addressFields" class="space-y-3 animate-fade-in hidden">
+                                <input type="text" id="checkStreet" placeholder="Nome da Rua / Avenida" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-primary/20">
+                                <div class="flex gap-2">
+                                    <input type="text" id="checkNumber" placeholder="Nº" class="w-20 bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-primary/20">
+                                    <input type="text" id="checkNeighborhood" placeholder="Bairro" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-primary/20">
+                                </div>
+                                <input type="text" id="checkReference" placeholder="Ponto de Referência" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-primary/20">
+                            </div>
+                        </div>
+                    </div>
+                
+                    <div class="p-5 border-t bg-white mt-auto">
+                        <div class="flex justify-between text-xl font-display font-black text-slate-900 mb-4">
+                            <span>Total</span>
+                            <span id="cartFinalTotal">R$ 0,00</span>
+                        </div>
+                        <button onclick="window.checkoutWhatsApp()" class="w-full bg-primary hover:bg-primaryDark text-white font-bold py-4 rounded-2xl shadow-lg active-scale flex justify-center items-center gap-3 transition-all">
+                            Finalizar Pedido <i data-lucide="message-circle" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+            </div> 
+        </div>
+    </div>
+
+    <div id="modalDelivery" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onclick="document.getElementById('modalDelivery').classList.add('hidden')"></div>
+        <div class="bg-white rounded-2xl p-6 w-full max-w-sm relative z-10 shadow-2xl animate-slide-up">
+            <h3 class="font-bold text-lg mb-4 text-slate-900">Taxas de Entrega</h3>
+            <div id="deliveryList" class="space-y-2 max-h-[50vh] overflow-y-auto mb-6"></div>
+            <button onclick="document.getElementById('modalDelivery').classList.add('hidden')" class="w-full py-3 bg-slate-100 font-bold text-slate-600 rounded-xl font-display">Fechar</button>
+        </div>
+    </div>
+
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>
+
