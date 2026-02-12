@@ -4,9 +4,11 @@ require('dotenv').config();
 const express = require("express");
 const path = require("path");
 const admin = require("firebase-admin");
+const cors = require("cors");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+app.use(cors());
 
 // 2. INICIALIZAÇÃO BLINDADA DO FIREBASE
 admin.initializeApp({

@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs');
 
 module.exports = (db, admin) => {
+
     // --- ROTA DA VITRINE COM CACHE INTELIGENTE ---
     router.get('/:lojaId', async (req, res) => {
         const lojaId = req.params.lojaId;
@@ -79,30 +80,26 @@ module.exports = (db, admin) => {
         }
     });
 
-    // --- ROTA DE ANALYTICS (HÍBRIDA PARA COMPATIBILIDADE) ---
+    // --- ROTA DE ANALYTICS (VISITAS) ---
     router.post('/:lojaId/visit', async (req, res) => {
         const lojaId = req.params.lojaId;
-        const hojeId = new Date().toLocaleDateString('en-CA'); // Formato: 2026-02-08
-        const horaAtual = new Date().getHours(); // Pega a hora atual: 0-23
+        const hojeId = new Date().toLocaleDateString('en-CA'); 
+        const horaAtual = new Date().getHours();
 
         try {
             const batch = db.batch();
 
-            // 1. ATUALIZAÇÃO PARA LOJAS ANTIGAS (analytics_history)
-            // Grava a hora usando apenas o número (ex: "14": +1)
             const historyRef = db.collection('stores').doc(lojaId).collection('analytics_history').doc(hojeId);
             batch.set(historyRef, { 
                 visits: admin.firestore.FieldValue.increment(1), 
-                [horaAtual]: admin.firestore.FieldValue.increment(1), // Padrão antigo
+                [horaAtual]: admin.firestore.FieldValue.increment(1), 
                 date: admin.firestore.FieldValue.serverTimestamp() 
             }, { merge: true });
 
-            // 2. ATUALIZAÇÃO PARA O PADRÃO NOVO (analytics/global)
-            // Grava o total geral e a hora com prefixo visits_H (ex: "visits_14": +1)
             const globalRef = db.collection('stores').doc(lojaId).collection('analytics').doc('global');
             batch.set(globalRef, { 
                 totalVisits: admin.firestore.FieldValue.increment(1), 
-                [`visits_${horaAtual}`]: admin.firestore.FieldValue.increment(1), // Padrão novo
+                [`visits_${horaAtual}`]: admin.firestore.FieldValue.increment(1), 
                 lastUpdate: admin.firestore.FieldValue.serverTimestamp() 
             }, { merge: true });
 
@@ -114,5 +111,73 @@ module.exports = (db, admin) => {
         }
     });
 
-    return router;
+    // --- ROTA DE MÉTRICAS (FAVORITOS E CARRINHO) ---
+    router.post('/metricas', async (req, res) => {
+        try {
+            const { lojaId, produtoId, acao } = req.body;
+            const globalRef = db.collection('stores').doc(lojaId).collection('analytics').doc('global');
+            const campoDinamico = `stats.${produtoId}.${acao === 'fav' ? 'favs' : 'adds'}`;
+
+            await globalRef.set({
+                [campoDinamico]: admin.firestore.FieldValue.increment(1),
+                "totalInteracoes": admin.firestore.FieldValue.increment(1),
+                "ultimaInteracao": admin.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+
+            res.status(200).json({ success: true });
+        } catch (error) {
+            console.error("❌ ERRO NO FIREBASE (Métricas):", error); 
+            res.status(500).json({ error: "Erro interno no servidor" });
+        }
+    });
+
+   // --- ROTA DE RANKING REFORMULADA ---
+router.get('/:lojaId/ranking', async (req, res) => {
+    const lojaId = req.params.lojaId;
+    try {
+        const globalRef = db.collection('stores').doc(lojaId).collection('analytics').doc('global');
+        const doc = await globalRef.get();
+
+        if (!doc.exists) return res.status(404).json({ erro: "Nenhum dado encontrado" });
+
+        const data = doc.data();
+        const rankingRaw = [];
+
+        // Lógica para capturar campos que começam com "stats."
+        Object.keys(data).forEach(key => {
+            if (key.startsWith('stats.')) {
+                const partes = key.split('.'); // [stats, prod_id, acao]
+                const prodId = partes[1];
+                const acao = partes[2];
+
+                // Procura se já adicionamos esse produto na lista
+                let item = rankingRaw.find(r => r.id === prodId);
+                if (!item) {
+                    item = { id: prodId, favs: 0, adds: 0 };
+                    rankingRaw.push(item);
+                }
+
+                if (acao === 'favs') item.favs = data[key];
+                if (acao === 'adds') item.adds = data[key];
+            }
+        });
+
+        // Calcula pontuação e ordena
+        const rankingFinal = rankingRaw.map(item => ({
+            ...item,
+            pontuacao: item.favs + item.adds
+        })).sort((a, b) => b.pontuacao - a.pontuacao);
+
+        res.json({
+            loja: lojaId,
+            totalInteracoes: data.totalInteracoes || 0,
+            ranking: rankingFinal.slice(0, 10)
+        });
+    } catch (error) {
+        console.error("Erro no Ranking:", error);
+        res.status(500).json({ erro: "Erro ao buscar ranking" });
+    }
+});
+
+    return router; 
 };

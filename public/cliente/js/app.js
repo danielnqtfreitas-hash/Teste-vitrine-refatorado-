@@ -195,11 +195,16 @@ window.handleMaxPrice = (val) => {
 
 window.updateFilterBadge = updateFilterBadge;
 
-// Favoritos
+// --- FAVORITOS COM MÉTRICA ---
 window.toggleFavorite = (id) => { 
     const idx = state.favorites.indexOf(id); 
-    if(idx > -1) state.favorites.splice(idx, 1); 
-    else state.favorites.push(id);
+    if(idx > -1) {
+        state.favorites.splice(idx, 1); 
+    } else {
+        state.favorites.push(id);
+        // Reporta a métrica apenas quando ADICIONA aos favoritos
+        window.reportarMetrica(id, 'fav'); 
+    }
     localStorage.setItem(state.FAV_KEY, JSON.stringify(state.favorites));
     renderCatalog(); 
     updateFavoritesUI(); 
@@ -223,11 +228,23 @@ window.shareProduct = shareProduct;
 window.toggleFavoriteCurrentDetail = () => { if (state.currentDetailId) window.toggleFavorite(state.currentDetailId); };
 window.quickAdd = (id) => { 
     const p = state.allProducts.find(x => x.id === id); 
-    if(p.sizes?.length || p.colors?.length) openProductModal(id); else addToCart(p, 1, {}); 
+    // Se tiver variação, abre o modal, se não, adiciona direto (e reporta)
+    if(p.sizes?.length || p.colors?.length) openProductModal(id); 
+    else window.addToCart(p, 1, {}); 
 };
 
 // Carrinho
-window.addToCart = addToCart;
+window.addToCart = (product, qty, options) => {
+    // 1. Chama a função original que você importou do cart.js
+    addToCart(product, qty, options);
+
+    // 2. Dispara a métrica
+    if (product && product.id) {
+        window.reportarMetrica(product.id, 'cart');
+    }
+};
+
+// Mantenha as outras linhas do carrinho como estão:
 window.modQty = modQty;
 window.checkoutWhatsApp = checkoutWhatsApp;
 window.goToStep1 = goToStep1;
@@ -316,3 +333,23 @@ document.addEventListener('change', (e) => {
     }
 });
 
+// FUNÇÃO GLOBAL DE MÉTRICAS - COLOQUE NA ÚLTIMA LINHA DO APP.JS
+window.reportarMetrica = async function(produtoId, tipoAcao) {
+    try {
+        if (!state.STORE_ID || !produtoId) return;
+
+        console.log(`📊 Enviando métrica: ${tipoAcao} no produto ${produtoId}`);
+        
+        await fetch('/api/produtos/metricas', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                lojaId: state.STORE_ID, 
+                produtoId: produtoId,
+                acao: tipoAcao
+            })
+        });
+    } catch (err) {
+        console.warn("Métrica não pôde ser enviada:", err);
+    }
+};

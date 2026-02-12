@@ -158,3 +158,99 @@ header.glass-header input { color: #334155 !important; }
     img { filter: none !important; }
     input, select, textarea { background-color: #FFFFFF !important; color: #334155 !important; }
 }
+
+/* =========================================
+   REFINAMENTO DE DESIGN - VITRINE ONLINE
+   ========================================= */
+
+/* 1. Grid de Produtos mais "App" */
+#productsGrid {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important; /* Força 2 colunas no mobile */
+    gap: 12px !important;
+    padding: 12px !important;
+}
+
+/* 2. Card de Produto Premium */
+.product-card {
+    border-radius: 16px !important; /* Bordas mais suaves */
+    border: none !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03) !important;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Ajuste da Imagem do Card */
+.product-card img {
+    aspect-ratio: 1/1 !important; /* Foto sempre quadrada */
+    object-fit: cover !important;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+/* 3. Tipografia e Preço */
+.product-card .p-3 {
+    padding: 10px !important;
+}
+
+.product-card h3 {
+    font-size: 0.9rem !important;
+    font-weight: 500 !important;
+    line-height: 1.2 !important;
+    margin-bottom: 6px !important;
+    color: #1e293b !important;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    height: 2.2rem; /* Mantém alinhamento mesmo com nomes curtos */
+}
+
+.product-card .text-lg {
+    font-size: 1.1rem !important;
+    font-weight: 800 !important;
+    color: var(--color-primary) !important;
+}
+
+/* 4. Botão de Compra Flutuante (Bottom Navigation) */
+/* Se você tiver um botão de carrinho ou WhatsApp, use este estilo */
+.mobile-nav {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    padding: 10px 20px;
+    border-radius: 30px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    display: flex;
+    gap: 20px;
+    z-index: 999;
+}
+
+/* 5. Efeito de Skeleton Loading (Aquece o olhar enquanto carrega) */
+@keyframes skeleton-pulse {
+    0% { background-color: #f1f5f9; }
+    50% { background-color: #e2e8f0; }
+    100% { background-color: #f1f5f9; }
+}
+
+.loading-skeleton {
+    animation: skeleton-pulse 1.5s infinite;
+}
+
+/* 6. Banner de Destaque (Hero) */
+.hero-card {
+    border-radius: 20px !important;
+    margin: 10px !important;
+    overflow: hidden;
+}
+
+/* Ajuste para o botão do Header não parecer "pesado" */
+header.glass-header #headerFavBtn, 
+header.glass-header button[onclick="openCartModal()"] {
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+}
+
+header.glass-header #headerFavBtn:hover {
+    transform: translateY(-2px);
+}
