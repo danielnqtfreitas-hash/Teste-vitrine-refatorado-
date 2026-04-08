@@ -788,12 +788,15 @@ export function setupSwipes() {
         }
     }, { passive: true });
 }
-
+export function openDeliveryModal() {
+    document.getElementById('modalDelivery').classList.remove('hidden');
+}
 // --- LÓGICA DE FUNCIONAMENTO (ABERTO/FECHADO) ---
 
 export function checkStoreStatus(config) {
     const statusBanner = document.getElementById('storeStatusBanner');
-    const checkoutBtns = document.querySelectorAll('.btn-checkout, #detailAddBtn'); 
+    // Seleciona o botão de adicionar no modal e os botões de compra rápida nos cards
+    const checkoutBtns = document.querySelectorAll('#detailAddBtn, [onclick*="window.quickAdd"]'); 
     
     if (!statusBanner || !config) return;
 
@@ -803,7 +806,7 @@ export function checkStoreStatus(config) {
 
     // 1. Fechamento Manual
     if (config.manualClosed) {
-        updateStoreUI(false, "Loja fechada temporariamente", statusBanner, checkoutBtns);
+        updateStoreUI(false, "FECHADO", statusBanner, checkoutBtns);
         return false;
     }
 
@@ -811,38 +814,40 @@ export function checkStoreStatus(config) {
     const hoje = config.openingHours?.[diaSemana];
 
     if (!hoje || !hoje.active) {
-        updateStoreUI(false, "Fechado hoje", statusBanner, checkoutBtns);
+        updateStoreUI(false, "FECHADO HOJE", statusBanner, checkoutBtns);
         return false;
     }
 
     if (horaAtual >= hoje.open && horaAtual < hoje.close) {
-        updateStoreUI(true, "Estamos abertos!", statusBanner, checkoutBtns);
+        updateStoreUI(true, "ABERTO", statusBanner, checkoutBtns);
         return true;
     } else {
         const h = Math.floor(hoje.open / 100).toString().padStart(2, '0');
         const m = (hoje.open % 100).toString().padStart(2, '0');
-        updateStoreUI(false, `Abriremos às ${h}:${m}`, statusBanner, checkoutBtns);
+        updateStoreUI(false, `ABRE ÀS ${h}:${m}`, statusBanner, checkoutBtns);
         return false;
     }
 }
 
 function updateStoreUI(isOpen, message, banner, buttons) {
     banner.innerText = message;
+    banner.classList.remove('hidden');
+    
     if (isOpen) {
-        banner.className = "bg-green-100 text-green-700 px-3 py-1 rounded-full text-[10px] font-bold animate-pulse";
+        banner.className = "bg-green-100 text-green-700 px-2 py-0.5 rounded-md text-[9px] font-black animate-pulse flex items-center shrink-0";
         buttons.forEach(btn => {
             btn.disabled = false;
-            btn.classList.remove('opacity-40', 'grayscale', 'pointer-events-none');
+            btn.style.opacity = '1';
+            btn.style.filter = 'none';
+            btn.style.pointerEvents = 'auto';
         });
     } else {
-        banner.className = "bg-red-100 text-red-700 px-3 py-1 rounded-full text-[10px] font-bold";
+        banner.className = "bg-red-100 text-red-700 px-2 py-0.5 rounded-md text-[9px] font-black flex items-center shrink-0";
         buttons.forEach(btn => {
             btn.disabled = true;
-            btn.classList.add('opacity-40', 'grayscale', 'pointer-events-none');
+            btn.style.opacity = '0.5';
+            btn.style.filter = 'grayscale(100%)';
+            btn.style.pointerEvents = 'none';
         });
     }
-}
-
-export function openDeliveryModal() {
-    document.getElementById('modalDelivery').classList.remove('hidden');
 }
