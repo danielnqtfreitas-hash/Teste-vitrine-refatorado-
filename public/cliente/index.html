@@ -88,11 +88,44 @@
     
     <div id="toastContainer" class="fixed bottom-6 left-0 right-0 z-[9999] flex flex-col items-center gap-2 pointer-events-none px-4"></div>
 
-    <div id="initialLoader" class="fixed inset-0 bg-white z-[9999] flex flex-col items-center justify-center transition-opacity duration-500">
-        <div class="w-12 h-12 border-4 border-slate-100 border-t-primary rounded-full animate-spin"></div>
-        <p class="mt-4 text-xs font-bold text-slate-400 animate-pulse uppercase tracking-widest">Sincronizando Vitrine...</p>
+    <div id="initialLoader" class="fixed inset-0 bg-[#F3F4F6] z-[9999] flex flex-col items-center justify-center transition-all duration-700 ease-in-out">
+    
+    <div class="relative flex flex-col items-center">
+        
+        <div class="absolute inset-0 bg-primary/20 blur-[100px] rounded-full scale-150 animate-pulse"></div>
+
+        <div class="relative mb-10">
+            <div class="w-24 h-24 bg-white rounded-[2rem] shadow-2xl shadow-primary/20 flex items-center justify-center border border-white/50 relative overflow-hidden animate-bounce-short">
+                
+                <div class="loader-wave"></div>
+                
+                <i data-lucide="shopping-bag" class="w-12 h-12 text-primary relative z-10 drop-shadow-sm"></i>
+            </div>
+
+            <div class="absolute -inset-3 border-[3px] border-slate-200 rounded-[2.5rem]"></div>
+            <div class="absolute -inset-3 border-[3px] border-transparent border-t-primary border-r-primary/30 rounded-[2.5rem] animate-spin-slow"></div>
+        </div>
+
+        <div class="text-center z-10">
+            <h2 class="font-display font-black text-slate-800 text-xl tracking-tight mb-2">
+                Vitrine Online
+            </h2>
+            <div class="flex items-center justify-center gap-2">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] ml-1">Carregando estoque</span>
+                <div class="flex gap-1">
+                    <span class="w-1 h-1 bg-primary rounded-full animate-bounce"></span>
+                    <span class="w-1 h-1 bg-primary rounded-full animate-bounce [animation-delay:0.2s]"></span>
+                    <span class="w-1 h-1 bg-primary rounded-full animate-bounce [animation-delay:0.4s]"></span>
+                </div>
+            </div>
+        </div>
     </div>
 
+    <div class="absolute bottom-12 flex flex-col items-center gap-3">
+        <div class="h-[1px] w-8 bg-slate-300"></div>
+        <span class="text-[9px] font-black text-slate-400 uppercase tracking-[0.4em]">Powered by Éclat</span>
+    </div>
+</div>
     <header class="sticky top-0 z-50 glass-header">
         <div class="container mx-auto px-4 lg:px-8 max-w-7xl h-20 md:h-24 flex items-center justify-between gap-4">
             
