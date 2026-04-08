@@ -126,60 +126,35 @@ async function initFlow() {
 function applyStoreConfig(d) {
     state.lojaZapDestino = (d.whatsappNumber || "").replace(/\D/g, "");
     
+    // Injeção de Variáveis CSS (Ajusta seu CSS novo automaticamente)
     const primary = d.primaryColor || '#EA1D2C';
     document.documentElement.style.setProperty('--color-primary', primary);
     document.documentElement.style.setProperty('--color-primary-dark', primary);
-
-    // --- ANIMAÇÃO DE TRANSIÇÃO DO LOADER ---
-    const loader = document.getElementById('loader');
-    const loaderText = document.getElementById('loaderText');
     
-    if (loader) {
-        // Ativa as cores da loja no loader via classe CSS
-        loader.classList.add('loader-ready');
-        
-        if (loaderText) {
-            loaderText.textContent = d.storeName || "Vitrine Online";
-            loaderText.classList.remove('opacity-40');
-        }
-        
-        // Troca o ícone se necessário e atualiza Lucide
-        if (window.lucide) lucide.createIcons();
-    }
-
-    // --- IDENTIDADE VISUAL ---
     const metaTheme = document.getElementById('theme-color-meta');
     if(metaTheme) metaTheme.setAttribute('content', primary);
 
+    // Textos e Logos
     document.title = d.storeName || "Vitrine Online";
-    
     const storeNameEl = document.getElementById('storeNameDisplay');
     if (storeNameEl) storeNameEl.textContent = d.storeName;
     
+    document.getElementById('footerStoreName').textContent = d.storeName;
+    document.getElementById('footerDescription').textContent = d.footerText || "Qualidade e confiança.";
+    
     if (d.logoUrl) { 
         const logoImg = document.getElementById('storeLogoImg');
-        if (logoImg) logoImg.src = d.logoUrl; 
-        const logoCont = document.getElementById('logoContainer');
-        if (logoCont) logoCont.classList.remove('hidden'); 
+        logoImg.src = d.logoUrl; 
+        document.getElementById('logoContainer').classList.remove('hidden'); 
     }
 
-    // --- TEXTOS DE RODAPÉ ---
-    const footerName = document.getElementById('footerStoreName');
-    if (footerName) footerName.textContent = d.storeName;
-    const footerDesc = document.getElementById('footerDescription');
-    if (footerDesc) footerDesc.textContent = d.footerText || "Qualidade e confiança.";
-
-    // --- ÁREAS DE ENTREGA ---
+    // Configuração de Entrega no Carrinho
     state.deliveryAreas = d.deliveryAreas || [];
     const deliverySelect = document.getElementById('cartDeliverySelect');
     if (deliverySelect) {
-        const options = state.deliveryAreas.map(a => 
-            `<option value="${a.fee}">${a.name} (R$ ${parseFloat(a.fee).toFixed(2).replace('.',',')})</option>`
-        ).join('');
-        deliverySelect.innerHTML = '<option value="0">Retirar na Loja</option>' + options;
+        deliverySelect.innerHTML = '<option value="0">Retirar na Loja</option>' + 
+            state.deliveryAreas.map(a => `<option value="${a.fee}">${a.name} (R$ ${parseFloat(a.fee).toFixed(2).replace('.',',')})</option>`).join('');
     }
-
-    console.log("🎨 Interface customizada com as cores da loja.");
 }
 
 // --- 4. FUNÇÕES GLOBAIS (PONTE PARA O HTML) ---
