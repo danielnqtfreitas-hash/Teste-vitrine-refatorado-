@@ -64,12 +64,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function initFlow() {
     try {
+        // 1. Início imediato
         updatePremiumLoader(10); 
 
         const response = await fetch(`/api/produtos/${state.STORE_ID}`);
         if (!response.ok) throw new Error("Loja não encontrada no servidor");
         
         const data = await response.json(); 
+        
+        // 2. Dados recebidos (Meio do caminho)
         updatePremiumLoader(50); 
 
         if (data.config.subscriptionStatus === 'suspended') { 
@@ -91,11 +94,16 @@ async function initFlow() {
         state.banners = data.banners || [];
         state.categories = Array.from(new Set(data.produtos.map(p => p.category).filter(Boolean))).sort();
 
+        // Aplica cores e o logo no Loader
         applyStoreConfig(data.config);
+        
         renderHeroCarousel(state.banners);
         renderCategoryTabs();
+        
+        // Renderiza o catálogo (ainda oculto pelo loader)
         await renderCatalog();
         
+        // 3. Tudo pronto nos bastidores
         updatePremiumLoader(80); 
         
         populateFilterOptions();
@@ -104,8 +112,11 @@ async function initFlow() {
         checkDeepLink(); 
         registerVisit(); 
 
-        updatePremiumLoader(100);
-        console.log(`🚀 Vitrine [${state.STORE_ID}] carregada com sucesso.`);
+        // 4. FINALIZAÇÃO COM DELAY (3 segundos para branding)
+        setTimeout(() => {
+            updatePremiumLoader(100);
+            console.log(`🚀 Vitrine [${state.STORE_ID}] carregada com sucesso.`);
+        }, 3000);
 
     } catch (error) {
         console.error("Erro crítico no carregamento:", error);
@@ -139,10 +150,10 @@ function applyStoreConfig(d) {
         const logoCont = document.getElementById('logoContainer');
         if(logoCont) logoCont.classList.remove('hidden'); 
         
+        // Alimenta o Loader com a logo da loja
         updatePremiumLoader(30, d.logoUrl); 
     }
 
-    // Configuração de Entrega no Carrinho
     state.deliveryAreas = d.deliveryAreas || [];
     const deliverySelect = document.getElementById('cartDeliverySelect');
     if (deliverySelect) {
@@ -257,6 +268,8 @@ document.addEventListener('change', (e) => {
     }
 });
 
+// --- 7. UTILS DE LOADER PREMIUM ---
+
 function updatePremiumLoader(progress, logoUrl = null) {
     const bar = document.getElementById('loaderProgressBar');
     const loaderImg = document.getElementById('loaderStoreLogo');
@@ -272,14 +285,16 @@ function updatePremiumLoader(progress, logoUrl = null) {
     }
 
     if (progress >= 100 && loader) {
+        // Inicia animação de saída (Slide up + Fade out)
         loader.style.transform = 'translateY(-100%)';
         loader.style.opacity = '0';
+        
         setTimeout(() => {
             loader.classList.add('hidden');
             const app = document.getElementById('app');
             if(app) {
                 app.classList.remove('hidden');
-                app.classList.add('animate-reveal-up');
+                app.classList.add('animate-reveal-up'); // Revelação suave do conteúdo
                 app.style.opacity = '1';
             }
         }, 800);
