@@ -124,37 +124,69 @@ async function initFlow() {
 // --- 3. CONFIGURAÇÕES VISUAIS DINÂMICAS ---
 
 function applyStoreConfig(d) {
+    // 1. Configuração de Destino (WhatsApp)
     state.lojaZapDestino = (d.whatsappNumber || "").replace(/\D/g, "");
     
-    // Injeção de Variáveis CSS (Ajusta seu CSS novo automaticamente)
+    // 2. Gestão de Cores (Injeção de Variáveis CSS)
+    // O CSS deve ter 'transition: all 0.6s' para o efeito ser suave
     const primary = d.primaryColor || '#EA1D2C';
     document.documentElement.style.setProperty('--color-primary', primary);
     document.documentElement.style.setProperty('--color-primary-dark', primary);
     
+    // 3. Atualização do Loader (Experiência de Transição)
+    const loaderIcon = document.querySelector('#loader i');
+    const loaderText = document.querySelector('#loader h2');
+    const loaderGlow = document.querySelector('#loaderGlow'); // Se adicionou o glow no HTML
+
+    if (loaderIcon) {
+        // Muda o ícone de 'spinner' para 'sacola' ou 'estrela'
+        loaderIcon.setAttribute('data-lucide', 'shopping-bag');
+        loaderIcon.classList.remove('animate-spin'); 
+        // Força o Lucide a renderizar o novo ícone
+        if(window.lucide) lucide.createIcons();
+    }
+
+    if (loaderText) {
+        // Substitui "Carregando..." pelo nome da loja com fade
+        loaderText.textContent = d.storeName || "Vitrine Online";
+        loaderText.style.opacity = "1";
+    }
+    
+    // 4. Identidade Visual e SEO
     const metaTheme = document.getElementById('theme-color-meta');
     if(metaTheme) metaTheme.setAttribute('content', primary);
 
-    // Textos e Logos
     document.title = d.storeName || "Vitrine Online";
+    
     const storeNameEl = document.getElementById('storeNameDisplay');
     if (storeNameEl) storeNameEl.textContent = d.storeName;
     
-    document.getElementById('footerStoreName').textContent = d.storeName;
-    document.getElementById('footerDescription').textContent = d.footerText || "Qualidade e confiança.";
+    const footerName = document.getElementById('footerStoreName');
+    if (footerName) footerName.textContent = d.storeName;
+
+    const footerDesc = document.getElementById('footerDescription');
+    if (footerDesc) footerDesc.textContent = d.footerText || "Qualidade e confiança.";
     
+    // 5. Logo da Loja
     if (d.logoUrl) { 
         const logoImg = document.getElementById('storeLogoImg');
-        logoImg.src = d.logoUrl; 
-        document.getElementById('logoContainer').classList.remove('hidden'); 
+        const logoCont = document.getElementById('logoContainer');
+        if (logoImg) logoImg.src = d.logoUrl; 
+        if (logoCont) logoCont.classList.remove('hidden'); 
     }
 
-    // Configuração de Entrega no Carrinho
+    // 6. Configuração de Entrega (Carrinho)
     state.deliveryAreas = d.deliveryAreas || [];
     const deliverySelect = document.getElementById('cartDeliverySelect');
     if (deliverySelect) {
-        deliverySelect.innerHTML = '<option value="0">Retirar na Loja</option>' + 
-            state.deliveryAreas.map(a => `<option value="${a.fee}">${a.name} (R$ ${parseFloat(a.fee).toFixed(2).replace('.',',')})</option>`).join('');
+        const options = state.deliveryAreas.map(a => 
+            `<option value="${a.fee}">${a.name} (R$ ${parseFloat(a.fee).toFixed(2).replace('.',',')})</option>`
+        ).join('');
+        
+        deliverySelect.innerHTML = '<option value="0">Retirar na Loja</option>' + options;
     }
+
+    console.log("🎨 Configuração da loja aplicada com sucesso.");
 }
 
 // --- 4. FUNÇÕES GLOBAIS (PONTE PARA O HTML) ---
