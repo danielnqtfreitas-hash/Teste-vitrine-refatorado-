@@ -88,19 +88,29 @@
     
     <div id="toastContainer" class="fixed bottom-6 left-0 right-0 z-[9999] flex flex-col items-center gap-2 pointer-events-none px-4"></div>
 
-  <div id="loader" class="fixed inset-0 bg-white z-[999] flex flex-col items-center justify-center">
+ <div id="loader" class="fixed inset-0 bg-slate-50 z-[999] flex flex-col items-center justify-center transition-all duration-700">
     <div class="relative flex flex-col items-center">
-        <div class="relative mb-8">
-            <div id="loaderGlow" class="absolute inset-0 bg-[var(--color-primary)] opacity-20 rounded-full blur-2xl animate-pulse"></div>
+        
+        <div class="relative mb-10">
+            <div id="loaderGlow" class="absolute inset-0 bg-slate-200 rounded-full blur-2xl animate-pulse"></div>
+            <div class="absolute inset-[-20px] border-2 border-slate-100 rounded-full animate-ping opacity-20" style="animation-duration: 3s;"></div>
             
-            <div class="relative bg-white p-5 rounded-[2.5rem] shadow-xl border border-slate-50 animate-float">
-                <i data-lucide="loader-2" class="w-12 h-12 text-[var(--color-primary)] animate-spin"></i>
+            <div class="relative bg-white p-6 rounded-[2.5rem] shadow-[0_25px_50px_-12px_rgba(0,0,0,0.1)] border border-white animate-float">
+                <div id="loaderIconContainer" class="text-slate-300 transition-colors duration-700">
+                    <i data-lucide="shopping-bag" class="w-14 h-14" stroke-width="1.5"></i>
+                </div>
             </div>
         </div>
-        
-        <h2 class="text-slate-900 font-bold text-2xl tracking-tighter">
-            Carregando...
-        </h2>
+
+        <div class="text-center">
+            <h2 id="loaderText" class="text-slate-900 font-bold text-2xl tracking-tighter mb-4 opacity-40 transition-all duration-700">
+                Sincronizando...
+            </h2>
+            
+            <div class="w-32 h-1 bg-slate-200 rounded-full overflow-hidden mx-auto">
+                <div id="loaderBar" class="h-full bg-slate-300 w-1/3 rounded-full animate-progress-smooth transition-all duration-700"></div>
+            </div>
+        </div>
     </div>
 </div>
 
