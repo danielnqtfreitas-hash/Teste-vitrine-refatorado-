@@ -35,19 +35,24 @@ const app = initializeApp(FIREBASE_CONFIG);
 const db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
 const auth = getAuth(app);
 
-// --- EXPORTS DO FIREBASE ---
 export { 
     app, db, auth, signInAnonymously, onAuthStateChanged,
     collection, doc, getDocFromCache, getDocFromServer, getDocs, getDocsFromServer, 
     query, where, addDoc, setDoc, updateDoc, increment, serverTimestamp, writeBatch, Timestamp 
 };
 
-// --- UTILS GERAIS (Funções puras) ---
+// --- UTILS GERAIS (Funções de UI Animadas) ---
 
 export function showToast(msg) {
     const t = document.createElement('div');
-    t.className = "bg-slate-900/90 text-white text-sm px-6 py-3 rounded-full shadow-2xl backdrop-blur-md flex items-center gap-3 toast-enter pointer-events-auto transform transition-all duration-300";
-    t.innerHTML = `<i data-lucide="shopping-bag" class="w-4 h-4 text-green-400"></i><span>${msg}</span>`;
+    // Design mais limpo e profissional para o Toast
+    t.className = "bg-white border border-slate-100 text-slate-800 text-xs font-bold px-6 py-4 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.08)] flex items-center gap-3 toast-enter pointer-events-auto transform transition-all duration-500 mb-4";
+    t.innerHTML = `
+        <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+            <i data-lucide="check" class="w-4 h-4 text-primary"></i>
+        </div>
+        <span>${msg}</span>
+    `;
     
     const container = document.getElementById('toastContainer');
     if(container) container.appendChild(t);
@@ -56,21 +61,30 @@ export function showToast(msg) {
     
     requestAnimationFrame(() => { t.classList.add('toast-enter-active'); });
     setTimeout(() => { 
-        t.classList.add('toast-exit-active'); 
-        setTimeout(() => t.remove(), 300); 
-    }, 3000);
+        t.classList.add('opacity-0', 'translate-y-2'); 
+        setTimeout(() => t.remove(), 500); 
+    }, 3500);
 }
 
 export function hideLoader() { 
-    const loader = document.getElementById('initialLoader');
+    // Usamos o ID 'loader' que definimos no novo HTML interativo
+    const loader = document.getElementById('loader');
     const appMain = document.getElementById('app');
     
     if(loader) {
+        // Aplica o efeito de "mergulho" (zoom out + fade)
         loader.style.opacity = '0'; 
+        loader.style.transform = 'scale(1.1)';
+        loader.style.transition = 'all 0.8s cubic-bezier(0.4, 0, 0.2, 1)';
+        
         setTimeout(() => { 
             loader.classList.add('hidden'); 
-            if(appMain) appMain.classList.remove('hidden', 'opacity-0'); 
-        }, 500); 
+            if(appMain) {
+                appMain.classList.remove('hidden', 'opacity-0');
+                // Pequena animação de entrada para o conteúdo do app
+                appMain.classList.add('animate-fade-in-up');
+            }
+        }, 800); 
     }
 }
 
