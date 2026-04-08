@@ -254,22 +254,3 @@ header.glass-header button[onclick="openCartModal()"] {
 header.glass-header #headerFavBtn:hover {
     transform: translateY(-2px);
 }
-
-@keyframes progress-load {
-    0% { width: 0%; left: 0%; }
-    50% { width: 70%; left: 15%; }
-    100% { width: 100%; left: 0%; }
-}
-
-.animate-progress-load {
-    animation: progress-load 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-}
-
-@keyframes bounce-slow {
-    0%, 100% { transform: translateY(-5%); animation-timing-function: cubic-bezier(0.8, 0, 1, 1); }
-    50% { transform: translateY(0); animation-timing-function: cubic-bezier(0, 0, 0.2, 1); }
-}
-
-.animate-bounce-slow {
-    animation: bounce-slow 1.5s infinite;
-}
