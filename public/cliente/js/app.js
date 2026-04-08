@@ -71,16 +71,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function initFlow() {
     try {
-        // Busca o "pacote" completo da loja via Backend no Render
+        // Busca o "pacote" completo da loja via seu Backend no Render
         const response = await fetch(`/api/produtos/${state.STORE_ID}`);
         if (!response.ok) throw new Error("Loja não encontrada no servidor");
         
         const data = await response.json(); 
 
-        // Verificação de Assinatura/Status (Mantendo sua lógica original)
+        // Verificação de Assinatura/Status
         if (data.config.subscriptionStatus === 'suspended') { 
             document.body.innerHTML = `
-                <div class="flex flex-col h-screen items-center justify-center p-6 text-center bg-[#F3F4F6]">
+                <div class="flex flex-col h-screen items-center justify-center p-6 text-center">
                     <div class="bg-red-50 p-4 rounded-full mb-4"><i data-lucide="shield-off" class="text-red-500 w-8 h-8"></i></div>
                     <h1 class="text-slate-800 font-bold text-xl">Loja Suspensa</h1>
                     <p class="text-slate-500 mt-2">Esta vitrine está temporariamente offline.</p>
@@ -90,7 +90,7 @@ async function initFlow() {
             return; 
         }
 
-        // Alimentação do Estado Global
+        // Alimentação do Estado Global (Usado pelo UI.js e Cart.js)
         state.storeConfigGlobal = data.config;
         state.allProducts = data.produtos;
         checkStoreStatus(state.storeConfigGlobal);
@@ -109,27 +109,18 @@ async function initFlow() {
         updateCartUI();
         
         // Verificações finais
-        checkDeepLink(); 
-        registerVisit(); 
+        checkDeepLink(); // Abre produto via URL se houver ID
+        registerVisit(); // Analytics de Visita
+        hideLoader();
 
-        // --- NOVA LÓGICA DE SAÍDA DO LOADER ---
-        const loader = document.getElementById('initialLoader');
-        if (loader) {
-            loader.classList.add('fade-out'); // Inicia animação de escala e opacidade
-            setTimeout(() => {
-                loader.style.display = 'none'; // Remove do DOM após 700ms
-            }, 700);
-        }
-
-        console.log(`🚀 Vitrine [${state.STORE_ID}] carregada com sucesso.`);
+        console.log(`🚀 Vitrine [${state.STORE_ID}] carregada com sucesso via Backend.`);
 
     } catch (error) {
         console.error("Erro crítico no carregamento:", error);
-        // Em caso de erro, removemos o loader para não travar a tela
-        const loader = document.getElementById('initialLoader');
-        if (loader) loader.style.display = 'none';
+        hideLoader();
     }
 }
+
 // --- 3. CONFIGURAÇÕES VISUAIS DINÂMICAS ---
 
 function applyStoreConfig(d) {
