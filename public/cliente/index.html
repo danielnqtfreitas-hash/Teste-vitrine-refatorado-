@@ -23,37 +23,65 @@
     
     <script>
     tailwind.config = {
-        theme: {
-            extend: {
-                fontFamily: { sans: ['Inter', 'sans-serif'], display: ['Outfit', 'sans-serif'] },
-                colors: { primary: 'var(--color-primary)', primaryDark: 'var(--color-primary-dark)' },
-                animation: { 
-                    'fade-in': 'fadeIn 0.5s ease-out', 
-                    'slide-up': 'slideUp 0.4s ease-out forwards',
-                    'bounce-short': 'bounceShort 0.5s ease-in-out 1',
-                    'zoom-in': 'zoomIn 0.3s ease-out forwards',
-                    'heart-beat': 'heartBeat 0.3s ease-in-out',
-                    'floating': 'floating 3s ease-in-out infinite',
-                    'fade-in-right': 'fadeInRight 0.6s ease-out forwards'
+    theme: {
+        extend: {
+            fontFamily: { 
+                sans: ['Inter', 'sans-serif'], 
+                display: ['Outfit', 'sans-serif'] 
+            },
+            colors: { 
+                primary: 'var(--color-primary)', 
+                primaryDark: 'var(--color-primary-dark)' 
+            },
+            animation: { 
+                // Suas animações atuais (mantidas)
+                'fade-in': 'fadeIn 0.5s ease-out', 
+                'slide-up': 'slideUp 0.4s ease-out forwards',
+                'bounce-short': 'bounceShort 0.5s ease-in-out 1',
+                'zoom-in': 'zoomIn 0.3s ease-out forwards',
+                'heart-beat': 'heartBeat 0.3s ease-in-out',
+                'floating': 'floating 3s ease-in-out infinite',
+                'fade-in-right': 'fadeInRight 0.6s ease-out forwards',
+                
+                // Novas animações Premium
+                'pulse-soft': 'pulseSoft 2s infinite ease-in-out',
+                'reveal-up': 'revealUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                'logo-float': 'logoFloat 3s ease-in-out infinite'
+            },
+            keyframes: {
+                // Seus keyframes atuais (mantidos)
+                fadeIn: { from: { opacity: 0 }, to: { opacity: 1 } },
+                slideUp: { from: { opacity: 0, transform: 'translateY(20px)' }, to: { opacity: 1, transform: 'translateY(0)' } },
+                bounceShort: { '0%, 100%': { transform: 'scale(1)' }, '50%': { transform: 'scale(1.2)' } },
+                heartBeat: { '0%': { transform: 'scale(1)' }, '50%': { transform: 'scale(1.3)' }, '100%': { transform: 'scale(1)' } },
+                zoomIn: { from: { transform: 'scale(0.95)', opacity: 0 }, to: { transform: 'scale(1)', opacity: 1 } },
+                floating: {
+                    '0%, 100%': { transform: 'translateY(0) rotate(3deg)' },
+                    '50%': { transform: 'translateY(-8px) rotate(5deg)' },
                 },
-                keyframes: {
-                    fadeIn: { from: { opacity: 0 }, to: { opacity: 1 } },
-                    slideUp: { from: { opacity: 0, transform: 'translateY(20px)' }, to: { opacity: 1, transform: 'translateY(0)' } },
-                    bounceShort: { '0%, 100%': { transform: 'scale(1)' }, '50%': { transform: 'scale(1.2)' } },
-                    heartBeat: { '0%': { transform: 'scale(1)' }, '50%': { transform: 'scale(1.3)' }, '100%': { transform: 'scale(1)' } },
-                    zoomIn: { from: { transform: 'scale(0.95)', opacity: 0 }, to: { transform: 'scale(1)', opacity: 1 } },
-                    floating: {
-                        '0%, 100%': { transform: 'translateY(0) rotate(3deg)' },
-                        '50%': { transform: 'translateY(-8px) rotate(5deg)' },
-                    },
-                    fadeInRight: {
-                        from: { opacity: 0, transform: 'translateX(-20px)' },
-                        to: { opacity: 1, transform: 'translateX(0)' }
-                    }
+                fadeInRight: {
+                    from: { opacity: 0, transform: 'translateX(-20px)' },
+                    to: { opacity: 1, transform: 'translateX(0)' }
+                },
+
+                // Novos keyframes
+                pulseSoft: {
+                    '0%, 100%': { transform: 'scale(1)', opacity: '0.3' },
+                    '50%': { transform: 'scale(1.5)', opacity: '0.1' },
+                },
+                revealUp: {
+                    '0%': { transform: 'translateY(20px)', opacity: '0' },
+                    '100%': { transform: 'translateY(0)', opacity: '1' },
+                },
+                logoFloat: {
+                    '0%, 100%': { transform: 'translateY(0)' },
+                    '50%': { transform: 'translateY(-10px)' },
                 }
             }
         }
     }
+}
+
     </script>
 </head>
 <body class="flex flex-col min-h-screen relative bg-[#F3F4F6] text-[#334155]">
@@ -88,44 +116,41 @@
     
     <div id="toastContainer" class="fixed bottom-6 left-0 right-0 z-[9999] flex flex-col items-center gap-2 pointer-events-none px-4"></div>
 
-    <div id="initialLoader" class="fixed inset-0 bg-[#F3F4F6] z-[9999] flex flex-col items-center justify-center transition-all duration-700 ease-in-out">
+    <div id="initialLoader" class="fixed inset-0 bg-white z-[9999] flex flex-col items-center justify-center transition-all duration-1000 ease-[cubic-bezier(0.23,1,0.32,1)]">
     
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-primary/10 rounded-full blur-[80px] animate-pulse-soft"></div>
+
     <div class="relative flex flex-col items-center">
-        
-        <div class="absolute inset-0 bg-primary/20 blur-[100px] rounded-full scale-150 animate-pulse"></div>
+        <div class="relative mb-8 group">
+            <div class="absolute -inset-4 border-[1px] border-slate-100 rounded-[2.5rem]"></div>
+            <div class="absolute -inset-4 border-[1.5px] border-transparent border-t-primary rounded-[2.5rem] animate-spin"></div>
 
-        <div class="relative mb-10">
-            <div class="w-24 h-24 bg-white rounded-[2rem] shadow-2xl shadow-primary/20 flex items-center justify-center border border-white/50 relative overflow-hidden animate-bounce-short">
-                
-                <div class="loader-wave"></div>
-                
-                <i data-lucide="shopping-bag" class="w-12 h-12 text-primary relative z-10 drop-shadow-sm"></i>
+            <div class="w-24 h-24 bg-white rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.08)] flex items-center justify-center border border-slate-50 relative overflow-hidden animate-logo-float">
+                <img id="loaderStoreLogo" src="" class="hidden w-full h-full object-cover" alt="Logo">
+                <i id="loaderDefaultIcon" data-lucide="shopping-bag" class="w-10 h-10 text-primary"></i>
             </div>
-
-            <div class="absolute -inset-3 border-[3px] border-slate-200 rounded-[2.5rem]"></div>
-            <div class="absolute -inset-3 border-[3px] border-transparent border-t-primary border-r-primary/30 rounded-[2.5rem] animate-spin-slow"></div>
         </div>
 
-        <div class="text-center z-10">
-            <h2 class="font-display font-black text-slate-800 text-xl tracking-tight mb-2">
-                Vitrine Online
+        <div class="text-center space-y-4 animate-reveal-up">
+            <h2 class="font-display font-extrabold text-slate-900 text-2xl tracking-tight">
+                Vitrine <span class="text-primary">Online</span>
             </h2>
-            <div class="flex items-center justify-center gap-2">
-                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] ml-1">Carregando estoque</span>
-                <div class="flex gap-1">
-                    <span class="w-1 h-1 bg-primary rounded-full animate-bounce"></span>
-                    <span class="w-1 h-1 bg-primary rounded-full animate-bounce [animation-delay:0.2s]"></span>
-                    <span class="w-1 h-1 bg-primary rounded-full animate-bounce [animation-delay:0.4s]"></span>
+            
+            <div class="flex flex-col items-center gap-3">
+                <div class="w-32 h-1 bg-slate-100 rounded-full overflow-hidden">
+                    <div id="loaderProgressBar" class="h-full bg-primary w-0 transition-all duration-500 ease-out shadow-[0_0_10px_rgba(var(--color-primary),0.5)]"></div>
                 </div>
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em]">Sincronizando Catálogo</span>
             </div>
         </div>
     </div>
 
-    <div class="absolute bottom-12 flex flex-col items-center gap-3">
-        <div class="h-[1px] w-8 bg-slate-300"></div>
-        <span class="text-[9px] font-black text-slate-400 uppercase tracking-[0.4em]">Powered by Éclat</span>
+    <div class="absolute bottom-10 flex flex-col items-center gap-2 opacity-50">
+        <span class="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em]">Tecnologia</span>
+        <img src="https://seu-dominio.com/logo-eclat.png" class="h-4 grayscale brightness-150" alt="Éclat">
     </div>
 </div>
+
     <header class="sticky top-0 z-50 glass-header">
         <div class="container mx-auto px-4 lg:px-8 max-w-7xl h-20 md:h-24 flex items-center justify-between gap-4">
             
