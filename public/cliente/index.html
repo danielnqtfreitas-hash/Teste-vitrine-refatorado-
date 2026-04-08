@@ -88,28 +88,28 @@
     
     <div id="toastContainer" class="fixed bottom-6 left-0 right-0 z-[9999] flex flex-col items-center gap-2 pointer-events-none px-4"></div>
 
-   <div id="loader" class="fixed inset-0 bg-white z-[999] flex flex-col items-center justify-center transition-opacity duration-500">
+  <div id="loader" class="fixed inset-0 bg-white z-[999] flex flex-col items-center justify-center">
     <div class="relative flex flex-col items-center">
-        <div class="relative mb-6">
-            <div class="absolute inset-0 bg-primary/20 rounded-full blur-xl animate-ping"></div>
-            <div class="relative bg-white p-4 rounded-3xl shadow-2xl border border-slate-100 animate-bounce-slow">
-                <i data-lucide="shopping-bag" class="w-12 h-12 text-primary"></i>
+        <div class="relative mb-8">
+            <div id="loaderGlow" class="absolute inset-0 bg-[var(--color-primary)] opacity-20 rounded-full blur-2xl animate-pulse"></div>
+            
+            <div class="relative bg-white p-5 rounded-[2.5rem] shadow-xl border border-slate-50 animate-float">
+                <i data-lucide="loader-2" class="w-12 h-12 text-[var(--color-primary)] animate-spin"></i>
             </div>
         </div>
-
-        <h2 class="text-slate-800 font-display font-bold text-xl mb-2 tracking-tighter">
-            Sincronizando <span class="text-primary">sua loja</span>
+        
+        <h2 class="text-slate-900 font-bold text-2xl tracking-tighter">
+            Carregando...
         </h2>
-        
-        <div class="w-48 h-1.5 bg-slate-100 rounded-full overflow-hidden relative">
-            <div class="absolute top-0 left-0 h-full bg-primary rounded-full animate-progress-load"></div>
-        </div>
-        
-        <p class="mt-4 text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] animate-pulse">
-            Preparando ofertas...
-        </p>
     </div>
 </div>
+
+<script>
+    // Executa o Lucide IMEDIATAMENTE antes de qualquer outra coisa
+    if (window.lucide) {
+        lucide.createIcons();
+    }
+</script>
 
     <header class="sticky top-0 z-50 glass-header">
         <div class="container mx-auto px-4 lg:px-8 max-w-7xl h-20 md:h-24 flex items-center justify-between gap-4">
