@@ -26,26 +26,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     const urlParams = new URLSearchParams(window.location.search);
     const pathSegments = window.location.pathname.split('/');
     
-    // Tenta identificar o ID da loja (URL Param -> Path -> LocalStorage)
     let storeId = urlParams.get('id') || 
                   (pathSegments[1] && pathSegments[1] !== "index.html" ? pathSegments[1] : null) || 
                   localStorage.getItem('last_store_id');
     
-    // Fallback de segurança para não quebrar o carregamento
     if (!storeId || ["index.html", "undefined", "null", ""].includes(storeId)) {
-        storeId = "admin"; // ID padrão ou redirecionamento
+        storeId = "admin"; 
     }
 
-    // Persiste para visitas futuras
     localStorage.setItem('last_store_id', storeId);
 
-    // Mágica de URL: Mantém o ?id= sempre visível para evitar erros de refresh
     if (!urlParams.get('id')) {
         const newUrl = `${window.location.protocol}//${window.location.host}${window.location.pathname}?id=${storeId}`;
         window.history.replaceState({ path: newUrl }, '', newUrl);
     }
 
-    // Limpa o carrinho se o usuário trocar de loja (Segurança Multitenant)
     const activeSession = localStorage.getItem('active_store_session');
     if (activeSession && activeSession !== storeId) {
         localStorage.removeItem('cart');
@@ -53,12 +48,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     localStorage.setItem('active_store_session', storeId);
 
-    // Configura o estado inicial
     setStoreId(storeId);
     loadFavorites();
     loadCart();
     
-    // Autenticação anônima obrigatória para persistência Firebase
     await signInAnonymously(auth);
     onAuthStateChanged(auth, (user) => { 
         if(user) initFlow(); 
@@ -71,20 +64,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function initFlow() {
     try {
-        // 1. Iniciou o carregamento
         updatePremiumLoader(10); 
 
         const response = await fetch(`/api/produtos/${state.STORE_ID}`);
         if (!response.ok) throw new Error("Loja não encontrada no servidor");
         
         const data = await response.json(); 
-        
-        // 2. Dados chegaram do Render
         updatePremiumLoader(50); 
 
-        // Verificação de Assinatura/Status
         if (data.config.subscriptionStatus === 'suspended') { 
-            hideLoader(); // Remove o loader imediatamente para mostrar o aviso
+            hideLoader(); 
             document.body.innerHTML = `
                 <div class="flex flex-col h-screen items-center justify-center p-6 text-center bg-white">
                     <div class="bg-red-50 p-4 rounded-full mb-4"><i data-lucide="shield-off" class="text-red-500 w-8 h-8"></i></div>
@@ -96,52 +85,39 @@ async function initFlow() {
             return; 
         }
 
-        // Alimentação do Estado Global
         state.storeConfigGlobal = data.config;
         state.allProducts = data.produtos;
         checkStoreStatus(state.storeConfigGlobal);
         state.banners = data.banners || [];
         state.categories = Array.from(new Set(data.produtos.map(p => p.category).filter(Boolean))).sort();
 
-        // Aplicar Identidade (Injeta cores e o logo no loader)
         applyStoreConfig(data.config);
-        
         renderHeroCarousel(state.banners);
         renderCategoryTabs();
-        
-        // Aguarda a renderização do catálogo (parte mais pesada)
         await renderCatalog();
         
-        // 3. Catálogo pronto e visível nos bastidores
         updatePremiumLoader(80); 
         
-        // Inicializar Utilitários de UI
         populateFilterOptions();
         updateFavoritesUI();
         updateCartUI();
-        
-        // Verificações finais
         checkDeepLink(); 
         registerVisit(); 
 
-        // 4. FINALIZAÇÃO: Dispara a animação de saída premium
         updatePremiumLoader(100);
-
         console.log(`🚀 Vitrine [${state.STORE_ID}] carregada com sucesso.`);
 
     } catch (error) {
         console.error("Erro crítico no carregamento:", error);
-        hideLoader(); // Fallback de segurança
+        hideLoader(); 
     }
 }
-
 
 // --- 3. CONFIGURAÇÕES VISUAIS DINÂMICAS ---
 
 function applyStoreConfig(d) {
     state.lojaZapDestino = (d.whatsappNumber || "").replace(/\D/g, "");
     
-    // Injeção de Variáveis CSS (Ajusta seu CSS novo automaticamente)
     const primary = d.primaryColor || '#EA1D2C';
     document.documentElement.style.setProperty('--color-primary', primary);
     document.documentElement.style.setProperty('--color-primary-dark', primary);
@@ -149,8 +125,6 @@ function applyStoreConfig(d) {
     const metaTheme = document.getElementById('theme-color-meta');
     if(metaTheme) metaTheme.setAttribute('content', primary);
 
-
-    // Textos e Logos
     document.title = d.storeName || "Vitrine Online";
     const storeNameEl = document.getElementById('storeNameDisplay');
     if (storeNameEl) storeNameEl.textContent = d.storeName;
@@ -160,13 +134,13 @@ function applyStoreConfig(d) {
     
     if (d.logoUrl) { 
         const logoImg = document.getElementById('storeLogoImg');
-        logoImg.src = d.logoUrl; 
-        document.getElementById('logoContainer').classList.remove('hidden'); 
+        if(logoImg) logoImg.src = d.logoUrl; 
         
-        // ADICIONE ESTA LINHA: Injeta o logo também no Loader Inicial
+        const logoCont = document.getElementById('logoContainer');
+        if(logoCont) logoCont.classList.remove('hidden'); 
+        
         updatePremiumLoader(30, d.logoUrl); 
     }
-}
 
     // Configuração de Entrega no Carrinho
     state.deliveryAreas = d.deliveryAreas || [];
@@ -177,9 +151,8 @@ function applyStoreConfig(d) {
     }
 }
 
-// --- 4. FUNÇÕES GLOBAIS (PONTE PARA O HTML) ---
+// --- 4. FUNÇÕES GLOBAIS ---
 
-// Gestão de Favoritos
 window.toggleFavorite = (id) => { 
     const idx = state.favorites.indexOf(id); 
     if(idx > -1) {
@@ -193,7 +166,6 @@ window.toggleFavorite = (id) => {
     updateFavoritesUI(); 
 };
 
-// Gestão de Compra
 window.addToCart = (product, qty, options) => {
     addToCart(product, qty, options);
     if (product && product.id) window.reportarMetrica(product.id, 'cart');
@@ -202,7 +174,6 @@ window.addToCart = (product, qty, options) => {
 window.quickAdd = (id) => { 
     const p = state.allProducts.find(x => x.id === id); 
     if(!p) return;
-    // Se tiver variações, obriga a abrir o modal, se não, add direto
     if((p.sizes && p.sizes.length > 0) || (p.colors && p.colors.length > 0)) {
         openProductModal(id); 
     } else {
@@ -211,38 +182,27 @@ window.quickAdd = (id) => {
     }
 };
 
-// --- 5. ANALYTICS (MÉTRICAS) ---
+// --- 5. ANALYTICS ---
 
 window.reportarMetrica = async function(produtoId, tipoAcao) {
     try {
         if (!state.STORE_ID || !produtoId) return;
-        
-        // Envia para a rota de métricas do seu Node.js
         fetch('/api/produtos/metricas', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                lojaId: state.STORE_ID, 
-                produtoId: produtoId,
-                acao: tipoAcao
-            })
+            body: JSON.stringify({ lojaId: state.STORE_ID, produtoId: produtoId, acao: tipoAcao })
         });
-    } catch (err) {
-        console.warn("Métrica não enviada.");
-    }
+    } catch (err) { console.warn("Métrica não enviada."); }
 };
 
 async function registerVisit() {
     if (!state.STORE_ID || ['admin', 'index'].includes(state.STORE_ID)) return;
     const sessionKey = `vst_${state.STORE_ID}`;
     if (sessionStorage.getItem(sessionKey)) return;
-
     try {
         const response = await fetch(`/api/produtos/${state.STORE_ID}/visit`, { method: 'POST' });
         if (response.ok) sessionStorage.setItem(sessionKey, "1");
-    } catch (err) { 
-        console.warn("Log de visita offline."); 
-    }
+    } catch (err) { console.warn("Log de visita offline."); }
 }
 
 // --- 6. HANDLERS DE UI ---
@@ -261,8 +221,6 @@ window.setDetailImage = setDetailImage;
 window.shareProduct = shareProduct;
 window.adjustDetailQty = adjustDetailQty;
 window.toggleFavoritesView = toggleFavoritesView;
-
-// Carrinho e Checkout
 window.modQty = modQty;
 window.checkoutWhatsApp = checkoutWhatsApp;
 window.goToStep1 = goToStep1;
@@ -280,30 +238,25 @@ window.closeCartModal = () => {
     setTimeout(() => document.getElementById('modalCart').classList.add('hidden'), 300); 
 };
 
-// Lógica de DeepLink (Abre produto por ID na URL)
 function checkDeepLink() {
     const urlParams = new URLSearchParams(window.location.search);
-    const prodId = urlParams.get('p'); // Use ?p=ID para produtos
+    const prodId = urlParams.get('p');
     if (prodId && state.allProducts.some(x => x.id === prodId)) {
         setTimeout(() => openProductModal(prodId), 500);
     }
 }
 
-// Listener de Pagamento (Dinheiro/Cartão/Troco)
 document.addEventListener('change', (e) => {
     if(e.target.id === 'checkPayment') {
         const method = e.target.value;
         const changeField = document.getElementById('changeField');
         const installmentsField = document.getElementById('cardInstallmentsField');
-        
         if(changeField) method === 'Dinheiro' ? changeField.classList.remove('hidden') : changeField.classList.add('hidden');
         if(installmentsField) method === 'Cartão' ? installmentsField.classList.remove('hidden') : installmentsField.classList.add('hidden');
-        
         updateCartTotals();
     }
 });
 
-// Função para gerenciar o Loader Premium
 function updatePremiumLoader(progress, logoUrl = null) {
     const bar = document.getElementById('loaderProgressBar');
     const loaderImg = document.getElementById('loaderStoreLogo');
@@ -319,19 +272,16 @@ function updatePremiumLoader(progress, logoUrl = null) {
     }
 
     if (progress >= 100 && loader) {
-        // Inicia animação de saída (Slide up)
         loader.style.transform = 'translateY(-100%)';
         loader.style.opacity = '0';
-        
         setTimeout(() => {
             loader.classList.add('hidden');
             const app = document.getElementById('app');
             if(app) {
                 app.classList.remove('hidden');
-                app.classList.add('animate-reveal-up'); // Aquela entrada suave que criamos no Tailwind
+                app.classList.add('animate-reveal-up');
                 app.style.opacity = '1';
             }
         }, 800);
     }
 }
-
