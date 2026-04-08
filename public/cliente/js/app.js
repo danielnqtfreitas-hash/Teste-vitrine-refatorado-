@@ -71,16 +71,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function initFlow() {
     try {
-        // Busca o "pacote" completo da loja via seu Backend no Render
+        // 1. Iniciou o carregamento
+        updatePremiumLoader(10); 
+
         const response = await fetch(`/api/produtos/${state.STORE_ID}`);
         if (!response.ok) throw new Error("Loja não encontrada no servidor");
         
         const data = await response.json(); 
+        
+        // 2. Dados chegaram do Render
+        updatePremiumLoader(50); 
 
         // Verificação de Assinatura/Status
         if (data.config.subscriptionStatus === 'suspended') { 
+            hideLoader(); // Remove o loader imediatamente para mostrar o aviso
             document.body.innerHTML = `
-                <div class="flex flex-col h-screen items-center justify-center p-6 text-center">
+                <div class="flex flex-col h-screen items-center justify-center p-6 text-center bg-white">
                     <div class="bg-red-50 p-4 rounded-full mb-4"><i data-lucide="shield-off" class="text-red-500 w-8 h-8"></i></div>
                     <h1 class="text-slate-800 font-bold text-xl">Loja Suspensa</h1>
                     <p class="text-slate-500 mt-2">Esta vitrine está temporariamente offline.</p>
@@ -90,18 +96,24 @@ async function initFlow() {
             return; 
         }
 
-        // Alimentação do Estado Global (Usado pelo UI.js e Cart.js)
+        // Alimentação do Estado Global
         state.storeConfigGlobal = data.config;
         state.allProducts = data.produtos;
         checkStoreStatus(state.storeConfigGlobal);
         state.banners = data.banners || [];
         state.categories = Array.from(new Set(data.produtos.map(p => p.category).filter(Boolean))).sort();
 
-        // Aplicar Identidade e Componentes
+        // Aplicar Identidade (Injeta cores e o logo no loader)
         applyStoreConfig(data.config);
+        
         renderHeroCarousel(state.banners);
         renderCategoryTabs();
+        
+        // Aguarda a renderização do catálogo (parte mais pesada)
         await renderCatalog();
+        
+        // 3. Catálogo pronto e visível nos bastidores
+        updatePremiumLoader(80); 
         
         // Inicializar Utilitários de UI
         populateFilterOptions();
@@ -109,17 +121,20 @@ async function initFlow() {
         updateCartUI();
         
         // Verificações finais
-        checkDeepLink(); // Abre produto via URL se houver ID
-        registerVisit(); // Analytics de Visita
-        hideLoader();
+        checkDeepLink(); 
+        registerVisit(); 
 
-        console.log(`🚀 Vitrine [${state.STORE_ID}] carregada com sucesso via Backend.`);
+        // 4. FINALIZAÇÃO: Dispara a animação de saída premium
+        updatePremiumLoader(100);
+
+        console.log(`🚀 Vitrine [${state.STORE_ID}] carregada com sucesso.`);
 
     } catch (error) {
         console.error("Erro crítico no carregamento:", error);
-        hideLoader();
+        hideLoader(); // Fallback de segurança
     }
 }
+
 
 // --- 3. CONFIGURAÇÕES VISUAIS DINÂMICAS ---
 
@@ -134,6 +149,7 @@ function applyStoreConfig(d) {
     const metaTheme = document.getElementById('theme-color-meta');
     if(metaTheme) metaTheme.setAttribute('content', primary);
 
+
     // Textos e Logos
     document.title = d.storeName || "Vitrine Online";
     const storeNameEl = document.getElementById('storeNameDisplay');
@@ -146,7 +162,11 @@ function applyStoreConfig(d) {
         const logoImg = document.getElementById('storeLogoImg');
         logoImg.src = d.logoUrl; 
         document.getElementById('logoContainer').classList.remove('hidden'); 
+        
+        // ADICIONE ESTA LINHA: Injeta o logo também no Loader Inicial
+        updatePremiumLoader(30, d.logoUrl); 
     }
+}
 
     // Configuração de Entrega no Carrinho
     state.deliveryAreas = d.deliveryAreas || [];
@@ -282,3 +302,36 @@ document.addEventListener('change', (e) => {
         updateCartTotals();
     }
 });
+
+// Função para gerenciar o Loader Premium
+function updatePremiumLoader(progress, logoUrl = null) {
+    const bar = document.getElementById('loaderProgressBar');
+    const loaderImg = document.getElementById('loaderStoreLogo');
+    const loaderIcon = document.getElementById('loaderDefaultIcon');
+    const loader = document.getElementById('initialLoader');
+
+    if (bar) bar.style.width = `${progress}%`;
+    
+    if (logoUrl && loaderImg) {
+        loaderImg.src = logoUrl;
+        loaderImg.classList.remove('hidden');
+        if(loaderIcon) loaderIcon.classList.add('hidden');
+    }
+
+    if (progress >= 100 && loader) {
+        // Inicia animação de saída (Slide up)
+        loader.style.transform = 'translateY(-100%)';
+        loader.style.opacity = '0';
+        
+        setTimeout(() => {
+            loader.classList.add('hidden');
+            const app = document.getElementById('app');
+            if(app) {
+                app.classList.remove('hidden');
+                app.classList.add('animate-reveal-up'); // Aquela entrada suave que criamos no Tailwind
+                app.style.opacity = '1';
+            }
+        }, 800);
+    }
+}
+
