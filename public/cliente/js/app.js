@@ -15,7 +15,7 @@ import {
     renderCatalog, renderHeroCarousel, renderCategoryTabs, populateFilterOptions, updateFavoritesUI, 
     openProductModal, closeModalDetails, updateFilterBadge, resetAllFilters, handleSearchInput, 
     openFilterDrawer, closeFilterDrawer, openImageZoom, closeImageZoom, setupSwipes, adjustDetailQty, 
-    shareProduct, openDeliveryModal, toggleFavoritesView, setDetailImage, mkProductCard 
+    shareProduct, openDeliveryModal, toggleFavoritesView, setDetailImage, mkProductCard , checkStoreStatus
 } from './ui.js';
 
 import { addToCart, checkoutWhatsApp, updateCartUI, updateCartTotals, goToStep1, goToStep2, toggleAddressFields, modQty, alertaEstoquePreso } from './cart.js';
@@ -93,6 +93,7 @@ async function initFlow() {
         // Alimentação do Estado Global (Usado pelo UI.js e Cart.js)
         state.storeConfigGlobal = data.config;
         state.allProducts = data.produtos;
+        checkStoreStatus(state.storeConfigGlobal);
         state.banners = data.banners || [];
         state.categories = Array.from(new Set(data.produtos.map(p => p.category).filter(Boolean))).sort();
 
