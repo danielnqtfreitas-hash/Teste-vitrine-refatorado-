@@ -279,3 +279,25 @@ header.glass-header #headerFavBtn:hover {
 .animate-bounce-slow {
     animation: bounce-slow 1.5s infinite;
 }
+@keyframes float {
+    0%, 100% { transform: translateY(0) rotate(0); }
+    50% { transform: translateY(-15px) rotate(3deg); }
+}
+
+@keyframes progress-smooth {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(300%); }
+}
+
+.animate-float {
+    animation: float 3s ease-in-out infinite;
+}
+
+.animate-progress-smooth {
+    animation: progress-smooth 2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+/* Estado de "Loja Carregada" (será aplicado via JS) */
+.loader-ready #loaderIconContainer { color: var(--color-primary) !important; }
+.loader-ready #loaderBar { background-color: var(--color-primary) !important; width: 100% !important; animation: none !important; }
+.loader-ready #loaderGlow { background-color: var(--color-primary) !important; opacity: 0.15; }
