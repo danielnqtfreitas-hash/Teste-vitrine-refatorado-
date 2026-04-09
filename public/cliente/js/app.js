@@ -182,14 +182,7 @@ window.addToCart = (product, qty, options) => {
     if (product && product.id) window.reportarMetrica(product.id, 'cart');
 };
 
-// NO SEU APP.JS, atualize a window.quickAdd:
 window.quickAdd = (id) => { 
-    // NOVA TRAVA AQUI
-    if (state.storeConfigGlobal?.status === 'closed') {
-        showToast("⚠️ Loja fechada para pedidos.");
-        return;
-    }
-
     const p = state.allProducts.find(x => x.id === id); 
     if(!p) return;
     if((p.sizes && p.sizes.length > 0) || (p.colors && p.colors.length > 0)) {
@@ -321,5 +314,30 @@ function updatePremiumLoader(progress, logoUrl = null) {
                 app.style.opacity = '1';
             }
         }, 800);
+    }
+}
+// No arquivo onde você gerencia a interface da vitrine
+export function checkStoreStatus(config) {
+    const status = config.status; // 'active' ou 'closed'
+    const banner = document.getElementById('statusBanner');
+    const btnCheckout = document.querySelector('button[onclick="window.checkoutWhatsApp()"]');
+    const btnFinalizarSacola = document.getElementById('btnFinalizarSacola'); // O botão que leva pro step 2
+
+    if (status === 'closed') {
+        // 1. Mostra a tarja
+        if (banner) banner.classList.remove('hidden');
+        
+        // 2. Esconde/Bloqueia botões de finalizar compra
+        if (btnCheckout) {
+            btnCheckout.disabled = true;
+            btnCheckout.classList.add('opacity-50', 'cursor-not-allowed');
+            btnCheckout.innerHTML = "Loja Fechada para Pedidos";
+        }
+
+        // 3. Opcional: Impedir de abrir o carrinho ou mostrar aviso nos botões de adicionar
+        window.lojaAberta = false;
+    } else {
+        if (banner) banner.classList.add('hidden');
+        window.lojaAberta = true;
     }
 }
