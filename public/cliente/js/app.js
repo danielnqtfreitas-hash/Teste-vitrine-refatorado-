@@ -164,6 +164,21 @@ function applyStoreConfig(d) {
 
 // --- 4. FUNÇÕES GLOBAIS ---
 
+// Centraliza a verificação de status para evitar repetição
+function verificarLojaAberta() {
+    if (window.lojaAberta === false) {
+        Swal.fire({
+            title: 'Loja Fechada',
+            text: 'No momento estamos apenas exibindo o catálogo. Não é possível adicionar itens.',
+            icon: 'info',
+            confirmButtonColor: 'var(--color-primary)',
+            confirmButtonText: 'Entendido'
+        });
+        return false;
+    }
+    return true;
+}
+
 window.toggleFavorite = (id) => { 
     const idx = state.favorites.indexOf(id); 
     if(idx > -1) {
@@ -177,19 +192,30 @@ window.toggleFavorite = (id) => {
     updateFavoritesUI(); 
 };
 
-window.addToCart = (product, qty, options) => {
+// Renomeado para evitar conflito com a função importada
+window.addToCartGlobal = (product, qty, options) => {
+    if (!verificarLojaAberta()) return;
+    
     addToCart(product, qty, options);
     if (product && product.id) window.reportarMetrica(product.id, 'cart');
 };
 
 window.quickAdd = (id) => { 
+    // 1. Trava de segurança usando a variável global definida no ui.js
+    if (!verificarLojaAberta()) return;
+
     const p = state.allProducts.find(x => x.id === id); 
     if(!p) return;
-    if((p.sizes && p.sizes.length > 0) || (p.colors && p.colors.length > 0)) {
+
+    // 2. Verifica se o produto tem variações (tamanho, cor ou matriz)
+    const temVariacao = (p.sizes?.length > 0) || (p.colors?.length > 0) || (p.variations?.length > 0);
+
+    if(temVariacao) {
         openProductModal(id); 
     } else {
-        window.addToCart(p, 1, {}); 
-        showToast("Adicionado ao carrinho!");
+        // Adiciona direto usando a função importada do cart.js
+        addToCart(p, 1, {}); 
+        // O toast já é disparado dentro da função addToCart original
     }
 };
 
