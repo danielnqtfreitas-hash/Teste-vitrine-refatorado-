@@ -257,14 +257,30 @@ function checkDeepLink() {
     }
 }
 
+// --- CORREÇÃO DO CAMPO DE PARCELAS ---
 document.addEventListener('change', (e) => {
     if(e.target.id === 'checkPayment') {
-        const method = e.target.value;
+        // Convertemos para minúsculo para aceitar "Cartão", "cartão" ou "cartao"
+        const method = e.target.value.toLowerCase(); 
         const changeField = document.getElementById('changeField');
         const installmentsField = document.getElementById('cardInstallmentsField');
-        if(changeField) method === 'Dinheiro' ? changeField.classList.remove('hidden') : changeField.classList.add('hidden');
-        if(installmentsField) method === 'Cartão' ? installmentsField.classList.remove('hidden') : installmentsField.classList.add('hidden');
-        updateCartTotals();
+        
+        // Lógica para Dinheiro (Exibe campo de troco)
+        if(changeField) {
+            method.includes('dinheiro') 
+                ? changeField.classList.remove('hidden') 
+                : changeField.classList.add('hidden');
+        }
+        
+        // Lógica para Cartão (Exibe campo de parcelas)
+        if(installmentsField) {
+            // Verifica se a palavra contém "cart" (pega cartão, cartao, crédito, etc)
+            (method.includes('cart') || method.includes('crédito')) 
+                ? installmentsField.classList.remove('hidden') 
+                : installmentsField.classList.add('hidden');
+        }
+        
+        updateCartTotals(); // Atualiza os totais do carrinho
     }
 });
 
