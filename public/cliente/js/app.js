@@ -182,7 +182,14 @@ window.addToCart = (product, qty, options) => {
     if (product && product.id) window.reportarMetrica(product.id, 'cart');
 };
 
+// NO SEU APP.JS, atualize a window.quickAdd:
 window.quickAdd = (id) => { 
+    // NOVA TRAVA AQUI
+    if (state.storeConfigGlobal?.status === 'closed') {
+        showToast("⚠️ Loja fechada para pedidos.");
+        return;
+    }
+
     const p = state.allProducts.find(x => x.id === id); 
     if(!p) return;
     if((p.sizes && p.sizes.length > 0) || (p.colors && p.colors.length > 0)) {
