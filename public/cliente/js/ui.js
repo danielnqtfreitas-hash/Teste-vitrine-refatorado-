@@ -791,86 +791,63 @@ export function setupSwipes() {
 export function openDeliveryModal() {
     document.getElementById('modalDelivery').classList.remove('hidden');
 }
-
-// --- LÓGICA DE FUNCIONAMENTO (ÚNICA E CORRIGIDA) ---
+// --- LÓGICA DE FUNCIONAMENTO (ABERTO/FECHADO) ---
 
 export function checkStoreStatus(config) {
-    const banner = document.getElementById('statusBanner') || document.getElementById('storeStatusBanner');
-    const btnCheckout = document.querySelector('button[onclick="window.checkoutWhatsApp()"]');
-    const btnFinalizarSacola = document.getElementById('btnFinalizarSacola');
-    // Seleciona botões de compra rápida e do modal
-    const quickAddBtns = document.querySelectorAll('#detailAddBtn, [onclick*="window.quickAdd"]'); 
-
-    if (!config) return;
-
-    let isOpen = true;
-    let message = "ABERTO";
-
-    // 1. Verificação de Fechamento Manual (Campo 'status' do Firebase)
-    if (config.status === 'closed' || config.manualClosed === true) {
-        isOpen = false;
-        message = "FECHADO";
-    } else if (config.openingHours) {
-        // 2. Verificação por Horário Automático
-        const agora = new Date();
-        const diaSemana = agora.getDay(); 
-        const horaAtual = agora.getHours() * 100 + agora.getMinutes();
-        const hoje = config.openingHours[diaSemana];
-
-        if (!hoje || !hoje.active) {
-            isOpen = false;
-            message = "FECHADO HOJE";
-        } else if (horaAtual < hoje.open || horaAtual >= hoje.close) {
-            isOpen = false;
-            const h = Math.floor(hoje.open / 100).toString().padStart(2, '0');
-            const m = (hoje.open % 100).toString().padStart(2, '0');
-            message = `FECHADO (ABRE ÀS ${h}:${m})`;
-        }
-    }
-
-    // Define a trava global para o app.js
-    window.lojaAberta = isOpen;
-
-    // Atualiza a Interface
-    if (!isOpen) {
-        if (banner) {
-            banner.innerText = message;
-            banner.classList.remove('hidden');
-            banner.className = "bg-red-100 text-red-700 px-2 py-0.5 rounded-md text-[10px] font-black flex items-center shrink-0";
-        }
-        
-        // Bloqueia botões de ação
-        const allActionBtns = [...quickAddBtns];
-        if (btnCheckout) allActionBtns.push(btnCheckout);
-        if (btnFinalizarSacola) allActionBtns.push(btnFinalizarSacola);
-
-        allActionBtns.forEach(btn => {
-            btn.disabled = true;
-            btn.classList.add('opacity-50', 'cursor-not-allowed');
-            if (btn === btnCheckout) btn.innerHTML = "Loja Fechada";
-        });
-
-    } else {
-        // Loja Aberta
-        if (banner) {
-            banner.innerText = "ABERTO";
-            banner.classList.remove('hidden');
-            banner.className = "bg-green-100 text-green-700 px-2 py-0.5 rounded-md text-[10px] font-black animate-pulse flex items-center shrink-0";
-        }
-
-        const allActionBtns = [...quickAddBtns];
-        if (btnCheckout) allActionBtns.push(btnCheckout);
-        if (btnFinalizarSacola) allActionBtns.push(btnFinalizarSacola);
-
-        allActionBtns.forEach(btn => {
-            btn.disabled = false;
-            btn.classList.remove('opacity-50', 'cursor-not-allowed');
-            if (btn === btnCheckout) {
-                btn.innerHTML = 'Finalizar Pedido <i data-lucide="message-circle" class="w-5 h-5"></i>';
-                if(window.lucide) lucide.createIcons();
-            }
-        });
-    }
+    const statusBanner = document.getElementById('storeStatusBanner');
+    // Seleciona o botão de adicionar no modal e os botões de compra rápida nos cards
+    const checkoutBtns = document.querySelectorAll('#detailAddBtn, [onclick*="window.quickAdd"]'); 
     
-    return isOpen;
+    if (!statusBanner || !config) return;
+
+    const agora = new Date();
+    const diaSemana = agora.getDay(); 
+    const horaAtual = agora.getHours() * 100 + agora.getMinutes(); 
+
+    // 1. Fechamento Manual
+    if (config.manualClosed) {
+        updateStoreUI(false, "FECHADO", statusBanner, checkoutBtns);
+        return false;
+    }
+
+    // 2. Verificação por Horário
+    const hoje = config.openingHours?.[diaSemana];
+
+    if (!hoje || !hoje.active) {
+        updateStoreUI(false, "FECHADO HOJE", statusBanner, checkoutBtns);
+        return false;
+    }
+
+    if (horaAtual >= hoje.open && horaAtual < hoje.close) {
+        updateStoreUI(true, "ABERTO", statusBanner, checkoutBtns);
+        return true;
+    } else {
+        const h = Math.floor(hoje.open / 100).toString().padStart(2, '0');
+        const m = (hoje.open % 100).toString().padStart(2, '0');
+        updateStoreUI(false, `ABRE ÀS ${h}:${m}`, statusBanner, checkoutBtns);
+        return false;
+    }
+}
+
+function updateStoreUI(isOpen, message, banner, buttons) {
+    banner.innerText = message;
+    banner.classList.remove('hidden');
+    
+    if (isOpen) {
+        banner.className = "bg-green-100 text-green-700 px-2 py-0.5 rounded-md text-[9px] font-black animate-pulse flex items-center shrink-0";
+        buttons.forEach(btn => {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.style.filter = 'none';
+            btn.style.pointerEvents = 'auto';
+        });
+    } else {
+        banner.className = "bg-red-100 text-red-700 px-2 py-0.5 rounded-md text-[9px] font-black flex items-center shrink-0";
+        buttons.forEach(btn => {
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+            btn.style.filter = 'grayscale(100%)';
+            btn.style.pointerEvents = 'none';
+        });
+    }
 }
