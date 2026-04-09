@@ -23,12 +23,14 @@ function getActivePrice(p, method) {
     const precoCardBase = p.priceCard || p.value;
     const diferencaCartao = precoCardBase - precoPixBase;
 
-    if (method === 'Cartão') {
+    // Ajuste aqui: Verifica se o método contém "cart" ou "crédito"
+    const isCard = method.toLowerCase().includes('cart') || method.toLowerCase().includes('crédito');
+
+    if (isCard) {
         if (isPromoValid) return p.promoValue + (diferencaCartao > 0 ? diferencaCartao : 0);
         return precoCardBase;
     }
     
-    // Pix ou Dinheiro
     if (isPromoValid) return p.promoValue; 
     return precoPixBase;                   
 }
@@ -152,8 +154,30 @@ export function updateCartTotals() {
     if(totalDisplay) {
         totalDisplay.textContent = `R$ ${(subtotalCalculado + deliveryFee).toFixed(2).replace('.', ',')}`; 
     }
+    renderInstallments();
 }
+// Gera as parcelas baseadas no subtotal atual
+export function renderInstallments() {
+    const select = document.getElementById('checkInstallments');
+    const installmentsField = document.getElementById('cardInstallmentsField');
+    if (!select || !installmentsField || installmentsField.classList.contains('hidden')) return;
 
+    // Calcula o subtotal atual (usando o preço de cartão)
+    const subtotal = state.cart.reduce((total, item) => {
+        const pOrig = state.allProducts.find(x => x.id === item.id);
+        return total + (getActivePrice(pOrig, 'Cartão') * item.q);
+    }, 0);
+
+    const maxInstallments = 3; // Ajuste conforme sua política
+    let html = '';
+    
+    for (let i = 1; i <= maxInstallments; i++) {
+        const valorParcela = subtotal / i;
+        html += `<option value="${i}">${i}x de R$ ${valorParcela.toFixed(2).replace('.', ',')} ${i === 1 ? 'à vista' : 'sem juros'}</option>`;
+    }
+    
+    select.innerHTML = html;
+}
 export function updateCartUI() {
     const totalItens = state.cart.reduce((a, b) => a + b.q, 0); 
     const badge = document.getElementById('cartBadge'); 
