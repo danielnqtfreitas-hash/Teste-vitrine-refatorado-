@@ -274,6 +274,7 @@ export function modQty(u, d) {
 export async function checkoutWhatsApp() { 
     if(!state.cart.length) return; 
 
+    // 1. CAPTURA E VALIDAÇÃO DE INPUTS
     const nome = document.getElementById('checkName').value.trim();
     const telefone = document.getElementById('checkPhone')?.value.trim();
     const pagamento = document.getElementById('checkPayment').value;
@@ -303,14 +304,31 @@ export async function checkoutWhatsApp() {
         dadosEndereco = { street: rua, number: numero, neighborhood: bairro, reference: ref };
     }
 
+    // 2. INTERFACE DE CONFIRMAÇÃO (UX DEFENSIVA)
+    // O SweetAlert interrompe aqui antes de mexer no banco de dados ou estoque
+    const { isConfirmed } = await Swal.fire({
+        title: 'Confirmar Pedido?',
+        html: `Você será redirecionado para o WhatsApp.<br><br><b>⚠️ IMPORTANTE:</b> Para sua segurança, apenas envie a mensagem que já aparecerá escrita. <br><br><span style="color: #e11d48; font-weight: bold;">NÃO APAGUE NEM ALTERE O TEXTO!</span>`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: 'var(--color-primary)',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'Sim, finalizar no WhatsApp!',
+        cancelButtonText: 'Revisar Pedido',
+        reverseButtons: true
+    });
+
+    if (!isConfirmed) return; // Usuário desistiu ou quer revisar
+
+    // 3. ESTADO DE CARREGAMENTO NO BOTÃO
     const btn = document.querySelector('button[onclick="window.checkoutWhatsApp()"]');
     if(btn) { 
-        btn.innerHTML = `<span class="animate-spin inline-block w-4 h-4 border-2 border-white/20 border-t-white rounded-full mr-2"></span> Validando...`;
+        btn.innerHTML = `<span class="animate-spin inline-block w-4 h-4 border-2 border-white/20 border-t-white rounded-full mr-2"></span> Processando...`;
         btn.disabled = true; 
     }
 
     try {
-        // Validação Final de Estoque (Duplo Cheque)
+        // 4. VALIDAÇÃO DE ESTOQUE (SERVER-SIDE CHECK)
         for (const item of state.cart) {
             const productRef = doc(db, `stores/${state.STORE_ID}/products/${item.id}`);
             const pSnap = await getDocFromServer(productRef);
@@ -328,11 +346,15 @@ export async function checkoutWhatsApp() {
             }
         }
 
-        // Cálculos Financeiros Final
+        // 5. CÁLCULOS FINANCEIROS FINAL
+        // Assume-se a existência de getActivePrice no escopo ou importada
         const subtotal = state.cart.reduce((total, item) => {
             const pOrig = state.allProducts.find(x => x.id === item.id);
-            return total + (getActivePrice(pOrig, pagamento) * item.q);
+            // Fallback caso getActivePrice não esteja disponível globalmente
+            const precoItem = typeof getActivePrice === 'function' ? getActivePrice(pOrig, pagamento) : item.price;
+            return total + (precoItem * item.q);
         }, 0);
+
         const taxaEntrega = isRetirada ? 0 : parseFloat(deliverySelect.value);
         const totalFinal = subtotal + taxaEntrega;
 
@@ -343,7 +365,7 @@ export async function checkoutWhatsApp() {
             if(parc > 1) infoPagamento += ` (${parc}x)`;
         }
 
-        // 1. Registro do Pedido
+        // 6. PERSISTÊNCIA NO FIREBASE (PEDIDO + SHADOW STOCK)
         const orderData = {
             customer: { name: nome, phone: telefone, addressString: enderecoCompleto, addressDetails: dadosEndereco },
             items: state.cart,
@@ -353,10 +375,10 @@ export async function checkoutWhatsApp() {
             createdAt: serverTimestamp(),
             status: 'pending_whatsapp'
         };
+
         const docRef = await addDoc(collection(db, `stores/${state.STORE_ID}/orders`), orderData);
         const shortId = docRef.id.slice(-5).toUpperCase();
 
-        // 2. Criação das Reservas Fantasmas (Shadow Stock)
         const reserveBatch = writeBatch(db);
         state.cart.forEach(item => {
             const resId = `res_${shortId}_${item.uid.replace(/-/g,'_')}`;
@@ -368,7 +390,7 @@ export async function checkoutWhatsApp() {
         });
         await reserveBatch.commit();
 
-        // 3. Montagem da Mensagem do WhatsApp
+        // 7. CONSTRUÇÃO DA MENSAGEM WHATSAPP
         let msg = `🛍️ *PEDIDO: #${shortId}*\n---------------------------\n`;
         msg += `👤 *Cliente:* ${nome}\n📦 *ITENS:*\n`;
         state.cart.forEach(item => {
@@ -376,22 +398,38 @@ export async function checkoutWhatsApp() {
             msg += `• ${item.q}x ${item.name} ${vars ? '('+vars+')' : ''}\n`;
             msg += `  Sub: R$ ${(item.price * item.q).toFixed(2).replace('.',',')} | _SKU: ${item.sku}_\n`;
         });
-        msg += `\n💰 *VALORES:*\nSubtotal: R$ ${subtotal.toFixed(2).replace('.',',')}\nTotal: *R$ ${totalFinal.toFixed(2).replace('.',',')}*\n\n`;
+        msg += `\n💰 *VALORES:*\nSubtotal: R$ ${subtotal.toFixed(2).replace('.',',')}\n`;
+        if(!isRetirada) msg += `Taxa: R$ ${taxaEntrega.toFixed(2).replace('.',',')}\n`;
+        msg += `Total: *R$ ${totalFinal.toFixed(2).replace('.',',')}*\n\n`;
         msg += `💳 *PAG:* ${infoPagamento}\n📍 *LOCAL:* ${enderecoCompleto}\n`;
 
         const link = `https://wa.me/${state.lojaZapDestino}?text=${encodeURIComponent(msg)}`;
         
-        // 4. Limpeza
+        // 8. FINALIZAÇÃO E LIMPEZA
         state.cart = [];
-        saveCart();
+        if (typeof saveCart === 'function') saveCart(); // Se existir no state.js
+        
+        // Abre o WhatsApp
         window.open(link, '_blank');
-        window.location.reload();
+        
+        // Pequeno delay para garantir que o window.open não seja bloqueado antes do reload
+        setTimeout(() => {
+            window.location.reload();
+        }, 500);
 
     } catch (e) {
-        console.error(e);
-        if(btn) { btn.disabled = false; btn.innerHTML = "Finalizar Pedido"; }
+        console.error("Erro no checkout:", e);
+        if(btn) { 
+            btn.disabled = false; 
+            btn.innerHTML = "Finalizar Pedido"; 
+        }
+        // Se não for erro de estoque (já tratado pelo alertaEstoquePreso), mostra toast genérico
+        if(e.message !== "Estoque insuficiente") {
+            showToast("❌ Erro ao processar pedido. Tente novamente.");
+        }
     }
 }
+
 
 // --- NAVEGAÇÃO E ALERTAS ---
 
