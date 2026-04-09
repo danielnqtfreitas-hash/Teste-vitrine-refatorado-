@@ -58,34 +58,13 @@ body {
 .thumb-active { border-color: var(--color-primary); opacity: 1; }
 .thumb-inactive { border-color: transparent; opacity: 0.6; }
 
-/* Correção de Fluxo para Banners Hero */
+/* Carrossel Hero */
 #heroGridContainer {
-    display: flex !important;
-    overflow-x: auto !important;
-    scroll-snap-type: x mandatory !important;
-    -webkit-overflow-scrolling: touch;
-    gap: 12px !important;
-    padding: 0 16px !important;
-    margin-top: 10px !important;
-    /* Evita que o banner mexa quando o statusBanner aparece */
-    contain: layout; 
+    background-color: transparent !important;
+    padding-left: 1vw; padding-right: 1vw; scroll-padding: 0 4vw; 
 }
+.hero-card { box-shadow: none !important; border: none !important; }
 
-.hero-card {
-    flex: 0 0 calc(100vw - 32px) !important; /* Trava a largura exata */
-    scroll-snap-align: center !important;
-    border-radius: 20px !important;
-    overflow: hidden;
-    position: relative;
-    transform: translateZ(0); /* Força renderização por GPU para evitar trepidação */
-}
-
-/* Garante que o Loader suma totalmente e não empurre nada */
-#initialLoader.fade-out {
-    opacity: 0;
-    pointer-events: none;
-    visibility: hidden;
-}
 /* =========================================
    MODAIS & OVERLAYS
    ========================================= */
