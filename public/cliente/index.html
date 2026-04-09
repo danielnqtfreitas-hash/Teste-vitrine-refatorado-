@@ -88,11 +88,12 @@
     
 <body class="flex flex-col min-h-screen relative bg-[#F3F4F6] text-[#334155]">
 
-<div id="statusBanner" class="hidden bg-red-600 text-white text-center py-2 px-4 sticky top-0 z-[10001] animate-pulse w-full">
-    <p class="text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2">
-        <i data-lucide="clock" class="w-3 h-3"></i> Loja Fechada no momento - Apenas visualização
-    </p>
-</div>
+    <div id="statusBanner" class="hidden bg-red-600 text-white text-center py-2 px-4 sticky top-0 z-[10001] animate-pulse w-full min-h-[40px] flex items-center justify-center">
+        <p class="text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2">
+            <i data-lucide="clock" class="w-3 h-3"></i> Loja Fechada no momento - Apenas visualização
+        </p>
+    </div>
+
     <div id="lojaFechadaBanner" class="hidden w-full z-[10001]"></div>
 
     <div id="errorScreen" class="fixed inset-0 z-[10000] bg-slate-900 hidden flex flex-col items-center justify-center p-6 text-center">
@@ -123,40 +124,39 @@
     
     <div id="toastContainer" class="fixed bottom-6 left-0 right-0 z-[9999] flex flex-col items-center gap-2 pointer-events-none px-4"></div>
 
-<div id="initialLoader" class="fixed inset-0 bg-white z-[99999] flex flex-col items-center justify-center transition-all duration-1000 ease-[cubic-bezier(0.23,1,0.32,1)]">
-    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-[var(--color-primary)] opacity-5 rounded-full blur-[60px]"></div>
+    <div id="initialLoader" class="fixed inset-0 bg-white z-[99999] flex flex-col items-center justify-center transition-all duration-1000 ease-[cubic-bezier(0.23,1,0.32,1)]">
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-[var(--color-primary)] opacity-5 rounded-full blur-[60px]"></div>
 
-    <div class="relative flex flex-col items-center">
-        <div id="loaderStoreLogoCont" class="animate-logo-float relative mb-12">
-            <div class="w-28 h-28 bg-white rounded-full shadow-[0_15px_40px_rgba(0,0,0,0.08)] flex items-center justify-center border border-slate-50 relative overflow-hidden">
-                <img id="loaderStoreLogo" src="" class="hidden w-full h-full object-cover rounded-full" alt="Logo">
-                <i id="loaderDefaultIcon" data-lucide="shopping-bag" class="w-10 h-10 text-[var(--color-primary)]"></i>
-            </div>
-        </div>
-
-        <div class="text-center flex flex-col items-center gap-6 animate-reveal-up">
-            <h2 class="font-display font-black text-slate-900 text-2xl tracking-tight">
-                Vitrine <span class="text-[var(--color-primary)]">Online</span>
-            </h2>
-            
-            <div class="flex flex-col items-center gap-4">
-                <div class="w-36 h-[3px] bg-slate-100 rounded-full overflow-hidden">
-                    <div id="loaderProgressBar" class="h-full bg-[var(--color-primary)] w-0 transition-all duration-500 ease-out"></div>
+        <div class="relative flex flex-col items-center">
+            <div id="loaderStoreLogoCont" class="animate-logo-float relative mb-12">
+                <div class="w-28 h-28 bg-white rounded-full shadow-[0_15px_40px_rgba(0,0,0,0.08)] flex items-center justify-center border border-slate-50 relative overflow-hidden">
+                    <img id="loaderStoreLogo" src="" class="hidden w-full h-full object-cover rounded-full" alt="Logo">
+                    <i id="loaderDefaultIcon" data-lucide="shopping-bag" class="w-10 h-10 text-[var(--color-primary)]"></i>
                 </div>
-                <span class="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] ml-[0.3em]">Sincronizando Catálogo</span>
+            </div>
+
+            <div class="text-center flex flex-col items-center gap-6 animate-reveal-up">
+                <h2 class="font-display font-black text-slate-900 text-2xl tracking-tight">
+                    Vitrine <span class="text-[var(--color-primary)]">Online</span>
+                </h2>
+                
+                <div class="flex flex-col items-center gap-4">
+                    <div class="w-36 h-[3px] bg-slate-100 rounded-full overflow-hidden">
+                        <div id="loaderProgressBar" class="h-full bg-[var(--color-primary)] w-0 transition-all duration-500 ease-out"></div>
+                    </div>
+                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] ml-[0.3em]">Sincronizando Catálogo</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="absolute bottom-12 flex flex-col items-center gap-3 opacity-40">
+            <span class="text-[8px] font-bold text-slate-400 uppercase tracking-[0.3em]">Tecnologia</span>
+            <div class="flex items-center gap-1.5 grayscale opacity-70">
+                <div class="w-1.5 h-1.5 rounded-full bg-slate-400"></div>
+                <span class="font-bold text-sm text-slate-500 tracking-tighter uppercase">Éclat</span>
             </div>
         </div>
     </div>
-
-    <div class="absolute bottom-12 flex flex-col items-center gap-3 opacity-40">
-        <span class="text-[8px] font-bold text-slate-400 uppercase tracking-[0.3em]">Tecnologia</span>
-        <div class="flex items-center gap-1.5 grayscale opacity-70">
-            <div class="w-1.5 h-1.5 rounded-full bg-slate-400"></div>
-            <span class="font-bold text-sm text-slate-500 tracking-tighter uppercase">Éclat</span>
-        </div>
-    </div>
-</div>
-
     <header class="sticky top-0 z-50 glass-header">
         <div class="container mx-auto px-4 lg:px-8 max-w-7xl h-20 md:h-24 flex items-center justify-between gap-4">
             
