@@ -316,28 +316,3 @@ function updatePremiumLoader(progress, logoUrl = null) {
         }, 800);
     }
 }
-// No arquivo onde você gerencia a interface da vitrine
-export function checkStoreStatus(config) {
-    const status = config.status; // 'active' ou 'closed'
-    const banner = document.getElementById('statusBanner');
-    const btnCheckout = document.querySelector('button[onclick="window.checkoutWhatsApp()"]');
-    const btnFinalizarSacola = document.getElementById('btnFinalizarSacola'); // O botão que leva pro step 2
-
-    if (status === 'closed') {
-        // 1. Mostra a tarja
-        if (banner) banner.classList.remove('hidden');
-        
-        // 2. Esconde/Bloqueia botões de finalizar compra
-        if (btnCheckout) {
-            btnCheckout.disabled = true;
-            btnCheckout.classList.add('opacity-50', 'cursor-not-allowed');
-            btnCheckout.innerHTML = "Loja Fechada para Pedidos";
-        }
-
-        // 3. Opcional: Impedir de abrir o carrinho ou mostrar aviso nos botões de adicionar
-        window.lojaAberta = false;
-    } else {
-        if (banner) banner.classList.add('hidden');
-        window.lojaAberta = true;
-    }
-}
