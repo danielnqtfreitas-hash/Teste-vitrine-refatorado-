@@ -184,19 +184,28 @@ window.addToCart = (product, qty, options) => {
 
 // NO SEU APP.JS, atualize a window.quickAdd:
 window.quickAdd = (id) => { 
-    // NOVA TRAVA AQUI
-    if (state.storeConfigGlobal?.status === 'closed') {
-        showToast("⚠️ Loja fechada para pedidos.");
+    // 1. Verifica se a loja está fechada antes de qualquer coisa
+    if (state.storeConfigGlobal && state.storeConfigGlobal.status === 'closed') {
+        Swal.fire({
+            title: 'Loja Fechada',
+            text: 'No momento não estamos aceitando pedidos.',
+            icon: 'info',
+            confirmButtonColor: 'var(--color-primary)'
+        });
         return;
     }
 
     const p = state.allProducts.find(x => x.id === id); 
     if(!p) return;
-    if((p.sizes && p.sizes.length > 0) || (p.colors && p.colors.length > 0)) {
+
+    // 2. Se tiver variações, abre o modal. Se for simples, adiciona direto.
+    const temVariacao = (p.sizes && p.sizes.length > 0) || (p.colors && p.colors.length > 0) || (p.variations && p.variations.length > 0);
+    
+    if(temVariacao) {
         openProductModal(id); 
     } else {
-        window.addToCart(p, 1, {}); 
-        showToast("Adicionado ao carrinho!");
+        // Usa a função importada para garantir o fluxo de estoque
+        addToCart(p, 1, {}); 
     }
 };
 
