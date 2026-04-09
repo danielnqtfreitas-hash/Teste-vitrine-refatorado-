@@ -58,43 +58,33 @@ body {
 .thumb-active { border-color: var(--color-primary); opacity: 1; }
 .thumb-inactive { border-color: transparent; opacity: 0.6; }
 
-/* =========================================
-   CARROSSEL HERO (BANNERS) - SNAP & ALINHAMENTO
-   ========================================= */
+/* Correção de Fluxo para Banners Hero */
 #heroGridContainer {
-    background-color: transparent !important;
-    padding: 0 16px !important; /* Espaço nas laterais para ver o próximo banner */
     display: flex !important;
-    gap: 12px !important;
     overflow-x: auto !important;
-    scroll-snap-type: x mandatory !important; /* Força o "imã" no deslize */
-    scroll-behavior: smooth;
-    -webkit-overflow-scrolling: touch; /* Melhora a fluidez no iOS */
-    scroll-padding: 0 16px; /* Alinha o ponto de parada com o padding */
-}
-
-/* Esconde a barra de rolagem para um visual limpo */
-#heroGridContainer::-webkit-scrollbar {
-    display: none;
+    scroll-snap-type: x mandatory !important;
+    -webkit-overflow-scrolling: touch;
+    gap: 12px !important;
+    padding: 0 16px !important;
+    margin-top: 10px !important;
+    /* Evita que o banner mexa quando o statusBanner aparece */
+    contain: layout; 
 }
 
 .hero-card {
-    min-width: calc(100vw - 44px) !important; /* Largura fixa baseada no viewport */
-    width: calc(100vw - 44px) !important;
-    scroll-snap-align: center !important; /* Trava o banner exatamente no centro */
-    flex-shrink: 0 !important; /* Impede o flexbox de achatar o banner */
+    flex: 0 0 calc(100vw - 32px) !important; /* Trava a largura exata */
+    scroll-snap-align: center !important;
     border-radius: 20px !important;
-    margin: 10px 0 !important;
     overflow: hidden;
-    box-shadow: 0 8px 20px -10px rgba(0,0,0,0.15) !important; /* Sombra suave para profundidade */
-    border: none !important;
+    position: relative;
+    transform: translateZ(0); /* Força renderização por GPU para evitar trepidação */
 }
 
-.hero-card img {
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: cover !important; /* Garante que a imagem preencha o card sem distorcer */
-    display: block;
+/* Garante que o Loader suma totalmente e não empurre nada */
+#initialLoader.fade-out {
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
 }
 /* =========================================
    MODAIS & OVERLAYS
