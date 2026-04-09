@@ -852,27 +852,51 @@ function updateStoreUI(isOpen, message, banner, buttons) {
     }
 }
 // No arquivo onde você gerencia a interface da vitrine
+// DENTRO DO SEU ARQUIVO UI.JS
 export function checkStoreStatus(config) {
     const status = config.status; // 'active' ou 'closed'
     const banner = document.getElementById('statusBanner');
+    
+    // Seleciona os botões de finalizar (tanto o da sacola quanto o do checkout final)
     const btnCheckout = document.querySelector('button[onclick="window.checkoutWhatsApp()"]');
-    const btnFinalizarSacola = document.getElementById('btnFinalizarSacola'); // O botão que leva pro step 2
+    const btnFinalizarSacola = document.getElementById('btnFinalizarSacola');
 
     if (status === 'closed') {
-        // 1. Mostra a tarja
+        // 1. Define a variável global que o app.js usa para travar o quickAdd
+        window.lojaAberta = false;
+
+        // 2. Mostra a tarja de aviso
         if (banner) banner.classList.remove('hidden');
         
-        // 2. Esconde/Bloqueia botões de finalizar compra
+        // 3. Bloqueia o botão de checkout do WhatsApp
         if (btnCheckout) {
             btnCheckout.disabled = true;
             btnCheckout.classList.add('opacity-50', 'cursor-not-allowed');
-            btnCheckout.innerHTML = "Loja Fechada para Pedidos";
+            btnCheckout.innerHTML = '<span>Loja Fechada</span> <i data-lucide="clock" class="w-5 h-5"></i>';
+            if (window.lucide) lucide.createIcons(); // Recarrega o ícone se necessário
         }
 
-        // 3. Opcional: Impedir de abrir o carrinho ou mostrar aviso nos botões de adicionar
-        window.lojaAberta = false;
+        // 4. Bloqueia o botão de ir para o checkout na sacola
+        if (btnFinalizarSacola) {
+            btnFinalizarSacola.disabled = true;
+            btnFinalizarSacola.classList.add('opacity-50', 'cursor-not-allowed');
+        }
+        
     } else {
-        if (banner) banner.classList.add('hidden');
+        // Loja aberta: limpa as travas
         window.lojaAberta = true;
+        if (banner) banner.classList.add('hidden');
+        
+        if (btnCheckout) {
+            btnCheckout.disabled = false;
+            btnCheckout.classList.remove('opacity-50', 'cursor-not-allowed');
+            btnCheckout.innerHTML = 'Finalizar Pedido <i data-lucide="message-circle" class="w-5 h-5"></i>';
+            if (window.lucide) lucide.createIcons();
+        }
+        
+        if (btnFinalizarSacola) {
+            btnFinalizarSacola.disabled = false;
+            btnFinalizarSacola.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
     }
 }
