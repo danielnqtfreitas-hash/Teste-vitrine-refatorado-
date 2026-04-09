@@ -58,13 +58,44 @@ body {
 .thumb-active { border-color: var(--color-primary); opacity: 1; }
 .thumb-inactive { border-color: transparent; opacity: 0.6; }
 
-/* Carrossel Hero */
+/* =========================================
+   CARROSSEL HERO (BANNERS) - SNAP & ALINHAMENTO
+   ========================================= */
 #heroGridContainer {
     background-color: transparent !important;
-    padding-left: 1vw; padding-right: 1vw; scroll-padding: 0 4vw; 
+    padding: 0 16px !important; /* Espaço nas laterais para ver o próximo banner */
+    display: flex !important;
+    gap: 12px !important;
+    overflow-x: auto !important;
+    scroll-snap-type: x mandatory !important; /* Força o "imã" no deslize */
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch; /* Melhora a fluidez no iOS */
+    scroll-padding: 0 16px; /* Alinha o ponto de parada com o padding */
 }
-.hero-card { box-shadow: none !important; border: none !important; }
 
+/* Esconde a barra de rolagem para um visual limpo */
+#heroGridContainer::-webkit-scrollbar {
+    display: none;
+}
+
+.hero-card {
+    min-width: calc(100vw - 44px) !important; /* Largura fixa baseada no viewport */
+    width: calc(100vw - 44px) !important;
+    scroll-snap-align: center !important; /* Trava o banner exatamente no centro */
+    flex-shrink: 0 !important; /* Impede o flexbox de achatar o banner */
+    border-radius: 20px !important;
+    margin: 10px 0 !important;
+    overflow: hidden;
+    box-shadow: 0 8px 20px -10px rgba(0,0,0,0.15) !important; /* Sombra suave para profundidade */
+    border: none !important;
+}
+
+.hero-card img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important; /* Garante que a imagem preencha o card sem distorcer */
+    display: block;
+}
 /* =========================================
    MODAIS & OVERLAYS
    ========================================= */
