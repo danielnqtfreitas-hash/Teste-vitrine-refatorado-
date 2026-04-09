@@ -38,6 +38,19 @@ function getActivePrice(p, method) {
 // --- ADICIONAR AO CARRINHO (Com verificação de estoque real e Shadow Stock) ---
 
 export async function addToCart(p, q, v) {
+    // --- PASSO 0: TRAVA DE LOJA FECHADA ---
+    // Verifica se o status no estado global da loja está como 'closed'
+    if (state.storeConfigGlobal && state.storeConfigGlobal.status === 'closed') {
+        Swal.fire({
+            title: 'Loja Fechada',
+            text: 'No momento estamos apenas exibindo o catálogo. Não é possível adicionar itens à sacola.',
+            icon: 'warning',
+            confirmButtonColor: 'var(--color-primary)',
+            confirmButtonText: 'Entendido'
+        });
+        return; // Interrompe a função aqui
+    }
+
     // 1. Busca dados REAIS do servidor (ignora cache local para garantir estoque)
     let pAtualizado = p;
     try {
