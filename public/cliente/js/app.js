@@ -336,11 +336,11 @@ document.addEventListener('change', (e) => {
 });
 
 // =========================================================================
-//     DISCOVERY FEED - MODO DEDICADO PREMIUM (COMPLETO)
+//     DISCOVERY FEED - MODO DEDICADO PREMIUM (COMPLETO & CORRIGIDO)
 // =========================================================================
 
 window.openDiscoveryFeed = function() {
-    console.log("🚀 Abrindo Feed Dedicado...");
+    console.log("🚀 Inicializando Discovery Feed...");
     
     const feed = document.getElementById('discoveryFeed');
     const app = document.getElementById('app'); 
@@ -349,64 +349,62 @@ window.openDiscoveryFeed = function() {
     
     if (!feed || !container) return;
 
-    // 1. PREPARAÇÃO DA UI
-    // Esconde o app e a navegação para foco total no "TikTok style"
+    // 1. Limpeza e Bloqueio de Scroll do Fundo
     if (app) app.classList.add('hidden');
     if (navBottom) navBottom.classList.add('hidden');
+    document.body.style.overflow = 'hidden';
 
     feed.classList.remove('hidden');
     feed.style.display = 'flex'; 
 
-    // 2. RENDERIZAÇÃO DOS ITENS
+    // 2. Verificação de Dados
+    if (!state.allProducts || state.allProducts.length === 0) {
+        container.innerHTML = `<div class="h-screen flex items-center justify-center text-white">Nenhum produto disponível.</div>`;
+        return;
+    }
+
+    // 3. Renderização com Funções Globais Corretas
     container.innerHTML = state.allProducts.map((p, index) => {
         const formattedPrice = `R$ ${p.price.toFixed(2).replace('.',',')}`;
-        const hasDiscount = p.oldPrice && p.oldPrice > p.price;
-        const formattedOldPrice = hasDiscount ? `R$ ${p.oldPrice.toFixed(2).replace('.',',')}` : '';
         const isFavorite = state.favorites.includes(p.id);
 
         return `
-            <div class="reel-item">
-                <div class="reel-media-cont">
+            <div class="reel-item" style="height: 100dvh; scroll-snap-align: start; position: relative;">
+                <div class="reel-media-cont" style="position: absolute; inset: 0; z-index: 1;">
                     <img src="${p.image}" 
-                         loading="${index === 0 ? 'eager' : 'lazy'}" 
-                         style="width:100%; height:100%; object-fit:cover;">
+                         style="width: 100%; height: 100%; object-fit: cover;" 
+                         onerror="this.src='https://via.placeholder.com/400x800?text=Imagem+Indisponível'">
                 </div>
 
-                <div class="reel-overlay"></div>
+                <div class="reel-overlay" style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 50%); z-index: 2;"></div>
                 
-                <div class="reel-actions-sidebar">
-                    <div class="action-btn-cont">
+                <div class="reel-actions-sidebar" style="position: absolute; right: 12px; bottom: 180px; z-index: 10;">
+                    <div class="action-btn-cont" style="margin-bottom: 20px;">
                         <button onclick="window.toggleFavorite('${p.id}')" class="${isFavorite ? 'is-fav' : ''}">
                             <i data-lucide="heart" class="w-7 h-7 ${isFavorite ? 'fill-current text-red-500' : 'text-white'}"></i>
                         </button>
-                        <span>Gostar</span>
+                        <span class="text-white text-[10px] font-bold">Gostar</span>
                     </div>
 
                     <div class="action-btn-cont">
                         <button onclick="window.shareProduct('${p.id}')">
                             <i data-lucide="share" class="w-7 h-7 text-white"></i>
                         </button>
-                        <span>Enviar</span>
+                        <span class="text-white text-[10px] font-bold">Enviar</span>
                     </div>
                 </div>
 
-                <div class="reel-text-info">
-                    <p class="text-[10px] font-black uppercase tracking-widest text-primary mb-1">
-                        ${state.storeConfigGlobal.storeName || 'Destaque'}
-                    </p>
-                    <h2 class="text-lg font-bold leading-tight text-white mb-2">${p.name}</h2>
+                <div class="reel-text-info" style="position: absolute; left: 16px; bottom: 120px; z-index: 10;">
+                    <h2 class="text-lg font-bold text-white">${p.name}</h2>
                 </div>
 
-                <div class="reel-product-card" onclick="window.openProductModalFromFeed('${p.id}')">
+                <div class="reel-product-card" onclick="window.openProductModalFromFeed('${p.id}')" style="z-index: 10;">
                     <img src="${p.image}" class="reel-prod-img">
                     <div class="reel-prod-details">
                         <span class="reel-prod-name text-slate-900 font-bold">${p.name}</span>
-                        <div class="reel-prod-price-row">
-                            <span class="reel-prod-price text-slate-900 font-black">${formattedPrice}</span>
-                            ${hasDiscount ? `<span class="reel-prod-old-price text-xs text-slate-400 line-through">${formattedOldPrice}</span>` : ''}
-                        </div>
+                        <span class="reel-prod-price text-slate-900 font-black">${formattedPrice}</span>
                     </div>
-                    <div class="bg-primary p-2.5 rounded-xl text-white shadow-lg">
+                    <div class="bg-primary p-2.5 rounded-xl text-white">
                         <i data-lucide="shopping-bag" class="w-5 h-5"></i>
                     </div>
                 </div>
@@ -414,17 +412,11 @@ window.openDiscoveryFeed = function() {
         `;
     }).join('');
 
-    // 3. FINALIZAÇÃO
-    container.scrollTop = 0;
-    document.body.style.overflow = 'hidden'; // Trava o scroll da página principal
-    
-    // Recriar ícones do Lucide para o conteúdo novo
+    // 4. Reset de ícones
     setTimeout(() => {
         if (window.lucide) lucide.createIcons();
-    }, 200);
+    }, 250);
 };
-
-// --- FUNÇÕES DE SUPORTE AO FEED ---
 
 window.closeDiscoveryFeed = function() {
     const feed = document.getElementById('discoveryFeed');
@@ -438,21 +430,16 @@ window.closeDiscoveryFeed = function() {
     
     if (app) app.classList.remove('hidden');
     if (navBottom) navBottom.classList.remove('hidden');
-    
-    document.body.style.overflow = ''; // Libera o scroll da página
+    document.body.style.overflow = ''; 
 };
 
 window.openProductModalFromFeed = function(productId) {
-    // Fecha o feed primeiro para evitar modais sobrepostos
     window.closeDiscoveryFeed();
-    
-    // Pequeno delay para a transição ser suave
     setTimeout(() => {
-        if (window.openProductModal) {
-            window.openProductModal(productId);
-        }
-    }, 350);
+        if (window.openProductModal) window.openProductModal(productId);
+    }, 300);
 };
+
 
     
 // --- 7. UTILS DE LOADER PREMIUM ---
