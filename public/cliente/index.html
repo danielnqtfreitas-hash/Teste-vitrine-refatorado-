@@ -489,9 +489,9 @@
     </button>
 </nav>
 
-<div id="discoveryArea" class="hidden fixed inset-0 z-[500] bg-black">
-    <button onclick="window.backToCatalog()" class="absolute top-6 left-5 z-[600] text-white flex items-center gap-2 bg-black/40 px-4 py-2 rounded-full backdrop-blur-md active:scale-95 transition-transform">
-        <i data-lucide="chevron-left" class="w-5 h-5"></i>
+<div id="discoveryFeed" class="fixed inset-0 z-[200000] bg-black hidden flex-col transition-opacity duration-300">
+    <button onclick="window.closeDiscoveryFeed()" class="absolute top-6 left-5 z-[200001] text-white p-2.5 bg-black/20 rounded-full backdrop-blur-md active:scale-90 transition-transform flex items-center gap-2">
+        <i data-lucide="chevron-left" class="w-6 h-6"></i>
         <span class="text-sm font-bold">Voltar</span>
     </button>
 
