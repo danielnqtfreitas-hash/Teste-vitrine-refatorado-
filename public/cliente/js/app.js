@@ -337,20 +337,19 @@ document.addEventListener('change', (e) => {
 
 
 // =========================================================================
-//     DISCOVERY FEED - MOTOR COMPLETO (v1.3 Shopee Style)
+//     DISCOVERY FEED - MOTOR COMPLETO (v1.5 Full Integration)
 // =========================================================================
 
-// 1. FUNÇÃO PRINCIPAL: ABRIR O FEED
 window.openDiscoveryFeed = function() {
     console.log("🚀 Abrindo Discovery Feed...");
     
-    const container = document.getElementById('reelsContainer');
     const feed = document.getElementById('discoveryFeed');
     const navBottom = document.getElementById('mainNavBottom');
+    const container = document.getElementById('reelsContainer');
     
-    if (!container || !feed) return;
+    if (!feed || !container) return;
 
-    // Gera o conteúdo baseado nos produtos do estado
+    // 1. GERAÇÃO DINÂMICA DO CONTEÚDO
     container.innerHTML = state.allProducts.map((p, index) => {
         const formattedPrice = `R$ ${p.price.toFixed(2).replace('.',',')}`;
         const hasDiscount = p.oldPrice && p.oldPrice > p.price;
@@ -359,71 +358,75 @@ window.openDiscoveryFeed = function() {
         const viewsCount = p.views ? p.views.toLocaleString('pt-BR') : '1.240'; 
 
         return `
-            <div class="reel-item" data-id="${p.id}">
-                <div class="reel-media-cont">
-                    <img src="${p.image}" loading="${index === 0 ? 'eager' : 'lazy'}" class="reel-main-media">
+            <div class="reel-item relative h-screen w-full snap-start bg-black overflow-hidden flex flex-col" data-id="${p.id}">
+                <div class="absolute inset-0 w-full h-full flex items-center justify-center bg-zinc-900">
+                    <img src="${p.image}" loading="${index === 0 ? 'eager' : 'lazy'}" class="w-full h-full object-cover opacity-80">
                 </div>
 
-                <div class="reel-overlay"></div>
+                <div class="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/80 pointer-events-none"></div>
                 
-                <button onclick="window.closeDiscoveryFeed()" class="absolute top-6 left-4 z-50 bg-black/20 backdrop-blur-md p-2 rounded-full text-white">
-                    <i data-lucide="arrow-left" class="w-6 h-6"></i>
-                </button>
-
-                <div class="reel-actions-sidebar">
-                    <div class="action-btn-cont">
-                        <button onclick="window.toggleFavorite('${p.id}'); setTimeout(window.openDiscoveryFeed, 100);" class="${isFavorite ? 'is-fav' : ''}">
-                            <i data-lucide="heart" class="w-6 h-6"></i>
+                <div class="absolute right-4 bottom-32 z-50 flex flex-col gap-6 items-center">
+                    <div class="flex flex-col items-center gap-1">
+                        <button onclick="window.toggleFavoriteFromFeed('${p.id}')" 
+                                class="p-3 bg-white/10 backdrop-blur-md rounded-full transition-all active:scale-125 ${isFavorite ? 'text-red-500' : 'text-white'}">
+                            <i data-lucide="heart" class="w-7 h-7 ${isFavorite ? 'fill-current' : ''}"></i>
                         </button>
-                        <span>Gostar</span>
+                        <span class="text-white text-[10px] font-bold">Gostar</span>
                     </div>
 
-                    <div class="action-btn-cont">
-                        <button onclick="window.shareProductDirect('${p.id}', '${p.name}')">
-                            <i data-lucide="share" class="w-6 h-6"></i>
+                    <div class="flex flex-col items-center gap-1">
+                        <button onclick="window.shareProductDirect('${p.id}', '${p.name.replace(/'/g, "\\'")}')" 
+                                class="p-3 bg-white/10 backdrop-blur-md rounded-full text-white active:scale-110">
+                            <i data-lucide="share" class="w-7 h-7"></i>
                         </button>
-                        <span>Partilhar</span>
+                        <span class="text-white text-[10px] font-bold">Enviar</span>
                     </div>
 
-                    <div class="action-btn-cont mt-2 opacity-70">
+                    <div class="flex flex-col items-center gap-1 opacity-60">
                         <i data-lucide="eye" class="w-5 h-5 text-white"></i>
-                        <span class="text-[9px] font-mono text-white mt-1">${viewsCount}</span>
+                        <span class="text-white text-[9px] font-mono">${viewsCount}</span>
                     </div>
                 </div>
 
-                <div class="reel-text-info">
-                    <p class="text-[10px] font-extrabold uppercase tracking-widest text-white/60 mb-1">
-                        ${state.storeConfigGlobal.storeName || 'Loja'}
-                    </p>
-                    <h2 class="text-base font-bold text-white leading-snug line-clamp-2">${p.name}</h2>
-                </div>
+                <div class="absolute bottom-0 left-0 w-full p-5 pb-8 z-40">
+                    <div class="mb-4">
+                        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-primary mb-1">
+                            ${state.storeConfigGlobal.storeName || 'Destaque'}
+                        </p>
+                        <h2 class="text-lg font-bold text-white leading-tight line-clamp-2 max-w-[80%]">${p.name}</h2>
+                    </div>
 
-                <div class="reel-product-card active-scale" onclick="window.openProductModalFromFeed('${p.id}')">
-                    <img src="${p.image}" class="reel-prod-img" alt="Produto">
-                    <div class="reel-prod-details">
-                        <p class="reel-prod-name">${p.name}</p>
-                        <div class="reel-prod-price-row">
-                            <span class="reel-prod-price">${formattedPrice}</span>
-                            ${hasDiscount ? `<span class="reel-prod-old-price">${formattedOldPrice}</span>` : ''}
+                    <div class="bg-white/10 backdrop-blur-xl border border-white/20 p-3 rounded-2xl flex items-center gap-3 active:scale-95 transition-transform" 
+                         onclick="window.openProductModalFromFeed('${p.id}')">
+                        <img src="${p.image}" class="w-12 h-12 object-cover rounded-lg shadow-lg" alt="Prod">
+                        <div class="flex-1">
+                            <p class="text-white text-xs font-bold truncate">${p.name}</p>
+                            <div class="flex items-center gap-2">
+                                <span class="text-white font-black text-sm">${formattedPrice}</span>
+                                ${hasDiscount ? `<span class="text-white/40 line-through text-[10px]">${formattedOldPrice}</span>` : ''}
+                            </div>
+                        </div>
+                        <div class="bg-primary p-2.5 rounded-xl text-white shadow-lg">
+                            <i data-lucide="shopping-bag" class="w-5 h-5"></i>
                         </div>
                     </div>
-                    <i data-lucide="shopping-bag" class="w-5 h-5 text-white bg-[#EA1D2C] p-3 rounded-lg ml-auto"></i>
                 </div>
             </div>
         `;
     }).join('');
 
-    // Exibição forçada
+    // 2. EXIBIÇÃO E ESTADO
     feed.classList.remove('hidden');
-    feed.style.setProperty('display', 'block', 'important');
-    document.body.style.overflow = 'hidden';
-    
-    if (navBottom) navBottom.style.setProperty('display', 'none', 'important');
+    feed.classList.add('flex');
+    document.body.style.overflow = 'hidden'; 
+    if (navBottom) navBottom.classList.add('hidden');
 
+    // 3. RE-INICIALIZAÇÃO DE COMPONENTES
     setTimeout(() => {
         if (window.lucide) lucide.createIcons();
-    }, 50);
+    }, 100);
 };
+ 
 
 // 2. FUNÇÃO: FECHAR O FEED
 window.closeDiscoveryFeed = function() {
@@ -431,11 +434,19 @@ window.closeDiscoveryFeed = function() {
     const navBottom = document.getElementById('mainNavBottom');
     
     if (!feed) return;
+
+    // Volta ao estado original usando classes
     feed.classList.add('hidden');
-    feed.style.setProperty('display', 'none', 'important');
+    feed.classList.remove('flex');
+    
+    // Restaura o scroll e a navegação
     document.body.style.overflow = ''; 
-    if (navBottom) navBottom.style.setProperty('display', 'flex', 'important');
+    if (navBottom) {
+        navBottom.classList.remove('hidden');
+        navBottom.classList.add('flex');
+    }
 };
+
 
 // 3. FUNÇÃO: ABRIR MODAL DE COMPRA A PARTIR DO FEED
 window.openProductModalFromFeed = function(productId) {
