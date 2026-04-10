@@ -162,22 +162,22 @@
 </div>
 
 
-    <header class="sticky top-0 z-[10000] bg-white border-b border-slate-100">
+    <header class="sticky top-0 z-[10000] bg-[var(--color-primary)] border-b border-white/10 shadow-lg">
     <div class="container mx-auto px-4 max-w-7xl h-16 md:h-20 flex items-center justify-between">
         
         <div class="flex items-center gap-2 cursor-pointer active-scale" onclick="window.scrollTo({top:0, behavior:'smooth'})">
-            <div id="logoContainer" class="w-10 h-10 rounded-full overflow-hidden bg-white border border-slate-50 shadow-sm flex items-center justify-center">
+            <div id="logoContainer" class="w-10 h-10 rounded-full overflow-hidden bg-white p-0.5 shadow-md flex items-center justify-center">
                 <img id="storeLogoImg" src="" class="w-full h-full object-cover rounded-full" alt="Logo">
             </div>
-            <h1 id="storeNameDisplay" class="font-display font-bold text-base text-slate-800 tracking-tight">Dandan</h1>
+            <h1 id="storeNameDisplay" class="font-display font-bold text-base text-white tracking-tight">Dandan</h1>
         </div>
 
         <div class="flex items-center gap-1">
-            <button onclick="toggleSearchBar()" class="p-2.5 rounded-full hover:bg-slate-50 text-slate-700 transition-all active-scale">
+            <button onclick="toggleSearchBar()" class="p-2.5 rounded-full hover:bg-white/10 text-white transition-all active-scale">
                 <i data-lucide="search" class="w-5 h-5"></i>
             </button>
             
-            <button onclick="window.openFilterDrawer()" class="p-2.5 rounded-full hover:bg-slate-50 text-slate-700 transition-all active-scale">
+            <button onclick="window.openFilterDrawer()" class="p-2.5 rounded-full hover:bg-white/10 text-white transition-all active-scale">
                 <i data-lucide="sliders-horizontal" class="w-5 h-5"></i>
             </button>
         </div>
@@ -193,9 +193,9 @@
                 id="mobileSearch" 
                 oninput="window.handleSearchInput(this.value)" 
                 placeholder="O que você procura?" 
-                class="w-full bg-slate-100 border-none rounded-2xl py-3 pl-11 pr-12 text-sm focus:ring-2 focus:ring-primary/20 text-slate-800 outline-none transition-all"
+                class="w-full bg-white border-none rounded-2xl py-3 pl-11 pr-12 text-sm text-slate-800 shadow-inner outline-none"
             >
-            <button onclick="toggleSearchBar()" class="absolute right-3 p-1.5 text-slate-400 hover:text-slate-600 bg-white/50 rounded-full">
+            <button onclick="toggleSearchBar()" class="absolute right-3 p-1.5 text-slate-400 hover:text-slate-600">
                 <i data-lucide="x" class="w-4 h-4"></i>
             </button>
         </div>
