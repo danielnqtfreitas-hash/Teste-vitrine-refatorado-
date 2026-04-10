@@ -337,7 +337,7 @@ document.addEventListener('change', (e) => {
 
 
 // =========================================================================
-//     DISCOVERY FEED - MOTOR COMPLETO (v1.5 Full Integration)
+//     DISCOVERY FEED - MOTOR COMPLETO (v1.6 - Fix Visibility)
 // =========================================================================
 
 window.openDiscoveryFeed = function() {
@@ -347,9 +347,15 @@ window.openDiscoveryFeed = function() {
     const navBottom = document.getElementById('mainNavBottom');
     const container = document.getElementById('reelsContainer');
     
-    if (!feed || !container) return;
+    if (!feed || !container) {
+        console.error("❌ Erro: Elementos do feed não encontrados no DOM.");
+        return;
+    }
 
-    // 1. GERAÇÃO DINÂMICA DO CONTEÚDO
+    // 1. LIMPEZA DE TRAVAS (Garante que o estilo inline não bloqueie o Tailwind)
+    feed.style.removeProperty('display');
+
+    // 2. GERAÇÃO DINÂMICA DO CONTEÚDO
     container.innerHTML = state.allProducts.map((p, index) => {
         const formattedPrice = `R$ ${p.price.toFixed(2).replace('.',',')}`;
         const hasDiscount = p.oldPrice && p.oldPrice > p.price;
@@ -415,31 +421,31 @@ window.openDiscoveryFeed = function() {
         `;
     }).join('');
 
-    // 2. EXIBIÇÃO E ESTADO
+    // 3. EXIBIÇÃO
     feed.classList.remove('hidden');
     feed.classList.add('flex');
+    
     document.body.style.overflow = 'hidden'; 
     if (navBottom) navBottom.classList.add('hidden');
 
-    // 3. RE-INICIALIZAÇÃO DE COMPONENTES
+    // 4. RE-INICIALIZAÇÃO DOS ÍCONES (Lucide)
     setTimeout(() => {
         if (window.lucide) lucide.createIcons();
     }, 100);
 };
- 
 
-// 2. FUNÇÃO: FECHAR O FEED
+// --- FUNÇÕES AUXILIARES ---
+
 window.closeDiscoveryFeed = function() {
     const feed = document.getElementById('discoveryFeed');
     const navBottom = document.getElementById('mainNavBottom');
     
     if (!feed) return;
 
-    // Volta ao estado original usando classes
-    feed.classList.add('hidden');
-    feed.classList.remove('flex');
+    // Reset de visibilidade usando classes
+    feed.classList.replace('flex', 'hidden');
+    feed.style.removeProperty('display'); 
     
-    // Restaura o scroll e a navegação
     document.body.style.overflow = ''; 
     if (navBottom) {
         navBottom.classList.remove('hidden');
@@ -447,8 +453,6 @@ window.closeDiscoveryFeed = function() {
     }
 };
 
-
-// 3. FUNÇÃO: ABRIR MODAL DE COMPRA A PARTIR DO FEED
 window.openProductModalFromFeed = function(productId) {
     window.closeDiscoveryFeed();
     setTimeout(() => {
@@ -456,27 +460,42 @@ window.openProductModalFromFeed = function(productId) {
     }, 200);
 };
 
-// 4. FUNÇÃO: PARTILHA NATIVA (SHARE)
+window.toggleFavoriteFromFeed = function(id) {
+    if (window.toggleFavorite) {
+        window.toggleFavorite(id);
+        // Atualiza a UI do feed sem fechar
+        const btn = event.currentTarget;
+        const icon = btn.querySelector('i');
+        const isFav = state.favorites.includes(id);
+        
+        if (isFav) {
+            btn.classList.add('text-red-500');
+            icon.classList.add('fill-current');
+        } else {
+            btn.classList.remove('text-red-500');
+            btn.classList.add('text-white');
+            icon.classList.remove('fill-current');
+        }
+    }
+};
+
 window.shareProductDirect = function(id, name) {
     const shareData = {
         title: name,
-        text: `Olha este produto fantástico na ${state.storeConfigGlobal.storeName || 'nossa loja'}!`,
-        url: `${window.location.protocol}//${window.location.host}${window.location.pathname}?id=${state.STORE_ID}&p=${id}`
+        text: `Olha este produto na ${state.storeConfigGlobal.storeName || 'loja'}!`,
+        url: `${window.location.origin}${window.location.pathname}?id=${state.STORE_ID}&p=${id}`
     };
 
     if (navigator.share) {
-        navigator.share(shareData)
-            .then(() => console.log('Partilhado com sucesso'))
-            .catch((err) => console.log('Erro ao partilhar:', err));
+        navigator.share(shareData).catch(err => console.log('Erro ao partilhar:', err));
     } else {
-        // Fallback: Copiar Link
         const dummy = document.createElement('input');
         document.body.appendChild(dummy);
         dummy.value = shareData.url;
         dummy.select();
         document.execCommand('copy');
         document.body.removeChild(dummy);
-        showToast("Link copiado para a área de transferência!");
+        showToast("Link copiado!");
     }
 };
 
