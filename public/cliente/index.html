@@ -166,27 +166,36 @@
     <div class="container mx-auto px-4 max-w-7xl h-16 md:h-20 flex items-center justify-between">
         
         <div class="flex items-center gap-2 cursor-pointer active-scale" onclick="window.scrollTo({top:0, behavior:'smooth'})">
-            <div id="logoContainer" class="w-10 h-10 rounded-full overflow-hidden bg-white border border-slate-100 shadow-sm">
-                <img id="storeLogoImg" src="" class="w-full h-full object-cover" alt="Logo">
+            <div id="logoContainer" class="w-10 h-10 rounded-full overflow-hidden bg-white border border-slate-50 shadow-sm flex items-center justify-center">
+                <img id="storeLogoImg" src="" class="w-full h-full object-cover rounded-full" alt="Logo">
             </div>
             <h1 id="storeNameDisplay" class="font-display font-bold text-base text-slate-800 tracking-tight">Dandan</h1>
         </div>
 
-        <div class="flex items-center gap-2">
-            <button onclick="toggleSearchBar()" class="p-2.5 rounded-full hover:bg-slate-50 text-slate-700 transition-all">
+        <div class="flex items-center gap-1">
+            <button onclick="toggleSearchBar()" class="p-2.5 rounded-full hover:bg-slate-50 text-slate-700 transition-all active-scale">
                 <i data-lucide="search" class="w-5 h-5"></i>
             </button>
             
-            <button onclick="window.openFilterDrawer()" class="p-2.5 rounded-full hover:bg-slate-50 text-slate-700 transition-all">
+            <button onclick="window.openFilterDrawer()" class="p-2.5 rounded-full hover:bg-slate-50 text-slate-700 transition-all active-scale">
                 <i data-lucide="sliders-horizontal" class="w-5 h-5"></i>
             </button>
         </div>
     </div>
     
     <div id="expandableSearch" class="hidden px-4 pb-4 animate-reveal-down">
-        <div class="flex items-center w-full bg-slate-100 rounded-xl px-4 border border-primary/20 transition-all">
-            <input type="text" id="mobileSearch" oninput="window.handleSearchInput(this.value)" placeholder="O que você procura?" class="w-full bg-transparent border-none py-3 text-sm focus:ring-0 text-slate-800">
-            <button onclick="toggleSearchBar()" class="text-slate-400">
+        <div class="relative flex items-center w-full">
+            <div class="absolute left-4 text-slate-400">
+                <i data-lucide="search" class="w-4 h-4"></i>
+            </div>
+            <input 
+                type="text" 
+                id="mobileSearch" 
+                oninput="window.handleSearchInput(this.value)" 
+                placeholder="O que você procura?" 
+                class="w-full bg-slate-100 border-none rounded-2xl py-3 pl-11 pr-12 text-sm focus:ring-2 focus:ring-primary/20 text-slate-800 outline-none transition-all"
+            >
+            <button onclick="toggleSearchBar()" class="absolute right-3 p-1.5 text-slate-400 hover:text-slate-600 bg-white/50 rounded-full">
                 <i data-lucide="x" class="w-4 h-4"></i>
             </button>
         </div>
