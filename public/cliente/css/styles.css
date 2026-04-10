@@ -383,7 +383,7 @@ header {
     justify-content: space-around; /* Distribui os 5 ícones igualmente */
     align-items: center;
     border-top: 1px solid #e2e8f0;
-    z-index: 50;
+    z-index: 1000;
     padding-bottom: env(safe-area-inset-bottom); /* Suporte para iPhone moderno */
 }
 
@@ -397,6 +397,8 @@ header {
     min-width: 0;
     color: #94a3b8;
     transition: all 0.2s;
+   cursor: pointer; /* Garante o cursor de clique */
+    pointer-events: auto; /* Garante que aceite eventos de toque/clique */
 }
 
 .nav-btn-item i {
