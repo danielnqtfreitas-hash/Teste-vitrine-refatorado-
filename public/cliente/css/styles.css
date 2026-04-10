@@ -462,3 +462,13 @@ header {
 body {
     padding-bottom: 75px !important;
 }
+
+/* Esconde a barra enquanto o loader estiver na tela */
+#initialLoader:not(.hidden) ~ #mainNavBottom {
+    display: none !important;
+}
+
+/* Garante que modais fiquem ACIMA da barra */
+#modalDetails, #modalCart, #filterModal {
+    z-index: 100001 !important; /* Um número maior que o 99999 da barra */
+}
