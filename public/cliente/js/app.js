@@ -335,9 +335,8 @@ document.addEventListener('change', (e) => {
     }
 });
 
-
 // =========================================================================
-//     DISCOVERY FEED - MODO DEDICADO PREMIUM (Sincronizado com CSS)
+//     DISCOVERY FEED - MODO DEDICADO PREMIUM (COMPLETO)
 // =========================================================================
 
 window.openDiscoveryFeed = function() {
@@ -350,14 +349,15 @@ window.openDiscoveryFeed = function() {
     
     if (!feed || !container) return;
 
-    // 1. LIMPEZA E TRANSIÇÃO (Esconde o catálogo para não haver conflito)
+    // 1. PREPARAÇÃO DA UI
+    // Esconde o app e a navegação para foco total no "TikTok style"
     if (app) app.classList.add('hidden');
     if (navBottom) navBottom.classList.add('hidden');
 
     feed.classList.remove('hidden');
-    feed.style.display = 'flex'; // Força a exibição
+    feed.style.display = 'flex'; 
 
-    // 2. RENDERIZAÇÃO USANDO AS CLASSES DO SEU CSS
+    // 2. RENDERIZAÇÃO DOS ITENS
     container.innerHTML = state.allProducts.map((p, index) => {
         const formattedPrice = `R$ ${p.price.toFixed(2).replace('.',',')}`;
         const hasDiscount = p.oldPrice && p.oldPrice > p.price;
@@ -367,22 +367,24 @@ window.openDiscoveryFeed = function() {
         return `
             <div class="reel-item">
                 <div class="reel-media-cont">
-                    <img src="${p.image}" loading="${index === 0 ? 'eager' : 'lazy'}">
+                    <img src="${p.image}" 
+                         loading="${index === 0 ? 'eager' : 'lazy'}" 
+                         style="width:100%; height:100%; object-fit:cover;">
                 </div>
 
                 <div class="reel-overlay"></div>
                 
                 <div class="reel-actions-sidebar">
                     <div class="action-btn-cont">
-                        <button onclick="window.toggleFavoriteFromFeed('${p.id}')" class="${isFavorite ? 'is-fav' : ''}">
-                            <i data-lucide="heart" class="w-7 h-7 ${isFavorite ? 'fill-current' : ''}"></i>
+                        <button onclick="window.toggleFavorite('${p.id}')" class="${isFavorite ? 'is-fav' : ''}">
+                            <i data-lucide="heart" class="w-7 h-7 ${isFavorite ? 'fill-current text-red-500' : 'text-white'}"></i>
                         </button>
                         <span>Gostar</span>
                     </div>
 
                     <div class="action-btn-cont">
-                        <button onclick="window.shareProductDirect('${p.id}', '${p.name.replace(/'/g, "\\'")}')">
-                            <i data-lucide="share" class="w-7 h-7"></i>
+                        <button onclick="window.shareProduct('${p.id}')">
+                            <i data-lucide="share" class="w-7 h-7 text-white"></i>
                         </button>
                         <span>Enviar</span>
                     </div>
@@ -392,16 +394,16 @@ window.openDiscoveryFeed = function() {
                     <p class="text-[10px] font-black uppercase tracking-widest text-primary mb-1">
                         ${state.storeConfigGlobal.storeName || 'Destaque'}
                     </p>
-                    <h2 class="text-lg font-bold leading-tight text-white">${p.name}</h2>
+                    <h2 class="text-lg font-bold leading-tight text-white mb-2">${p.name}</h2>
                 </div>
 
                 <div class="reel-product-card" onclick="window.openProductModalFromFeed('${p.id}')">
                     <img src="${p.image}" class="reel-prod-img">
                     <div class="reel-prod-details">
-                        <span class="reel-prod-name">${p.name}</span>
+                        <span class="reel-prod-name text-slate-900 font-bold">${p.name}</span>
                         <div class="reel-prod-price-row">
-                            <span class="reel-prod-price">${formattedPrice}</span>
-                            ${hasDiscount ? `<span class="reel-prod-old-price">${formattedOldPrice}</span>` : ''}
+                            <span class="reel-prod-price text-slate-900 font-black">${formattedPrice}</span>
+                            ${hasDiscount ? `<span class="reel-prod-old-price text-xs text-slate-400 line-through">${formattedOldPrice}</span>` : ''}
                         </div>
                     </div>
                     <div class="bg-primary p-2.5 rounded-xl text-white shadow-lg">
@@ -412,37 +414,44 @@ window.openDiscoveryFeed = function() {
         `;
     }).join('');
 
-    // 3. FINALIZAÇÃO E ÍCONES
+    // 3. FINALIZAÇÃO
     container.scrollTop = 0;
-    document.body.style.overflow = 'hidden'; 
+    document.body.style.overflow = 'hidden'; // Trava o scroll da página principal
     
+    // Recriar ícones do Lucide para o conteúdo novo
     setTimeout(() => {
         if (window.lucide) lucide.createIcons();
-    }, 150);
+    }, 200);
 };
 
-// --- FUNÇÕES DE SUPORTE ---
+// --- FUNÇÕES DE SUPORTE AO FEED ---
 
 window.closeDiscoveryFeed = function() {
     const feed = document.getElementById('discoveryFeed');
     const app = document.getElementById('app');
     const navBottom = document.getElementById('mainNavBottom');
     
-    feed.classList.add('hidden');
-    feed.style.display = 'none';
+    if (feed) {
+        feed.classList.add('hidden');
+        feed.style.display = 'none';
+    }
     
     if (app) app.classList.remove('hidden');
     if (navBottom) navBottom.classList.remove('hidden');
     
-    document.body.style.overflow = ''; 
+    document.body.style.overflow = ''; // Libera o scroll da página
 };
 
 window.openProductModalFromFeed = function(productId) {
-    // Fecha o feed e chama o modal de detalhes do produto que já existe no seu ui.js
+    // Fecha o feed primeiro para evitar modais sobrepostos
     window.closeDiscoveryFeed();
+    
+    // Pequeno delay para a transição ser suave
     setTimeout(() => {
-        if (window.openProductModal) window.openProductModal(productId);
-    }, 300);
+        if (window.openProductModal) {
+            window.openProductModal(productId);
+        }
+    }, 350);
 };
 
     
