@@ -335,71 +335,66 @@ document.addEventListener('change', (e) => {
     }
 });
 
-// --- =========================================================================
-//     DISCOVERY FEED - MOTOR DE ENGAJAMENTO (v1.0 Shopee Like)
-//     Replica a UX da Shopee/Mercado Livre usando dados do Firebase/Node
+
+// =========================================================================
+//     DISCOVERY FEED - MOTOR COMPLETO (v1.3 Shopee Style)
 // =========================================================================
 
-// Função para abrir o Feed (Gera o conteúdo e trava a vitrine)
+// 1. FUNÇÃO PRINCIPAL: ABRIR O FEED
 window.openDiscoveryFeed = function() {
+    console.log("🚀 Abrindo Discovery Feed...");
+    
     const container = document.getElementById('reelsContainer');
     const feed = document.getElementById('discoveryFeed');
     const navBottom = document.getElementById('mainNavBottom');
     
-    // Blindagem de segurança
-    if (!container || !feed || !state.allProducts || state.allProducts.length === 0) {
-        showToast("Nenhum produto disponível para o feed.");
-        return;
-    }
+    if (!container || !feed) return;
 
-    // 1. Gera o HTML imersivo baseado no estado real da loja
+    // Gera o conteúdo baseado nos produtos do estado
     container.innerHTML = state.allProducts.map((p, index) => {
-        
-        // Formata os dados
         const formattedPrice = `R$ ${p.price.toFixed(2).replace('.',',')}`;
         const hasDiscount = p.oldPrice && p.oldPrice > p.price;
         const formattedOldPrice = hasDiscount ? `R$ ${p.oldPrice.toFixed(2).replace('.',',')}` : '';
-        
-        // Verifica se é favorito (para pintar o coração)
         const isFavorite = state.favorites.includes(p.id);
-        
-        // Pega as visualizações reais (vindo do backend/state)
-        // Se o campo não existir, coloca um número base ou zero
-        const viewsCount = p.views ? p.views.toLocaleString('pt-BR') : '1.050'; 
+        const viewsCount = p.views ? p.views.toLocaleString('pt-BR') : '1.240'; 
 
         return `
             <div class="reel-item" data-id="${p.id}">
-                
                 <div class="reel-media-cont">
                     <img src="${p.image}" loading="${index === 0 ? 'eager' : 'lazy'}" class="reel-main-media">
                 </div>
 
                 <div class="reel-overlay"></div>
                 
+                <button onclick="window.closeDiscoveryFeed()" class="absolute top-6 left-4 z-50 bg-black/20 backdrop-blur-md p-2 rounded-full text-white">
+                    <i data-lucide="arrow-left" class="w-6 h-6"></i>
+                </button>
+
                 <div class="reel-actions-sidebar">
-                    
                     <div class="action-btn-cont">
                         <button onclick="window.toggleFavorite('${p.id}'); setTimeout(window.openDiscoveryFeed, 100);" class="${isFavorite ? 'is-fav' : ''}">
                             <i data-lucide="heart" class="w-6 h-6"></i>
                         </button>
-                        <span>Incluir em favoritos</span>
+                        <span>Gostar</span>
                     </div>
 
                     <div class="action-btn-cont">
                         <button onclick="window.shareProductDirect('${p.id}', '${p.name}')">
                             <i data-lucide="share" class="w-6 h-6"></i>
                         </button>
-                        <span>Compartilhar</span>
+                        <span>Partilhar</span>
                     </div>
 
-                    <div class="action-btn-cont mt-2 opacity-80">
-                        <i data-lucide="eye" class="w-5 h-5 text-white/70"></i>
-                        <span class="text-[9px] font-mono text-white/70 mt-1">${viewsCount} visualizações</span>
+                    <div class="action-btn-cont mt-2 opacity-70">
+                        <i data-lucide="eye" class="w-5 h-5 text-white"></i>
+                        <span class="text-[9px] font-mono text-white mt-1">${viewsCount}</span>
                     </div>
                 </div>
 
                 <div class="reel-text-info">
-                    <p class="text-[11px] font-extrabold uppercase tracking-widest text-white/70 mb-1">${state.storeConfigGlobal.storeName || 'DANDAN'}</p>
+                    <p class="text-[10px] font-extrabold uppercase tracking-widest text-white/60 mb-1">
+                        ${state.storeConfigGlobal.storeName || 'Loja'}
+                    </p>
                     <h2 class="text-base font-bold text-white leading-snug line-clamp-2">${p.name}</h2>
                 </div>
 
@@ -412,57 +407,67 @@ window.openDiscoveryFeed = function() {
                             ${hasDiscount ? `<span class="reel-prod-old-price">${formattedOldPrice}</span>` : ''}
                         </div>
                     </div>
-                    <i data-lucide="chevron-right" class="w-5 h-5 text-slate-300 ml-auto"></i>
+                    <i data-lucide="shopping-bag" class="w-5 h-5 text-white bg-[#EA1D2C] p-3 rounded-lg ml-auto"></i>
                 </div>
-
             </div>
         `;
     }).join('');
 
-    // 2. Abre o feed e gerencia a UI
+    // Exibição forçada
     feed.classList.remove('hidden');
-    document.body.style.overflow = 'hidden'; // Trava o scroll do fundo
-    if (navBottom) navBottom.classList.add('hidden'); // Oculta a barra inferior
+    feed.style.setProperty('display', 'block', 'important');
+    document.body.style.overflow = 'hidden';
+    
+    if (navBottom) navBottom.style.setProperty('display', 'none', 'important');
 
-    // 3. Inicializa os ícones Lucide nos novos elementos
     setTimeout(() => {
-        lucide.createIcons();
-        window.updateNavigationBadges(); // Atualiza contadores caso algo mude
+        if (window.lucide) lucide.createIcons();
     }, 50);
 };
 
-// Função para fechar o Feed
+// 2. FUNÇÃO: FECHAR O FEED
 window.closeDiscoveryFeed = function() {
     const feed = document.getElementById('discoveryFeed');
     const navBottom = document.getElementById('mainNavBottom');
     
     if (!feed) return;
     feed.classList.add('hidden');
-    document.body.style.overflow = ''; // Libera o scroll
-    if (navBottom) navBottom.classList.remove('hidden'); // Devolve a barra inferior
+    feed.style.setProperty('display', 'none', 'important');
+    document.body.style.overflow = ''; 
+    if (navBottom) navBottom.style.setProperty('display', 'flex', 'important');
 };
 
-// Handler para abrir o modal de compra de dentro do Feed
+// 3. FUNÇÃO: ABRIR MODAL DE COMPRA A PARTIR DO FEED
 window.openProductModalFromFeed = function(productId) {
-    // 1. Fecha o feed para não poluir
     window.closeDiscoveryFeed();
-    // 2. Chama a função original que abre o modal de compra com atraso suave
-    setTimeout(() => window.openProductModal(productId), 150);
+    setTimeout(() => {
+        if (window.openProductModal) window.openProductModal(productId);
+    }, 200);
 };
 
-// Handler para compartilhamento direto no feed
+// 4. FUNÇÃO: PARTILHA NATIVA (SHARE)
 window.shareProductDirect = function(id, name) {
+    const shareData = {
+        title: name,
+        text: `Olha este produto fantástico na ${state.storeConfigGlobal.storeName || 'nossa loja'}!`,
+        url: `${window.location.protocol}//${window.location.host}${window.location.pathname}?id=${state.STORE_ID}&p=${id}`
+    };
+
     if (navigator.share) {
-        navigator.share({
-            title: name,
-            text: `Confira este produto na ${state.storeConfigGlobal.storeName || 'Dandan'}!`,
-            url: `${window.location.protocol}//${window.location.host}${window.location.pathname}?id=${state.STORE_ID}&p=${id}`
-        }).catch(() => showToast("Erro ao compartilhar."));
+        navigator.share(shareData)
+            .then(() => console.log('Partilhado com sucesso'))
+            .catch((err) => console.log('Erro ao partilhar:', err));
     } else {
-        showToast("Seu navegador não suporta compartilhamento.");
+        // Fallback: Copiar Link
+        const dummy = document.createElement('input');
+        document.body.appendChild(dummy);
+        dummy.value = shareData.url;
+        dummy.select();
+        document.execCommand('copy');
+        document.body.removeChild(dummy);
+        showToast("Link copiado para a área de transferência!");
     }
 };
-
 
 // --- 7. UTILS DE LOADER PREMIUM ---
 
