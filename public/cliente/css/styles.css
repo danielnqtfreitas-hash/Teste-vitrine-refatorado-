@@ -161,21 +161,6 @@ body {
     color: var(--color-primary) !important;
 }
 
-/* 4. Botão de Compra Flutuante (Bottom Navigation) */
-/* Se você tiver um botão de carrinho ou WhatsApp, use este estilo */
-.mobile-nav {
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: white;
-    padding: 10px 20px;
-    border-radius: 30px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-    display: flex;
-    gap: 20px;
-    z-index: 999;
-}
 
 /* 5. Efeito de Skeleton Loading (Aquece o olhar enquanto carrega) */
 @keyframes skeleton-pulse {
@@ -385,78 +370,82 @@ header {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* =========================================
-   BOTTOM NAVIGATION - EDIÇÃO LUXO DELICADA
-   ========================================= */
+/* BOTTOM NAVIGATION - ESTILO FLAT (SEM DESTAQUE CENTRAL) */
 #mainNavBottom {
     position: fixed !important;
     bottom: 0 !important;
     left: 0 !important;
     right: 0 !important;
     height: 65px !important;
-    background: rgba(255, 255, 255, 0.92) !important;
-    backdrop-filter: blur(12px) !important;
-    -webkit-backdrop-filter: blur(12px) !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
     z-index: 99999 !important;
-    border-top: 1px solid rgba(0,0,0,0.05) !important;
+    border-top: 1px solid #f1f5f9 !important;
     display: flex !important;
     justify-content: space-around !important;
     align-items: center !important;
     padding-bottom: env(safe-area-inset-bottom) !important;
 }
 
-/* Ícones Menores e Finos */
-#mainNavBottom i {
-    width: 20px !important;
-    height: 20px !important;
-    stroke-width: 2.2px !important; /* Deixa o ícone mais elegante */
+/* Itens da navegação iguais para todos */
+.nav-btn-item {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    flex: 1 !important;
+    background: none !important;
+    border: none !important;
+    color: #94a3b8 !important; /* Cor cinza padrão para todos */
+    transition: all 0.2s ease !important;
+    position: relative !important;
 }
 
-#mainNavBottom span {
+/* Cor quando o botão for clicado ou estiver ativo */
+.nav-btn-item:active, .nav-btn-item.active {
+    color: var(--color-primary) !important;
+}
+
+.nav-btn-item i {
+    width: 22px !important;
+    height: 22px !important;
+}
+
+.nav-btn-item span {
     font-size: 9px !important;
     font-weight: 700 !important;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-top: 2px;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
 }
 
-/* Botão de Carrinho Centralizado e Redimensionado */
-.nav-item-main-cont {
-    flex: 1;
-    display: flex;
-    justify-content: center;
-    position: relative;
-}
-
-.main-cart-circle {
-    width: 54px !important; /* Reduzido de 64px para 54px */
-    height: 54px !important;
+/* Estilo dos Badges (Destaque real) */
+.badge-nav {
+    position: absolute !important;
+    top: -2px !important;
+    right: 22% !important; /* Ajuste conforme o ícone */
     background: var(--color-primary) !important;
-    border-radius: 50% !important;
+    color: white !important;
+    font-size: 9px !important;
+    font-weight: 800 !important;
+    min-width: 16px !important;
+    height: 16px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    border: 4px solid #F3F4F6 !important; /* Cor do fundo do site */
-    margin-top: -35px !important;
-    box-shadow: 0 8px 20px rgba(234, 29, 44, 0.3) !important;
-}
-
-/* Badges Proporcionais */
-#cartBadgeBottom, #favBadgeBottom {
-    background: #334155 !important;
-    color: white !important;
-    font-size: 8px !important;
-    padding: 2px 5px !important;
     border-radius: 8px !important;
-    min-width: 15px;
-    text-align: center;
+    border: 2px solid white !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+    transform: scale(0); /* Escondido por padrão */
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
 }
 
-#favBadgeBottom {
-    position: absolute;
-    top: -4px;
-    right: 20%;
+/* Classe para mostrar o badge quando houver itens */
+.badge-visible {
+    transform: scale(1) !important;
 }
+
 
 /* Reset Final de Espaçamento */
 body {
