@@ -696,3 +696,26 @@ header {
     scrollbar-width: none;
 }
 
+/* Garante que o feed cubra o Header e outros modais */
+#discoveryFeed {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 200000 !important;
+    background-color: #000;
+}
+
+/* Força a imagem a preencher o fundo sem sobrar espaços pretos */
+.reel-media-cont img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+}
+
+/* Estilo do coração ativo no feed */
+.action-btn-cont button.is-fav {
+    background-color: white !important;
+}
+.action-btn-cont button.is-fav i {
+    color: #EA1D2C !important;
+    fill: #EA1D2C !important;
+}
