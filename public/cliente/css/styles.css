@@ -719,3 +719,31 @@ header {
     color: #EA1D2C !important;
     fill: #EA1D2C !important;
 }
+
+/* Força o container a aceitar o scroll dos itens */
+#reelsContainer {
+    display: block !important;
+    height: 100dvh !important;
+    overflow-y: scroll !important;
+    scroll-snap-type: y mandatory !important;
+}
+
+/* Garante que cada item do feed seja visível */
+.reel-item {
+    display: flex !important;
+    flex-direction: column;
+    justify-content: flex-end;
+    background-color: #000;
+}
+
+/* Garante que as imagens não fiquem escondidas */
+.reel-media-cont, .reel-media-cont img {
+    display: block !important;
+    opacity: 1 !important;
+}
+
+/* Estilo para garantir que os botões laterais apareçam sobre a imagem */
+.reel-actions-sidebar {
+    z-index: 20 !important;
+}
+
