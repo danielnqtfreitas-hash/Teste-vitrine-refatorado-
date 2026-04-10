@@ -495,10 +495,5 @@ function updatePremiumLoader(progress, logoUrl = null) {
     }
 }
 
-// Forçar a exposição das funções do Feed para o HTML (Módulos ES)
-window.openDiscoveryFeed = openDiscoveryFeed;
-window.closeDiscoveryFeed = closeDiscoveryFeed;
-window.openProductModalFromFeed = openProductModalFromFeed;
-window.shareProductDirect = shareProductDirect;
 
 
