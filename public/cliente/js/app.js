@@ -58,6 +58,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     setupSwipes();
+    
+    if (window.lucide) lucide.createIcons(); 
 });
 
 // --- 2. FLUXO DE DADOS (API NODE.JS) ---
