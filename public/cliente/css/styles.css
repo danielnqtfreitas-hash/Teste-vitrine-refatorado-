@@ -370,21 +370,25 @@ header {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* BOTTOM NAVIGATION - ESTILO FLAT (SEM DESTAQUE CENTRAL) */
+/* =========================================
+   BOTTOM NAVIGATION - ESTRUTURA REVISADA (v3.2)
+   ========================================= */
 #mainNavBottom {
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
-    height: 70px;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
+    height: 72px; /* Aumentado levemente para melhor toque */
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(15px);
     display: flex;
-    justify-content: space-around; /* Distribui os 5 ícones igualmente */
+    justify-content: space-around;
     align-items: center;
-    border-top: 1px solid #e2e8f0;
-    z-index: 50;
-    padding-bottom: env(safe-area-inset-bottom); /* Suporte para iPhone moderno */
+    border-top: 1px solid #f1f5f9;
+    /* Z-index alto para ficar acima de tudo, mas abaixo de modais */
+    z-index: 5000; 
+    padding-bottom: env(safe-area-inset-bottom);
+    box-shadow: 0 -4px 15px rgba(0,0,0,0.03);
 }
 
 .nav-btn-item {
@@ -395,30 +399,53 @@ header {
     gap: 4px;
     flex: 1;
     min-width: 0;
+    height: 100%; /* Garante que toda a altura seja clicável */
     color: #94a3b8;
-    transition: all 0.2s;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    position: relative;
+    /* Garante que o clique seja capturado mesmo em áreas vazias do item */
+    pointer-events: auto !important;
+    background: transparent;
+    border: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Evita que o ícone ou o texto bloqueiem o clique no botão pai */
+.nav-btn-item i, 
+.nav-btn-item span {
+    pointer-events: none;
 }
 
 .nav-btn-item i {
-    width: 22px; /* Diminuímos um pouco para caber os 5 sem apertar */
+    width: 22px;
     height: 22px;
+    stroke-width: 2px;
 }
 
 .nav-btn-item span {
     font-size: 10px;
-    font-weight: 600;
+    font-weight: 700;
     white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
 }
 
-.nav-btn-item.active, .nav-btn-item:active {
+/* Estado Ativo/Destaque */
+.nav-btn-item.active, 
+.nav-btn-item:active {
     color: var(--color-primary);
 }
 
-/* Badge dos contadores */
+.nav-btn-item:active i {
+    transform: scale(0.9);
+}
+
+/* Badge dos contadores (Favoritos/Carrinho) */
 .badge-nav {
     position: absolute;
-    top: -5px;
-    right: -5px;
+    top: 10px;
+    right: 22%; /* Ajustado para não flutuar longe demais do ícone */
     background-color: var(--color-primary);
     color: white;
     font-size: 9px;
@@ -427,70 +454,27 @@ header {
     height: 16px;
     border-radius: 50%;
     display: flex;
-    items-center: center;
+    align-items: center;
     justify-content: center;
     border: 2px solid white;
+    transform: scale(0);
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-.badge-nav.hidden {
-    display: none;
-}
-
-/* Classe para mostrar o badge quando houver itens */
+/* Classe disparada pelo JS para mostrar o badge */
 .badge-visible {
     transform: scale(1) !important;
 }
 
-
-/* Reset Final de Espaçamento */
+/* Ajuste no Body para o conteúdo não ser "atropelado" pela barra */
 body {
-    padding-bottom: 75px !important;
+    padding-bottom: 80px !important;
 }
 
-/* Esconde a barra enquanto o loader estiver na tela */
+/* Esconde a barra APENAS se o loader estiver ativo */
 #initialLoader:not(.hidden) ~ #mainNavBottom {
-    display: none !important;
-}
-
-/* Garante que modais fiquem ACIMA da barra */
-#modalDetails, #modalCart, #filterModal {
-    z-index: 100001 !important; /* Um número maior que o 99999 da barra */
-}
-
-/* Garante que o Header colorido tenha sombra e contraste */
-header {
-    background-color: var(--color-primary) !important;
-}
-
-/* Barra de Categorias (Nav dos Itens) - Mantemos fundo neutro para não cansar a vista */
-#categoryContainer {
-    background: transparent;
-    padding-top: 10px;
-    padding-bottom: 10px;
-}
-
-/* Chips de Categoria - Destaque discreto */
-.category-chip {
-    background: white;
-    color: #64748b;
-    border: 1px solid #e2e8f0;
-    white-space: nowrap;
-    padding: 8px 16px;
-    border-radius: 50px;
-    font-size: 13px;
-    font-weight: 600;
-}
-
-.category-chip.active {
-    background: var(--color-primary);
-    color: white;
-    border-color: var(--color-primary);
-}
-
-/* Barra de Status (Loja Fechada) - Quando o header é vermelho, o banner precisa ser diferente */
-#statusBanner {
-    background-color: #1e293b !important; /* Azul bem escuro ou preto para destacar do vermelho */
-    color: white;
+    opacity: 0;
+    pointer-events: none;
 }
 
 /* =========================================
