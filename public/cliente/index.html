@@ -466,23 +466,41 @@
         <span>Início</span>
     </button>
 
-    <button onclick="window.toggleFavoritesView()" class="nav-btn-item">
+    <button onclick="window.openDiscoveryFeed()" class="nav-btn-item">
+        <div class="relative">
+            <i data-lucide="play-circle" class="text-primary animate-pulse"></i>
+        </div>
+        <span>Descobrir</span>
+    </button>
+
+    <button onclick="window.toggleFavoritesView()" class="nav-btn-item relative">
         <i data-lucide="heart"></i>
-        <span id="favBadgeBottom" class="badge-nav">0</span>
+        <span id="favBadgeBottom" class="badge-nav hidden">0</span>
         <span>Favoritos</span>
     </button>
 
-    <button onclick="window.openCartModal()" class="nav-btn-item">
+    <button onclick="window.openCartModal()" class="nav-btn-item relative">
         <i data-lucide="shopping-cart"></i>
-        <span id="cartBadgeBottom" class="badge-nav">0</span>
+        <span id="cartBadgeBottom" class="badge-nav hidden">0</span>
         <span>Sacola</span>
     </button>
 
-    <button onclick="window.open('https://wa.me/SEUNUMERO', '_blank')" class="nav-btn-item">
-        <i data-lucide="message-circle"></i>
-        <span>Contato</span>
+    <button onclick="window.openDeliveryModal()" class="nav-btn-item">
+        <i data-lucide="truck"></i>
+        <span>Entrega</span>
     </button>
 </nav>
 
+<div id="discoveryFeed" class="fixed inset-0 z-[200000] bg-black hidden flex-col transition-opacity duration-300">
+    
+    <button onclick="window.closeDiscoveryFeed()" class="absolute top-6 left-5 z-50 text-white p-2.5 bg-black/20 rounded-full backdrop-blur-md active:scale-90 transition-transform">
+        <i data-lucide="arrow-left" class="w-6 h-6"></i>
+    </button>
+
+    <div id="reelsContainer" class="flex-1 w-full overflow-y-scroll snap-y snap-mandatory hide-scroll bg-black">
+        </div>
+</div>
+
+    
 </body>
 </html>
