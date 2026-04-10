@@ -471,5 +471,35 @@
     </div>
 
     <script type="module" src="js/app.js"></script>
+    <nav class="mobile-nav-bar border-t border-slate-100 lg:hidden">
+    <div class="flex justify-around items-center h-full">
+        <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})" class="nav-item active">
+            <i data-lucide="home"></i>
+            <span>Início</span>
+        </button>
+
+        <button onclick="openFavoritesModal()" class="nav-item">
+            <div class="relative">
+                <i data-lucide="heart"></i>
+                <span id="favBadgeBottom" class="badge-count hidden">0</span>
+            </div>
+            <span>Favoritos</span>
+        </button>
+
+        <button onclick="openCartModal()" class="nav-item nav-item-main">
+            <div class="main-cart-circle shadow-lg">
+                <i data-lucide="shopping-cart" class="text-white"></i>
+                <span id="cartBadgeBottom" class="badge-count-main">0</span>
+            </div>
+            <span class="mt-8">Carrinho</span>
+        </button>
+
+        <button onclick="window.open('https://wa.me/SEUNUMERO', '_blank')" class="nav-item">
+            <i data-lucide="message-circle"></i>
+            <span>Contato</span>
+        </button>
+    </div>
+</nav>
+
 </body>
 </html>
