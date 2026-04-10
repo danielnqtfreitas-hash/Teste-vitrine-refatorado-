@@ -111,6 +111,7 @@ async function initFlow() {
         updateCartUI();
         checkDeepLink(); 
         registerVisit(); 
+        window.updateNavigationBadges();
 
         // 4. FINALIZAÇÃO COM DELAY (3 segundos para branding)
         setTimeout(() => {
@@ -175,11 +176,13 @@ window.toggleFavorite = (id) => {
     localStorage.setItem(state.FAV_KEY, JSON.stringify(state.favorites));
     renderCatalog(); 
     updateFavoritesUI(); 
+    window.updateNavigationBadges();
 };
 
 window.addToCart = (product, qty, options) => {
     addToCart(product, qty, options);
     if (product && product.id) window.reportarMetrica(product.id, 'cart');
+    window.updateNavigationBadges();
 };
 
 window.quickAdd = (id) => { 
@@ -191,6 +194,7 @@ window.quickAdd = (id) => {
         window.addToCart(p, 1, {}); 
         showToast("Adicionado ao carrinho!");
     }
+    window.updateNavigationBadges();
 };
 
 // --- 5. ANALYTICS ---
@@ -220,6 +224,51 @@ async function registerVisit() {
 
 window.renderCatalog = renderCatalog;
 window.handleSearchInput = handleSearchInput;
+// --- LOGICA DA BARRA DE PESQUISA EXPANSÍVEL ---
+window.toggleSearchBar = function() {
+    const searchBar = document.getElementById('expandableSearch');
+    const searchInput = document.getElementById('mobileSearch');
+    
+    if (!searchBar || !searchInput) return;
+
+    if (searchBar.classList.contains('hidden')) {
+        // 1. Mostra a barra
+        searchBar.classList.remove('hidden');
+        // 2. Foca no input automaticamente para abrir o teclado no mobile
+        setTimeout(() => searchInput.focus(), 150);
+    } else {
+        // 1. Esconde a barra
+        searchBar.classList.add('hidden');
+        // 2. Limpa o texto da busca ao fechar
+        searchInput.value = '';
+        // 3. Reseta o catálogo para mostrar todos os produtos novamente
+        if(window.handleSearchInput) window.handleSearchInput('');
+    }
+};
+
+// --- ATUALIZAÇÃO DOS BADGES (CONTADORES) ---
+window.updateNavigationBadges = function() {
+    const cartCount = state.cart.reduce((sum, item) => sum + item.qty, 0);
+    const favCount = state.favorites.length;
+
+    const cBadge = document.getElementById('cartBadgeBottom');
+    const fBadge = document.getElementById('favBadgeBottom');
+
+    if (cBadge) {
+        cBadge.innerText = cartCount;
+        // Só mostra a bolinha se tiver itens
+        if (cartCount > 0) cBadge.classList.add('badge-visible');
+        else cBadge.classList.remove('badge-visible');
+    }
+
+    if (fBadge) {
+        fBadge.innerText = favCount;
+        // Só mostra a bolinha se tiver favoritos
+        if (favCount > 0) fBadge.classList.add('badge-visible');
+        else fBadge.classList.remove('badge-visible');
+    }
+};
+
 window.resetAllFilters = resetAllFilters;
 window.openFilterDrawer = openFilterDrawer;
 window.closeFilterDrawer = closeFilterDrawer;
