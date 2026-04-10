@@ -20,12 +20,6 @@ import {
 
 import { addToCart, checkoutWhatsApp, updateCartUI, updateCartTotals, goToStep1, goToStep2, toggleAddressFields, modQty, alertaEstoquePreso } from './cart.js';
 
-// Forçar a exposição das funções do Feed para o HTML (Módulos ES)
-window.openDiscoveryFeed = openDiscoveryFeed;
-window.closeDiscoveryFeed = closeDiscoveryFeed;
-window.openProductModalFromFeed = openProductModalFromFeed;
-window.shareProductDirect = shareProductDirect;
-
 // --- 1. INICIALIZAÇÃO E BLINDAGEM DE ROTA ---
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -500,4 +494,11 @@ function updatePremiumLoader(progress, logoUrl = null) {
         }, 800);
     }
 }
+
+// Forçar a exposição das funções do Feed para o HTML (Módulos ES)
+window.openDiscoveryFeed = openDiscoveryFeed;
+window.closeDiscoveryFeed = closeDiscoveryFeed;
+window.openProductModalFromFeed = openProductModalFromFeed;
+window.shareProductDirect = shareProductDirect;
+
 
