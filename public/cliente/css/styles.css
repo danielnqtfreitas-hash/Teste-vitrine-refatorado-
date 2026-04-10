@@ -396,3 +396,19 @@ header.glass-header #headerFavBtn:hover {
 body {
     padding-bottom: 80px !important;
 }
+
+/* Faz os badges aparecerem quando o valor for > 0 */
+#cartBadgeBottom:not(:empty), 
+#favBadgeBottom:not(:empty):not(:contains('0')) {
+    transform: scale(1) !important;
+}
+
+/* Garante que o conteúdo da página não suma atrás da barra */
+body {
+    padding-bottom: 80px !important;
+}
+
+/* Estilo para quando o item estiver ativo (ex: Início) */
+.nav-active {
+    color: var(--color-primary) !important;
+}
