@@ -461,3 +461,39 @@ body {
 #modalDetails, #modalCart, #filterModal {
     z-index: 100001 !important; /* Um número maior que o 99999 da barra */
 }
+
+/* Garante que o Header colorido tenha sombra e contraste */
+header {
+    background-color: var(--color-primary) !important;
+}
+
+/* Barra de Categorias (Nav dos Itens) - Mantemos fundo neutro para não cansar a vista */
+#categoryContainer {
+    background: transparent;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+/* Chips de Categoria - Destaque discreto */
+.category-chip {
+    background: white;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+    padding: 8px 16px;
+    border-radius: 50px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.category-chip.active {
+    background: var(--color-primary);
+    color: white;
+    border-color: var(--color-primary);
+}
+
+/* Barra de Status (Loja Fechada) - Quando o header é vermelho, o banner precisa ser diferente */
+#statusBanner {
+    background-color: #1e293b !important; /* Azul bem escuro ou preto para destacar do vermelho */
+    color: white;
+}
