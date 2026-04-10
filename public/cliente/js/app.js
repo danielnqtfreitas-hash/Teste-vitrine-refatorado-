@@ -340,80 +340,70 @@ document.addEventListener('change', (e) => {
 //     DISCOVERY FEED - MOTOR COMPLETO (v1.6 - Fix Visibility)
 // =========================================================================
 
+// =========================================================================
+//     DISCOVERY FEED - MODO ÁREA DEDICADA (v3.0)
+// =========================================================================
+
 window.openDiscoveryFeed = function() {
-    console.log("🚀 Abrindo Discovery Feed...");
+    console.log("🚀 Migrando para Área Discovery...");
     
-    const feed = document.getElementById('discoveryFeed');
+    const mainContent = document.getElementById('app'); 
+    const discoveryArea = document.getElementById('discoveryArea');
     const navBottom = document.getElementById('mainNavBottom');
     const container = document.getElementById('reelsContainer');
-    
-    if (!feed || !container) {
-        console.error("❌ Erro: Elementos do feed não encontrados no DOM.");
+
+    if (!state.allProducts || state.allProducts.length === 0) {
+        if(window.showToast) showToast("Carregando produtos...");
         return;
     }
 
-    // 1. LIMPEZA DE TRAVAS (Garante que o estilo inline não bloqueie o Tailwind)
-    feed.style.removeProperty('display');
+    // 1. TROCA DE ESTADOS (Esconde catálogo, mostra feed)
+    if (mainContent) mainContent.classList.add('hidden');
+    if (navBottom) navBottom.classList.add('hidden');
+    
+    discoveryArea.classList.remove('hidden');
+    discoveryArea.classList.add('block');
 
-    // 2. GERAÇÃO DINÂMICA DO CONTEÚDO
+    // 2. RENDERIZAÇÃO DOS ITENS
     container.innerHTML = state.allProducts.map((p, index) => {
         const formattedPrice = `R$ ${p.price.toFixed(2).replace('.',',')}`;
-        const hasDiscount = p.oldPrice && p.oldPrice > p.price;
-        const formattedOldPrice = hasDiscount ? `R$ ${p.oldPrice.toFixed(2).replace('.',',')}` : '';
         const isFavorite = state.favorites.includes(p.id);
-        const viewsCount = p.views ? p.views.toLocaleString('pt-BR') : '1.240'; 
 
         return `
-            <div class="reel-item relative h-screen w-full snap-start bg-black overflow-hidden flex flex-col" data-id="${p.id}">
+            <div class="reel-item relative h-screen w-full snap-start bg-black overflow-hidden flex flex-col">
                 <div class="absolute inset-0 w-full h-full flex items-center justify-center bg-zinc-900">
-                    <img src="${p.image}" loading="${index === 0 ? 'eager' : 'lazy'}" class="w-full h-full object-cover opacity-80">
+                    <img src="${p.image}" loading="${index === 0 ? 'eager' : 'lazy'}" class="w-full h-full object-cover opacity-70">
                 </div>
 
-                <div class="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/80 pointer-events-none"></div>
+                <div class="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/90 pointer-events-none"></div>
                 
-                <div class="absolute right-4 bottom-32 z-50 flex flex-col gap-6 items-center">
-                    <div class="flex flex-col items-center gap-1">
-                        <button onclick="window.toggleFavoriteFromFeed('${p.id}')" 
-                                class="p-3 bg-white/10 backdrop-blur-md rounded-full transition-all active:scale-125 ${isFavorite ? 'text-red-500' : 'text-white'}">
-                            <i data-lucide="heart" class="w-7 h-7 ${isFavorite ? 'fill-current' : ''}"></i>
-                        </button>
-                        <span class="text-white text-[10px] font-bold">Gostar</span>
-                    </div>
+                <div class="absolute right-4 bottom-32 z-[510] flex flex-col gap-6 items-center">
+                    <button onclick="window.toggleFavoriteFromFeed('${p.id}')" 
+                            class="p-4 bg-white/10 backdrop-blur-xl rounded-full ${isFavorite ? 'text-red-500' : 'text-white'} active:scale-125 transition-all">
+                        <i data-lucide="heart" class="w-8 h-8 ${isFavorite ? 'fill-current' : ''}"></i>
+                    </button>
 
-                    <div class="flex flex-col items-center gap-1">
-                        <button onclick="window.shareProductDirect('${p.id}', '${p.name.replace(/'/g, "\\'")}')" 
-                                class="p-3 bg-white/10 backdrop-blur-md rounded-full text-white active:scale-110">
-                            <i data-lucide="share" class="w-7 h-7"></i>
-                        </button>
-                        <span class="text-white text-[10px] font-bold">Enviar</span>
-                    </div>
-
-                    <div class="flex flex-col items-center gap-1 opacity-60">
-                        <i data-lucide="eye" class="w-5 h-5 text-white"></i>
-                        <span class="text-white text-[9px] font-mono">${viewsCount}</span>
-                    </div>
+                    <button onclick="window.shareProductDirect('${p.id}', '${p.name.replace(/'/g, "\\'")}')" 
+                            class="p-4 bg-white/10 backdrop-blur-xl rounded-full text-white active:scale-110 transition-all">
+                        <i data-lucide="share" class="w-8 h-8"></i>
+                    </button>
                 </div>
 
-                <div class="absolute bottom-0 left-0 w-full p-5 pb-8 z-40">
-                    <div class="mb-4">
-                        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-primary mb-1">
-                            ${state.storeConfigGlobal.storeName || 'Destaque'}
-                        </p>
-                        <h2 class="text-lg font-bold text-white leading-tight line-clamp-2 max-w-[80%]">${p.name}</h2>
+                <div class="absolute bottom-0 left-0 w-full p-5 pb-10 z-[510]">
+                    <div class="mb-4 text-white ml-1">
+                        <p class="text-[10px] font-black uppercase tracking-widest text-primary mb-1">${state.storeConfigGlobal.storeName || 'Destaque'}</p>
+                        <h2 class="text-xl font-bold line-clamp-2 leading-tight">${p.name}</h2>
                     </div>
 
-                    <div class="bg-white/10 backdrop-blur-xl border border-white/20 p-3 rounded-2xl flex items-center gap-3 active:scale-95 transition-transform" 
-                         onclick="window.openProductModalFromFeed('${p.id}')">
-                        <img src="${p.image}" class="w-12 h-12 object-cover rounded-lg shadow-lg" alt="Prod">
+                    <div class="bg-white/10 backdrop-blur-2xl border border-white/20 p-4 rounded-3xl flex items-center gap-4 active:scale-[0.98] transition-transform" 
+                         onclick="window.goToProductFromFeed('${p.id}')">
+                        <img src="${p.image}" class="w-14 h-14 object-cover rounded-xl shadow-2xl">
                         <div class="flex-1">
-                            <p class="text-white text-xs font-bold truncate">${p.name}</p>
-                            <div class="flex items-center gap-2">
-                                <span class="text-white font-black text-sm">${formattedPrice}</span>
-                                ${hasDiscount ? `<span class="text-white/40 line-through text-[10px]">${formattedOldPrice}</span>` : ''}
-                            </div>
+                            <p class="text-white text-xs font-medium opacity-80 truncate w-40">${p.name}</p>
+                            <p class="text-white font-black text-lg">${formattedPrice}</p>
                         </div>
-                        <div class="bg-primary p-2.5 rounded-xl text-white shadow-lg">
-                            <i data-lucide="shopping-bag" class="w-5 h-5"></i>
+                        <div class="bg-primary p-3 rounded-2xl text-white shadow-lg">
+                            <i data-lucide="shopping-bag" class="w-6 h-6"></i>
                         </div>
                     </div>
                 </div>
@@ -421,84 +411,62 @@ window.openDiscoveryFeed = function() {
         `;
     }).join('');
 
-    // 3. EXIBIÇÃO
-    feed.classList.remove('hidden');
-    feed.classList.add('flex');
-    
+    // 3. FINALIZAÇÃO
+    container.scrollTop = 0;
     document.body.style.overflow = 'hidden'; 
-    if (navBottom) navBottom.classList.add('hidden');
-
-    // 4. RE-INICIALIZAÇÃO DOS ÍCONES (Lucide)
+    
     setTimeout(() => {
         if (window.lucide) lucide.createIcons();
     }, 100);
 };
 
-// --- FUNÇÕES AUXILIARES ---
+// --- FUNÇÕES DE NAVEGAÇÃO DA ÁREA ---
 
-window.closeDiscoveryFeed = function() {
-    const feed = document.getElementById('discoveryFeed');
+window.backToCatalog = function() {
+    const mainContent = document.getElementById('app');
+    const discoveryArea = document.getElementById('discoveryArea');
     const navBottom = document.getElementById('mainNavBottom');
-    
-    if (!feed) return;
 
-    // Reset de visibilidade usando classes
-    feed.classList.replace('flex', 'hidden');
-    feed.style.removeProperty('display'); 
+    discoveryArea.classList.add('hidden');
+    if (mainContent) mainContent.classList.remove('hidden');
+    if (navBottom) navBottom.classList.remove('hidden');
     
-    document.body.style.overflow = ''; 
-    if (navBottom) {
-        navBottom.classList.remove('hidden');
-        navBottom.classList.add('flex');
-    }
+    document.body.style.overflow = '';
 };
 
-window.openProductModalFromFeed = function(productId) {
-    window.closeDiscoveryFeed();
+window.goToProductFromFeed = function(productId) {
+    // Fecha o feed e abre o modal de compra no catálogo
+    window.backToCatalog();
     setTimeout(() => {
         if (window.openProductModal) window.openProductModal(productId);
-    }, 200);
+    }, 300);
 };
 
 window.toggleFavoriteFromFeed = function(id) {
     if (window.toggleFavorite) {
         window.toggleFavorite(id);
-        // Atualiza a UI do feed sem fechar
+        // Atualização visual simples sem remontar o feed
         const btn = event.currentTarget;
         const icon = btn.querySelector('i');
         const isFav = state.favorites.includes(id);
         
-        if (isFav) {
-            btn.classList.add('text-red-500');
-            icon.classList.add('fill-current');
-        } else {
-            btn.classList.remove('text-red-500');
-            btn.classList.add('text-white');
-            icon.classList.remove('fill-current');
-        }
+        btn.classList.toggle('text-red-500', isFav);
+        btn.classList.toggle('text-white', !isFav);
+        if (icon) icon.classList.toggle('fill-current', isFav);
     }
 };
 
 window.shareProductDirect = function(id, name) {
-    const shareData = {
-        title: name,
-        text: `Olha este produto na ${state.storeConfigGlobal.storeName || 'loja'}!`,
-        url: `${window.location.origin}${window.location.pathname}?id=${state.STORE_ID}&p=${id}`
-    };
-
+    const url = `${window.location.origin}${window.location.pathname}?id=${state.STORE_ID}&p=${id}`;
     if (navigator.share) {
-        navigator.share(shareData).catch(err => console.log('Erro ao partilhar:', err));
+        navigator.share({ title: name, url: url });
     } else {
-        const dummy = document.createElement('input');
-        document.body.appendChild(dummy);
-        dummy.value = shareData.url;
-        dummy.select();
-        document.execCommand('copy');
-        document.body.removeChild(dummy);
-        showToast("Link copiado!");
+        navigator.clipboard.writeText(url);
+        if(window.showToast) showToast("Link copiado!");
     }
 };
 
+    
 // --- 7. UTILS DE LOADER PREMIUM ---
 
 function updatePremiumLoader(progress, logoUrl = null) {
