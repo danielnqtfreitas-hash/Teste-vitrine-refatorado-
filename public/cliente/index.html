@@ -490,14 +490,16 @@
 </nav>
 
 <div id="discoveryFeed" class="fixed inset-0 z-[200000] bg-black hidden flex-col transition-opacity duration-300">
-    <button onclick="window.closeDiscoveryFeed()" class="absolute top-6 left-5 z-[200001] text-white p-2.5 bg-black/20 rounded-full backdrop-blur-md active:scale-90 transition-transform flex items-center gap-2">
+    
+    <button onclick="window.closeDiscoveryFeed()" class="absolute top-6 left-5 z-[200010] text-white p-2.5 bg-black/40 rounded-full backdrop-blur-md active:scale-90 transition-transform flex items-center gap-2">
         <i data-lucide="chevron-left" class="w-6 h-6"></i>
         <span class="text-sm font-bold">Voltar</span>
     </button>
 
-    <div id="reelsContainer" class="h-full overflow-y-scroll snap-y snap-mandatory hide-scroll">
+    <div id="reelsContainer" class="h-full w-full overflow-y-scroll snap-y snap-mandatory hide-scroll bg-black">
         </div>
 </div>
+
     
 </body>
 </html>
