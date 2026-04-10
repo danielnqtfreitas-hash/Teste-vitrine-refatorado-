@@ -318,3 +318,81 @@ header.glass-header #headerFavBtn:hover {
 @keyframes spin {
     to { transform: rotate(360deg); }
 }
+
+/* =========================================
+   BOTTOM NAVIGATION BAR - ESTILO APP NATIVO
+   ========================================= */
+.mobile-nav-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 70px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    z-index: 999;
+    padding-bottom: env(safe-area-inset-bottom); /* Suporte para iPhone moderno */
+}
+
+.nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #94a3b8;
+    gap: 4px;
+    flex: 1;
+    transition: all 0.3s ease;
+}
+
+.nav-item i { width: 22px; height: 22px; }
+.nav-item span { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+
+.nav-item.active { color: var(--color-primary); }
+
+/* Botão Central de Destaque (Carrinho) */
+.nav-item-main {
+    position: relative;
+    top: -15px; /* Eleva o botão do carrinho */
+}
+
+.main-cart-circle {
+    width: 56px;
+    height: 56px;
+    background: var(--color-primary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 5px solid #F3F4F6; /* Cor do fundo do body para dar efeito de recorte */
+}
+
+/* Badges de Contagem */
+.badge-count {
+    position: absolute;
+    top: -5px;
+    right: -10px;
+    background: var(--color-primary);
+    color: white;
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-weight: bold;
+}
+
+.badge-count-main {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: #334155;
+    color: white;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    border: 2px solid var(--color-primary);
+}
+
+/* Ajuste no Body para o conteúdo não ficar escondido atrás da barra */
+body {
+    padding-bottom: 80px !important;
+}
