@@ -372,73 +372,68 @@ header {
 
 /* BOTTOM NAVIGATION - ESTILO FLAT (SEM DESTAQUE CENTRAL) */
 #mainNavBottom {
-    position: fixed !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    height: 65px !important;
-    background: rgba(255, 255, 255, 0.95) !important;
-    backdrop-filter: blur(10px) !important;
-    -webkit-backdrop-filter: blur(10px) !important;
-    z-index: 99999 !important;
-    border-top: 1px solid #f1f5f9 !important;
-    display: flex !important;
-    justify-content: space-around !important;
-    align-items: center !important;
-    padding-bottom: env(safe-area-inset-bottom) !important;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 70px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    display: flex;
+    justify-content: space-around; /* Distribui os 5 ícones igualmente */
+    align-items: center;
+    border-top: 1px solid #e2e8f0;
+    z-index: 50;
+    padding-bottom: env(safe-area-inset-bottom); /* Suporte para iPhone moderno */
 }
 
-/* Itens da navegação iguais para todos */
 .nav-btn-item {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: 4px !important;
-    flex: 1 !important;
-    background: none !important;
-    border: none !important;
-    color: #94a3b8 !important; /* Cor cinza padrão para todos */
-    transition: all 0.2s ease !important;
-    position: relative !important;
-}
-
-/* Cor quando o botão for clicado ou estiver ativo */
-.nav-btn-item:active, .nav-btn-item.active {
-    color: var(--color-primary) !important;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+    color: #94a3b8;
+    transition: all 0.2s;
 }
 
 .nav-btn-item i {
-    width: 22px !important;
-    height: 22px !important;
+    width: 22px; /* Diminuímos um pouco para caber os 5 sem apertar */
+    height: 22px;
 }
 
 .nav-btn-item span {
-    font-size: 9px !important;
-    font-weight: 700 !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.05em !important;
+    font-size: 10px;
+    font-weight: 600;
+    white-space: nowrap;
 }
 
-/* Estilo dos Badges (Destaque real) */
+.nav-btn-item.active, .nav-btn-item:active {
+    color: var(--color-primary);
+}
+
+/* Badge dos contadores */
 .badge-nav {
-    position: absolute !important;
-    top: -2px !important;
-    right: 22% !important; /* Ajuste conforme o ícone */
-    background: var(--color-primary) !important;
-    color: white !important;
-    font-size: 9px !important;
-    font-weight: 800 !important;
-    min-width: 16px !important;
-    height: 16px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    border-radius: 8px !important;
-    border: 2px solid white !important;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
-    transform: scale(0); /* Escondido por padrão */
-    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background-color: var(--color-primary);
+    color: white;
+    font-size: 9px;
+    font-weight: 800;
+    min-width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: flex;
+    items-center: center;
+    justify-content: center;
+    border: 2px solid white;
+}
+
+.badge-nav.hidden {
+    display: none;
 }
 
 /* Classe para mostrar o badge quando houver itens */
@@ -496,4 +491,185 @@ header {
 #statusBanner {
     background-color: #1e293b !important; /* Azul bem escuro ou preto para destacar do vermelho */
     color: white;
+}
+
+/* =========================================
+   DISCOVERY FEED - UI REELS (SHOPEE LIKE)
+   ========================================= */
+
+/* Força snap scrolling vertical */
+#reelsContainer {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch; /* Scroll suave no iOS */
+}
+
+/* O Item do Feed (Ocupa a tela inteira) */
+.reel-item {
+    height: 100vh; /* Altura total da viewport */
+    height: 100dvh; /* Altura dinâmica (lida com barras de navegação mobile) */
+    width: 100%;
+    snap-align: start; /* Trava o scroll aqui */
+    snap-stop: always; /* Força parar em cada item */
+    position: relative;
+    overflow: hidden;
+    background-color: #000;
+}
+
+/* A Mídia (Imersiva de fundo) */
+.reel-media-cont {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+}
+
+.reel-media-cont img, .reel-media-cont video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Preenche a tela mantendo a proporção */
+    object-position: center; /* Centraliza o conteúdo */
+}
+
+/* Camada de Gradiente (Sombra embaixo para ler o texto) */
+.reel-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.2) 40%, transparent 70%);
+    z-index: 2;
+    pointer-events: none; /* Deixa cliques passarem para a mídia */
+}
+
+/* =========================================
+   CAMADA DE ENGAJAMENTO (FLUTUANTE NO TOPO)
+   ========================================= */
+
+/* 1. Botões Laterais Direitos (Gostei, Compartilhar, Views) */
+.reel-actions-sidebar {
+    position: absolute;
+    right: 12px;
+    bottom: 160px; /* Posicionado acima do card do produto */
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px; /* Espaço entre os botões */
+}
+
+.action-btn-cont {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px; /* Espaço entre ícone e texto */
+    color: white;
+    text-align: center;
+}
+
+/* Estilo dos ícones circulares da Shopee */
+.action-btn-cont button {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    items-center: center;
+    justify-content: center;
+    color: white;
+    transition: all 0.2s ease;
+}
+
+.action-btn-cont button:active { transform: scale(0.9); background-color: rgba(255, 255, 255, 0.2); }
+
+/* Ícone de favorito ativo (Coração Vermelho) */
+.action-btn-cont button.is-fav {
+    background-color: #fff !important; /* Fundo branco para destacar o coração vermelho */
+}
+
+.action-btn-cont button.is-fav i {
+    fill: #EA1D2C !important;
+    color: #EA1D2C !important;
+    stroke: #EA1D2C !important;
+}
+
+.action-btn-cont span {
+    font-size: 10px;
+    font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5); /* Sombra para ler no branco */
+    max-width: 60px;
+}
+
+/* 2. Informações do Produto (Texto embaixo na esquerda) */
+.reel-text-info {
+    position: absolute;
+    left: 16px;
+    bottom: 110px; /* Posicionado acima do card */
+    z-index: 10;
+    color: white;
+    max-width: 75%; /* Não encostar nos botões da direita */
+}
+
+/* =========================================
+   3. CARD DO PRODUTO (FLUTUANTE EMBAIXO - IGUAL REFERÊNCIA)
+   ========================================= */
+.reel-product-card {
+    position: absolute;
+    bottom: 20px;
+    left: 16px;
+    right: 16px;
+    z-index: 10;
+    background-color: #fff;
+    border-radius: 12px;
+    padding: 10px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.reel-product-card:active { transform: scale(0.98); }
+
+.reel-prod-img {
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 1px solid #f1f5f9;
+}
+
+.reel-prod-details {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.reel-prod-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: #1e293b;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.3;
+    margin-bottom: 4px;
+}
+
+.reel-prod-price-row {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+}
+
+.reel-prod-price {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--color-primary);
+}
+
+.reel-prod-old-price {
+    font-size: 11px;
+    color: #94a3b8;
+    text-decoration: line-through;
 }
