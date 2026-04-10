@@ -333,6 +333,135 @@ document.addEventListener('change', (e) => {
     }
 });
 
+// --- =========================================================================
+//     DISCOVERY FEED - MOTOR DE ENGAJAMENTO (v1.0 Shopee Like)
+//     Replica a UX da Shopee/Mercado Livre usando dados do Firebase/Node
+// =========================================================================
+
+// Função para abrir o Feed (Gera o conteúdo e trava a vitrine)
+window.openDiscoveryFeed = function() {
+    const container = document.getElementById('reelsContainer');
+    const feed = document.getElementById('discoveryFeed');
+    const navBottom = document.getElementById('mainNavBottom');
+    
+    // Blindagem de segurança
+    if (!container || !feed || !state.allProducts || state.allProducts.length === 0) {
+        showToast("Nenhum produto disponível para o feed.");
+        return;
+    }
+
+    // 1. Gera o HTML imersivo baseado no estado real da loja
+    container.innerHTML = state.allProducts.map((p, index) => {
+        
+        // Formata os dados
+        const formattedPrice = `R$ ${p.price.toFixed(2).replace('.',',')}`;
+        const hasDiscount = p.oldPrice && p.oldPrice > p.price;
+        const formattedOldPrice = hasDiscount ? `R$ ${p.oldPrice.toFixed(2).replace('.',',')}` : '';
+        
+        // Verifica se é favorito (para pintar o coração)
+        const isFavorite = state.favorites.includes(p.id);
+        
+        // Pega as visualizações reais (vindo do backend/state)
+        // Se o campo não existir, coloca um número base ou zero
+        const viewsCount = p.views ? p.views.toLocaleString('pt-BR') : '1.050'; 
+
+        return `
+            <div class="reel-item" data-id="${p.id}">
+                
+                <div class="reel-media-cont">
+                    <img src="${p.image}" loading="${index === 0 ? 'eager' : 'lazy'}" class="reel-main-media">
+                </div>
+
+                <div class="reel-overlay"></div>
+                
+                <div class="reel-actions-sidebar">
+                    
+                    <div class="action-btn-cont">
+                        <button onclick="window.toggleFavorite('${p.id}'); setTimeout(window.openDiscoveryFeed, 100);" class="${isFavorite ? 'is-fav' : ''}">
+                            <i data-lucide="heart" class="w-6 h-6"></i>
+                        </button>
+                        <span>Incluir em favoritos</span>
+                    </div>
+
+                    <div class="action-btn-cont">
+                        <button onclick="window.shareProductDirect('${p.id}', '${p.name}')">
+                            <i data-lucide="share" class="w-6 h-6"></i>
+                        </button>
+                        <span>Compartilhar</span>
+                    </div>
+
+                    <div class="action-btn-cont mt-2 opacity-80">
+                        <i data-lucide="eye" class="w-5 h-5 text-white/70"></i>
+                        <span class="text-[9px] font-mono text-white/70 mt-1">${viewsCount} visualizações</span>
+                    </div>
+                </div>
+
+                <div class="reel-text-info">
+                    <p class="text-[11px] font-extrabold uppercase tracking-widest text-white/70 mb-1">${state.storeConfigGlobal.storeName || 'DANDAN'}</p>
+                    <h2 class="text-base font-bold text-white leading-snug line-clamp-2">${p.name}</h2>
+                </div>
+
+                <div class="reel-product-card active-scale" onclick="window.openProductModalFromFeed('${p.id}')">
+                    <img src="${p.image}" class="reel-prod-img" alt="Produto">
+                    <div class="reel-prod-details">
+                        <p class="reel-prod-name">${p.name}</p>
+                        <div class="reel-prod-price-row">
+                            <span class="reel-prod-price">${formattedPrice}</span>
+                            ${hasDiscount ? `<span class="reel-prod-old-price">${formattedOldPrice}</span>` : ''}
+                        </div>
+                    </div>
+                    <i data-lucide="chevron-right" class="w-5 h-5 text-slate-300 ml-auto"></i>
+                </div>
+
+            </div>
+        `;
+    }).join('');
+
+    // 2. Abre o feed e gerencia a UI
+    feed.classList.remove('hidden');
+    document.body.style.overflow = 'hidden'; // Trava o scroll do fundo
+    if (navBottom) navBottom.classList.add('hidden'); // Oculta a barra inferior
+
+    // 3. Inicializa os ícones Lucide nos novos elementos
+    setTimeout(() => {
+        lucide.createIcons();
+        window.updateNavigationBadges(); // Atualiza contadores caso algo mude
+    }, 50);
+};
+
+// Função para fechar o Feed
+window.closeDiscoveryFeed = function() {
+    const feed = document.getElementById('discoveryFeed');
+    const navBottom = document.getElementById('mainNavBottom');
+    
+    if (!feed) return;
+    feed.classList.add('hidden');
+    document.body.style.overflow = ''; // Libera o scroll
+    if (navBottom) navBottom.classList.remove('hidden'); // Devolve a barra inferior
+};
+
+// Handler para abrir o modal de compra de dentro do Feed
+window.openProductModalFromFeed = function(productId) {
+    // 1. Fecha o feed para não poluir
+    window.closeDiscoveryFeed();
+    // 2. Chama a função original que abre o modal de compra com atraso suave
+    setTimeout(() => window.openProductModal(productId), 150);
+};
+
+// Handler para compartilhamento direto no feed
+window.shareProductDirect = function(id, name) {
+    if (navigator.share) {
+        navigator.share({
+            title: name,
+            text: `Confira este produto na ${state.storeConfigGlobal.storeName || 'Dandan'}!`,
+            url: `${window.location.protocol}//${window.location.host}${window.location.pathname}?id=${state.STORE_ID}&p=${id}`
+        }).catch(() => showToast("Erro ao compartilhar."));
+    } else {
+        showToast("Seu navegador não suporta compartilhamento.");
+    }
+};
+
+
 // --- 7. UTILS DE LOADER PREMIUM ---
 
 function updatePremiumLoader(progress, logoUrl = null) {
