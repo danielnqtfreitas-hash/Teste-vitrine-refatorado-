@@ -489,15 +489,19 @@
     </button>
 </nav>
 
-<div id="discoveryFeed" class="fixed inset-0 z-[200000] bg-black hidden flex-col transition-opacity duration-300">
+<div id="discoveryFeed" class="hidden fixed inset-0 bg-black z-[99999] flex-col">
     
-    <button onclick="window.closeDiscoveryFeed()" class="absolute top-6 left-5 z-[200010] text-white p-2.5 bg-black/40 rounded-full backdrop-blur-md active:scale-90 transition-transform flex items-center gap-2">
-        <i data-lucide="chevron-left" class="w-6 h-6"></i>
-        <span class="text-sm font-bold">Voltar</span>
-    </button>
+    <!-- Botão de voltar -->
+    <div class="absolute top-4 left-4 z-50">
+        <button onclick="closeDiscoveryFeed()" class="text-white bg-black/40 px-3 py-2 rounded-full">
+            Voltar
+        </button>
+    </div>
 
-    <div id="reelsContainer" class="h-full w-full overflow-y-scroll snap-y snap-mandatory hide-scroll bg-black">
-        </div>
+    <!-- Container dos reels -->
+    <div id="reelsContainer" class="h-full overflow-y-scroll snap-y snap-mandatory">
+    </div>
+
 </div>
 
     
