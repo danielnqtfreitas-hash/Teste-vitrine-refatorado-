@@ -162,57 +162,40 @@
 </div>
 
 
-    <header class="sticky top-0 z-50 glass-header">
-        <div class="container mx-auto px-4 lg:px-8 max-w-7xl h-20 md:h-24 flex items-center justify-between gap-4">
-            
-            <div class="flex items-center gap-4 cursor-pointer active-scale shrink-0" onclick="window.resetAllFilters(); window.scrollTo({top:0, behavior:'smooth'})">
-                <div id="logoContainer" class="hidden w-12 h-12 md:w-14 md:h-14 rounded-full overflow-hidden bg-white border border-slate-200 shadow-sm flex-shrink-0">
-                    <img id="storeLogoImg" src="" class="w-full h-full object-cover" alt="Logo">
-                </div>
-                <div class="flex flex-col justify-center">
-                    <div class="flex items-center gap-2">
-                        <h1 id="storeNameDisplay" class="font-display font-bold text-lg md:text-2xl text-slate-800 leading-tight truncate max-w-[220px] md:max-w-md">Carregando...</h1>
-                    </div>
-                    <span class="text-[9px] font-bold text-slate-400 uppercase tracking-tighter md:hidden">Vitrine Online</span>
-                </div>
-            </div>
-
-            <div class="flex-1 max-w-2xl hidden md:flex items-center bg-slate-100 rounded-full px-1 border border-transparent focus-within:border-primary/20 focus-within:bg-white focus-within:ring-1 focus-within:ring-primary/50 transition-all">
-                <div class="relative flex-grow">
-                   <input type="text" id="desktopSearch" autocomplete="off" oninput="window.handleSearchInput(this.value)" placeholder="O que você procura?" class="w-full bg-transparent border-none py-2.5 pl-10 pr-2 text-sm focus:ring-0">
-                    <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2"></i>
-                </div>
-                <button onclick="window.openFilterDrawer()" class="relative p-2 m-1 rounded-full hover:bg-slate-200 bg-white shadow-sm border border-slate-200 text-slate-600">
-                    <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
-                    <span id="filterBadgeDesktop" class="absolute -top-1 -right-1 bg-primary text-white text-[9px] font-black h-4 w-4 flex items-center justify-center rounded-full border-2 border-white transform scale-0 transition-transform duration-300">0</span>
-                </button>
-            </div>
-
-            <div class="flex items-center gap-1 md:gap-3 shrink-0">
-                <button onclick="window.toggleFavoritesView()" id="headerFavBtn" class="flex items-center justify-center p-2.5 rounded-full hover:bg-slate-50 active-scale bg-white border border-slate-200 relative transition-colors">
-                    <i data-lucide="heart" class="w-5 h-5 text-slate-700" id="headerHeartIcon"></i>
-                    <span id="favBadgeDesktop" class="absolute -top-1 -right-1 bg-primary text-white text-[10px] font-bold h-4 w-4 flex items-center justify-center rounded-full border-2 border-white transform scale-0 transition-transform duration-300">0</span>
-                </button>
-                <button onclick="window.openCartModal()" class="flex items-center gap-2 p-2.5 rounded-full bg-primary hover:brightness-90 active-scale group relative border border-primary shadow-md transition-all">
-                    <i data-lucide="shopping-cart" class="w-5 h-5 text-white"></i>
-                    <span id="cartBadge" class="absolute -top-1 -right-1 bg-white text-primary text-[10px] font-black h-4 w-4 flex items-center justify-center rounded-full border-2 border-primary transform scale-0 transition-transform duration-300 shadow-sm">0</span>
-                </button>
-            </div>
-        </div>
+    <header class="sticky top-0 z-[10000] bg-white border-b border-slate-100">
+    <div class="container mx-auto px-4 max-w-7xl h-20 flex items-center justify-between gap-4">
         
-        <div class="md:hidden px-4 pb-4">
-            <div class="flex items-center w-full bg-slate-100 rounded-xl pr-1 border border-transparent focus-within:bg-white focus-within:border-primary/20 transition-all">
-                <div class="relative flex-1">
-                  <input type="text" id="mobileSearch" autocomplete="off" oninput="window.handleSearchInput(this.value)" placeholder="Buscar produtos..." class="w-full bg-transparent border-none py-3 pl-10 pr-2 text-sm focus:ring-0">
-                    <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2"></i>
-                </div>
-                <button onclick="window.openFilterDrawer()" class="relative p-2 m-1 rounded-lg bg-white shadow-sm border border-slate-200 text-slate-600">
-                    <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
-                    <span id="filterBadgeMobile" class="absolute -top-1 -right-1 bg-primary text-white text-[9px] font-black h-4 w-4 flex items-center justify-center rounded-full border-2 border-white transform scale-0 transition-transform duration-300">0</span>
-                </button>
+        <div class="flex items-center gap-3 cursor-pointer active-scale shrink-0" onclick="window.resetAllFilters(); window.scrollTo({top:0, behavior:'smooth'})">
+            <div id="logoContainer" class="w-12 h-12 rounded-full overflow-hidden bg-white border border-slate-200 shadow-sm flex-shrink-0">
+                <img id="storeLogoImg" src="" class="w-full h-full object-cover" alt="Logo">
+            </div>
+            <div class="flex flex-col justify-center">
+                <h1 id="storeNameDisplay" class="font-display font-bold text-lg text-slate-800 leading-tight truncate max-w-[180px]">Carregando...</h1>
+                <span class="text-[9px] font-black text-primary uppercase tracking-widest">Vitrine Online</span>
             </div>
         </div>
-    </header>
+
+        <div class="hidden md:flex flex-1 max-w-xl items-center bg-slate-100 rounded-full px-4 border border-transparent focus-within:bg-white focus-within:border-primary/20 transition-all">
+            <i data-lucide="search" class="w-4 h-4 text-slate-400"></i>
+            <input type="text" id="desktopSearch" oninput="window.handleSearchInput(this.value)" placeholder="O que você procura hoje?" class="w-full bg-transparent border-none py-2.5 px-3 text-sm focus:ring-0 text-slate-800">
+        </div>
+
+        <button onclick="window.openFilterDrawer()" class="hidden md:flex p-2.5 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">
+            <i data-lucide="sliders-horizontal" class="w-5 h-5"></i>
+        </button>
+    </div>
+    
+    <div class="md:hidden px-4 pb-4">
+        <div class="flex items-center w-full bg-slate-100 rounded-2xl px-4 border border-transparent focus-within:bg-white focus-within:border-primary/20 transition-all shadow-sm">
+            <i data-lucide="search" class="w-4 h-4 text-slate-400"></i>
+            <input type="text" id="mobileSearch" oninput="window.handleSearchInput(this.value)" placeholder="Buscar produtos..." class="w-full bg-transparent border-none py-3 px-3 text-sm focus:ring-0 text-slate-800">
+            <button onclick="window.openFilterDrawer()" class="text-slate-400 pl-2 border-l border-slate-200">
+                <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
+            </button>
+        </div>
+    </div>
+</header>
+
 
     <main id="app" class="flex-grow container mx-auto px-2 md:px-8 max-w-7xl pt-4 hidden opacity-0 transition-opacity duration-700">
         <div class="relative w-full pt-0 overflow-hidden px-2 md:px-0">
@@ -471,35 +454,33 @@
     </div>
 
     <script type="module" src="js/app.js"></script>
-    <nav class="mobile-nav-bar border-t border-slate-100 lg:hidden">
-    <div class="flex justify-around items-center h-full">
-        <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})" class="nav-item active">
-            <i data-lucide="home"></i>
-            <span>Início</span>
-        </button>
 
-        <button onclick="openFavoritesModal()" class="nav-item">
-            <div class="relative">
-                <i data-lucide="heart"></i>
-                <span id="favBadgeBottom" class="badge-count hidden">0</span>
-            </div>
-            <span>Favoritos</span>
-        </button>
+    <nav id="mainNavBottom" class="fixed bottom-0 left-0 right-0 h-[70px] bg-white border-t border-slate-100 z-[99999] lg:hidden flex justify-around items-center px-2 pb-[env(safe-area-inset-bottom)]">
+    
+    <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})" class="flex flex-col items-center gap-1 flex-1 text-primary">
+        <i data-lucide="home" class="w-6 h-6"></i>
+        <span class="text-[10px] font-bold uppercase tracking-tighter">Início</span>
+    </button>
 
-        <button onclick="openCartModal()" class="nav-item nav-item-main">
-            <div class="main-cart-circle shadow-lg">
-                <i data-lucide="shopping-cart" class="text-white"></i>
-                <span id="cartBadgeBottom" class="badge-count-main">0</span>
-            </div>
-            <span class="mt-8">Carrinho</span>
-        </button>
+    <button onclick="window.toggleFavoritesView()" class="flex flex-col items-center gap-1 flex-1 text-slate-400 relative">
+        <i data-lucide="heart" class="w-6 h-6"></i>
+        <span id="favBadgeBottom" class="absolute top-0 right-1/4 bg-primary text-white text-[9px] font-bold h-4 w-4 flex items-center justify-center rounded-full border-2 border-white transform scale-0 transition-transform">0</span>
+        <span class="text-[10px] font-bold uppercase tracking-tighter">Favoritos</span>
+    </button>
 
-        <button onclick="window.open('https://wa.me/SEUNUMERO', '_blank')" class="nav-item">
-            <i data-lucide="message-circle"></i>
-            <span>Contato</span>
+    <div class="flex-1 flex justify-center -mt-10">
+        <button onclick="window.openCartModal()" class="w-16 h-16 bg-primary rounded-full border-[6px] border-[#F3F4F6] shadow-xl flex items-center justify-center active:scale-90 transition-transform relative">
+            <i data-lucide="shopping-cart" class="w-7 h-7 text-white"></i>
+            <span id="cartBadgeBottom" class="absolute -top-1 -right-1 bg-slate-800 text-white text-[10px] font-black h-5 w-5 flex items-center justify-center rounded-full border-2 border-primary shadow-sm">0</span>
         </button>
     </div>
+
+    <button onclick="window.open('https://wa.me/SEUNUMERO', '_blank')" class="flex flex-col items-center gap-1 flex-1 text-slate-400">
+        <i data-lucide="message-circle" class="w-6 h-6"></i>
+        <span class="text-[10px] font-bold uppercase tracking-tighter">Contato</span>
+    </button>
 </nav>
+
 
 </body>
 </html>
