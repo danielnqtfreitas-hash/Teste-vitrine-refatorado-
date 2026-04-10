@@ -335,10 +335,6 @@ document.addEventListener('change', (e) => {
     }
 });
 
-// =========================================================================
-//     DISCOVERY FEED - MODO DEDICADO PREMIUM (COMPLETO & CORRIGIDO)
-// =========================================================================
-
 window.openDiscoveryFeed = function() {
     console.log("🚀 Inicializando Discovery Feed...");
     
@@ -349,7 +345,6 @@ window.openDiscoveryFeed = function() {
     
     if (!feed || !container) return;
 
-    // 1. Limpeza e Bloqueio de Scroll do Fundo
     if (app) app.classList.add('hidden');
     if (navBottom) navBottom.classList.add('hidden');
     document.body.style.overflow = 'hidden';
@@ -357,52 +352,53 @@ window.openDiscoveryFeed = function() {
     feed.classList.remove('hidden');
     feed.style.display = 'flex'; 
 
-    // 2. Verificação de Dados
     if (!state.allProducts || state.allProducts.length === 0) {
         container.innerHTML = `<div class="h-screen flex items-center justify-center text-white">Nenhum produto disponível.</div>`;
         return;
     }
 
-    // 3. Renderização com Funções Globais Corretas
     container.innerHTML = state.allProducts.map((p, index) => {
-        const formattedPrice = `R$ ${p.price.toFixed(2).replace('.',',')}`;
-        const isFavorite = state.favorites.includes(p.id);
+        // --- TRAVA DE SEGURANÇA: Verifica se o preço existe antes de usar toFixed ---
+        const safePrice = (p.price && typeof p.price === 'number') ? p.price : 0;
+        const formattedPrice = `R$ ${safePrice.toFixed(2).replace('.',',')}`;
+        
+        const isFavorite = state.favorites && state.favorites.includes(p.id);
 
         return `
-            <div class="reel-item" style="height: 100dvh; scroll-snap-align: start; position: relative;">
+            <div class="reel-item" style="height: 100dvh; scroll-snap-align: start; position: relative; background: #000;">
                 <div class="reel-media-cont" style="position: absolute; inset: 0; z-index: 1;">
-                    <img src="${p.image}" 
+                    <img src="${p.image || ''}" 
                          style="width: 100%; height: 100%; object-fit: cover;" 
                          onerror="this.src='https://via.placeholder.com/400x800?text=Imagem+Indisponível'">
                 </div>
 
-                <div class="reel-overlay" style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 50%); z-index: 2;"></div>
+                <div class="reel-overlay" style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 50%); z-index: 2; pointer-events: none;"></div>
                 
                 <div class="reel-actions-sidebar" style="position: absolute; right: 12px; bottom: 180px; z-index: 10;">
-                    <div class="action-btn-cont" style="margin-bottom: 20px;">
-                        <button onclick="window.toggleFavorite('${p.id}')" class="${isFavorite ? 'is-fav' : ''}">
+                    <div class="action-btn-cont" style="margin-bottom: 20px; display: flex; flex-direction: column; align-items: center;">
+                        <button onclick="window.toggleFavorite('${p.id}')" class="${isFavorite ? 'is-fav' : ''}" style="width: 50px; height: 50px; border-radius: 50%; background: rgba(255,255,255,0.2); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.3);">
                             <i data-lucide="heart" class="w-7 h-7 ${isFavorite ? 'fill-current text-red-500' : 'text-white'}"></i>
                         </button>
-                        <span class="text-white text-[10px] font-bold">Gostar</span>
+                        <span class="text-white text-[10px] font-bold mt-1">Gostar</span>
                     </div>
 
-                    <div class="action-btn-cont">
-                        <button onclick="window.shareProduct('${p.id}')">
+                    <div class="action-btn-cont" style="display: flex; flex-direction: column; align-items: center;">
+                        <button onclick="window.shareProduct('${p.id}')" style="width: 50px; height: 50px; border-radius: 50%; background: rgba(255,255,255,0.2); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.3);">
                             <i data-lucide="share" class="w-7 h-7 text-white"></i>
                         </button>
-                        <span class="text-white text-[10px] font-bold">Enviar</span>
+                        <span class="text-white text-[10px] font-bold mt-1">Enviar</span>
                     </div>
                 </div>
 
                 <div class="reel-text-info" style="position: absolute; left: 16px; bottom: 120px; z-index: 10;">
-                    <h2 class="text-lg font-bold text-white">${p.name}</h2>
+                    <h2 class="text-lg font-bold text-white shadow-sm">${p.name || 'Produto sem nome'}</h2>
                 </div>
 
-                <div class="reel-product-card" onclick="window.openProductModalFromFeed('${p.id}')" style="z-index: 10;">
-                    <img src="${p.image}" class="reel-prod-img">
-                    <div class="reel-prod-details">
-                        <span class="reel-prod-name text-slate-900 font-bold">${p.name}</span>
-                        <span class="reel-prod-price text-slate-900 font-black">${formattedPrice}</span>
+                <div class="reel-product-card" onclick="window.openProductModalFromFeed('${p.id}')" style="position: absolute; bottom: 20px; left: 16px; right: 16px; background: white; border-radius: 16px; padding: 12px; display: flex; align-items: center; gap: 12px; z-index: 10; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+                    <img src="${p.image || ''}" style="width: 50px; height: 50px; border-radius: 8px; object-fit: cover;">
+                    <div style="flex: 1;">
+                        <span class="block text-slate-900 font-bold text-sm truncate">${p.name || 'Produto'}</span>
+                        <span class="block text-primary font-black text-base">${formattedPrice}</span>
                     </div>
                     <div class="bg-primary p-2.5 rounded-xl text-white">
                         <i data-lucide="shopping-bag" class="w-5 h-5"></i>
@@ -412,7 +408,6 @@ window.openDiscoveryFeed = function() {
         `;
     }).join('');
 
-    // 4. Reset de ícones
     setTimeout(() => {
         if (window.lucide) lucide.createIcons();
     }, 250);
