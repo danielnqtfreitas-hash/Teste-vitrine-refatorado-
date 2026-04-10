@@ -460,31 +460,29 @@
 
     <script type="module" src="js/app.js"></script>
 
-    <nav id="mainNavBottom" class="fixed bottom-0 left-0 right-0 h-[65px] bg-white/90 backdrop-blur-md border-t border-slate-100 z-[99999] lg:hidden flex justify-around items-center px-4 pb-[env(safe-area-inset-bottom)]">
-    
-    <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})" class="flex flex-col items-center gap-0.5 flex-1 text-primary">
-        <i data-lucide="home" class="w-5 h-5"></i>
-        <span class="text-[9px] font-bold uppercase tracking-wider">Início</span>
+<nav id="mainNavBottom" class="lg:hidden">
+    <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})" class="nav-btn-item active">
+        <i data-lucide="home"></i>
+        <span>Início</span>
     </button>
 
-    <button onclick="window.toggleFavoritesView()" class="flex flex-col items-center gap-0.5 flex-1 text-slate-400 relative">
-        <i data-lucide="heart" class="w-5 h-5"></i>
-        <span id="favBadgeBottom" class="absolute top-0 right-1/4 bg-primary text-white text-[8px] font-bold h-3.5 w-3.5 flex items-center justify-center rounded-full border border-white transform scale-0 transition-transform">0</span>
-        <span class="text-[9px] font-bold uppercase tracking-wider">Favoritos</span>
+    <button onclick="window.toggleFavoritesView()" class="nav-btn-item">
+        <i data-lucide="heart"></i>
+        <span id="favBadgeBottom" class="badge-nav">0</span>
+        <span>Favoritos</span>
     </button>
 
-    <div class="flex-1 flex justify-center -mt-8">
-        <button onclick="window.openCartModal()" class="w-14 h-14 bg-primary rounded-full border-[4px] border-[#F3F4F6] shadow-lg flex items-center justify-center active:scale-90 transition-transform relative">
-            <i data-lucide="shopping-cart" class="w-6 h-6 text-white"></i>
-            <span id="cartBadgeBottom" class="absolute -top-1 -right-1 bg-slate-800 text-white text-[9px] font-black h-4.5 w-4.5 flex items-center justify-center rounded-full border-2 border-primary shadow-sm">0</span>
-        </button>
-    </div>
-
-    <button onclick="window.open('https://wa.me/SEUNUMERO', '_blank')" class="flex flex-col items-center gap-0.5 flex-1 text-slate-400">
-        <i data-lucide="message-circle" class="w-5 h-5"></i>
-        <span class="text-[9px] font-bold uppercase tracking-wider">Contato</span>
+    <button onclick="window.openCartModal()" class="nav-btn-item">
+        <i data-lucide="shopping-cart"></i>
+        <span id="cartBadgeBottom" class="badge-nav">0</span>
+        <span>Sacola</span>
     </button>
-    </nav>
+
+    <button onclick="window.open('https://wa.me/SEUNUMERO', '_blank')" class="nav-btn-item">
+        <i data-lucide="message-circle"></i>
+        <span>Contato</span>
+    </button>
+</nav>
 
 </body>
 </html>
