@@ -675,3 +675,24 @@ header {
     color: #94a3b8;
     text-decoration: line-through;
 }
+
+#reelsContainer {
+    scroll-snap-type: y mandatory;
+    overflow-y: scroll;
+    height: 100vh;
+}
+
+.reel-item {
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+}
+
+/* Esconder barra de scroll */
+.hide-scroll::-webkit-scrollbar {
+    display: none;
+}
+.hide-scroll {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
