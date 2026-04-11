@@ -428,7 +428,39 @@ window.openDiscoveryFeed = function() {
     }, 100);
 };
 
+// 1. Torne a função global para que o 'onclick' do HTML a encontre
+window.openProductModalFromFeed = function(productId) {
+    console.log("🎯 Abrindo produto do feed:", productId);
+    
+    // Primeiro fechamos o feed
+    window.closeDiscoveryFeed();
+    
+    // Pequeno delay para a transição visual ser suave
+    setTimeout(() => {
+        // Chamamos a função principal de abrir modal que você já tem no app.js
+        if (typeof window.openProductModal === 'function') {
+            window.openProductModal(productId);
+        } else {
+            console.error("❌ Erro: window.openProductModal não encontrada!");
+        }
+    }, 300);
+};
 
+// 2. Garanta que o fechamento também seja global
+window.closeDiscoveryFeed = function() {
+    const feed = document.getElementById('discoveryFeed');
+    const app = document.getElementById('app');
+    const navBottom = document.getElementById('mainNavBottom');
+    
+    if (feed) {
+        feed.classList.add('hidden');
+        feed.style.display = 'none';
+    }
+    
+    if (app) app.classList.remove('hidden');
+    if (navBottom) navBottom.classList.remove('hidden');
+    document.body.style.overflow = ''; // Devolve o scroll ao site
+};
     
 // --- 7. UTILS DE LOADER PREMIUM ---
 
