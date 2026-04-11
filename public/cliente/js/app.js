@@ -63,57 +63,95 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // --- 2. FLUXO DE DADOS (API NODE.JS + FIREBASE SYNC) ---
+// --- 2. FLUXO DE DADOS (API NODE.JS + FIREBASE SYNC) ---
 async function initFlow() {
     try {
+        // 1. Início imediato (Progresso visual)
         updatePremiumLoader(10); 
 
-        // 1. Busca Catálogo via API
+        // Busca o catálogo principal na sua API Node.js
         const response = await fetch(`/api/produtos/${state.STORE_ID}`);
-        if (!response.ok) throw new Error("Erro ao carregar catálogo");
+        if (!response.ok) throw new Error("Loja não encontrada no servidor");
+        
         const data = await response.json(); 
         updatePremiumLoader(50); 
 
+        // Verificação de status da assinatura
         if (data.config.subscriptionStatus === 'suspended') { 
             hideLoader(); 
-            document.body.innerHTML = `<h1 class="p-10 text-center">Loja Suspensa</h1>`;
+            document.body.innerHTML = `
+                <div class="flex flex-col h-screen items-center justify-center p-6 text-center bg-white">
+                    <div class="bg-red-50 p-4 rounded-full mb-4"><i data-lucide="shield-off" class="text-red-500 w-8 h-8"></i></div>
+                    <h1 class="text-slate-800 font-bold text-xl">Loja Suspensa</h1>
+                    <p class="text-slate-500 mt-2">Esta vitrine está temporariamente offline.</p>
+                </div>
+            `;
+            if (window.lucide) lucide.createIcons();
             return; 
         }
 
+        // Configura o estado global com as definições da loja
         state.storeConfigGlobal = data.config;
 
-        // 2. SINCRONIZAÇÃO DE VIEWS (Leitura do Firebase)
+        // --- BLOCO DE SINCRONIZAÇÃO DE VISUALIZAÇÕES (FIREBASE) ---
         try {
-            // Documento: stores/dandan/analytics/product_views
+            // Referência ao documento exato de analytics da loja
             const analyticsRef = doc(db, "stores", state.STORE_ID, "analytics", "product_views");
-            const analyticsSnap = await getDoc(analyticsRef);
+            
+            // BUSCA OS DADOS REAIS DO FIREBASE
+            const analyticsSnap = await getDoc(analyticsRef); 
             const viewsMap = analyticsSnap.exists() ? analyticsSnap.data() : {};
 
-            state.allProducts = data.produtos.map(p => ({
-                ...p,
-                views: (viewsMap[p.id] && viewsMap[p.id].views) ? viewsMap[p.id].views : 0
-            }));
-            console.log("✅ Views carregadas.");
+            // Injeta as views baixadas em cada produto dentro do state.allProducts
+            state.allProducts = data.produtos.map(p => {
+                const stats = viewsMap[p.id]; 
+                return {
+                    ...p,
+                    // Se o ID do produto existir no documento baixado, usa o valor de 'views', senão 0
+                    views: (stats && stats.views) ? stats.views : 0
+                };
+            });
+            
+            console.log("✅ Dados de visualizações baixados e aplicados aos produtos.");
         } catch (e) {
-            console.warn("Erro ao ler views:", e);
+            console.warn("Erro ao baixar analytics, usando apenas dados da API:", e);
             state.allProducts = data.produtos; 
         }
+        // -----------------------------------------------------------
 
-        // 3. RENDERIZAÇÃO E UI
+        // Processamento de categorias e banners
         checkStoreStatus(state.storeConfigGlobal);
         state.banners = data.banners || [];
         state.categories = Array.from(new Set(data.produtos.map(p => p.category).filter(Boolean))).sort();
+
+        // Aplica a identidade visual (Cores, Logos)
         applyStoreConfig(data.config);
+        
+        // Renderiza componentes da Interface
         renderHeroCarousel(state.banners);
         renderCategoryTabs();
+        
+        // Renderiza o catálogo principal (Home)
         await renderCatalog();
         
         updatePremiumLoader(80); 
+        
+        // Inicializa utilitários e badges de navegação
+        populateFilterOptions();
+        updateFavoritesUI();
+        updateCartUI();
+        checkDeepLink(); 
+        registerVisit(); 
         window.updateNavigationBadges();
 
-        setTimeout(() => updatePremiumLoader(100), 3000);
+        // Finaliza o loader com delay para fixação da marca (branding)
+        setTimeout(() => {
+            updatePremiumLoader(100);
+            console.log(`🚀 Vitrine [${state.STORE_ID}] carregada e sincronizada.`);
+        }, 3000);
 
     } catch (error) {
-        console.error("Erro crítico no initFlow:", error);
+        console.error("Erro crítico no carregamento do initFlow:", error);
         hideLoader(); 
     }
 }
