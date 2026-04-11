@@ -70,52 +70,57 @@ async function initFlow() {
         const response = await fetch(`/api/produtos/${state.STORE_ID}`);
         if (!response.ok) throw new Error("Loja não encontrada");
         const data = await response.json(); 
-        updatePremiumLoader(50); 
+        updatePremiumLoader(40); 
 
         state.storeConfigGlobal = data.config;
 
         // --- BLOCO DE SINCRONIZAÇÃO DE VISUALIZAÇÕES (FIREBASE) ---
-try {
-    const analyticsRef = doc(db, "stores", state.STORE_ID, "analytics", "product_views");
-    // getDocFromServer garante que pegamos o dado real do banco, não do cache
-    const analyticsSnap = await getDocFromServer(analyticsRef); 
-    const viewsMap = analyticsSnap.exists() ? analyticsSnap.data() : {};
+        try {
+            const analyticsRef = doc(db, "stores", state.STORE_ID, "analytics", "product_views");
+            // getDocFromServer evita cache e garante o dado atualizado (os "11" do Baruk)
+            const analyticsSnap = await getDocFromServer(analyticsRef); 
+            const viewsMap = analyticsSnap.exists() ? analyticsSnap.data() : {};
 
-    state.allProducts = data.produtos.map(p => {
-        // Acessa o objeto do produto dentro do mapa (ex: viewsMap["prod_123"])
-        const stats = viewsMap[p.id]; 
+            state.allProducts = data.produtos.map(p => {
+                // Buscamos o objeto dentro do mapa usando o ID do produto como chave
+                const stats = viewsMap[p.id]; 
+                
+                return {
+                    ...p,
+                    // Se stats existe e tem .views, usamos. Caso contrário, 0.
+                    views: (stats && typeof stats.views === 'number') ? stats.views : 0
+                };
+            });
+            
+            console.log("✅ Visualizações sincronizadas:", viewsMap);
+        } catch (e) {
+            console.warn("⚠️ Erro ao sincronizar analytics, usando dados padrão:", e);
+            state.allProducts = data.produtos; // Fallback para não quebrar a loja
+        }
         
-        return {
-            ...p,
-            // Pega o campo 'views' de dentro do mapa. Se não existir, põe 0.
-            views: (stats && typeof stats.views === 'number') ? stats.views : 0
-        };
-    });
-    
-    console.log("✅ Visualizações sincronizadas com sucesso.");
-} catch (e) {
-    console.warn("Erro ao sincronizar analytics:", e);
-    state.allProducts = data.produtos; 
-}
+        updatePremiumLoader(60);
 
-        // 2. Renderização da Interface
+        // 2. Processamento de Categorias e Banners
         checkStoreStatus(state.storeConfigGlobal);
         state.banners = data.banners || [];
         state.categories = Array.from(new Set(data.produtos.map(p => p.category).filter(Boolean))).sort();
 
+        // 3. Renderização da Interface
         applyStoreConfig(data.config);
         renderHeroCarousel(state.banners);
         renderCategoryTabs();
         
-        // Renderiza agora com os dados de views já injetados
+        // Renderiza o catálogo já com state.allProducts (que contém as views)
         await renderCatalog();
         
         updatePremiumLoader(100);
         window.updateNavigationBadges();
 
     } catch (error) {
-        console.error("Erro no initFlow:", error);
-        hideLoader(); 
+        console.error("❌ Erro fatal no initFlow:", error);
+        // Em caso de erro crítico, escondemos o loader para não travar a tela
+        const loader = document.getElementById('premium-loader');
+        if(loader) loader.style.display = 'none';
     }
 }
 // --- 3. CONFIGURAÇÕES VISUAIS DINÂMICAS ---
