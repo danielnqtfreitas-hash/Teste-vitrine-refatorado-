@@ -48,7 +48,6 @@ export function mkProductCard(p) {
     const disc = hasPromo && !outOfStock ? `<span class="absolute top-0 right-0 bg-red-600 text-white text-[10px] font-black px-2 py-1 rounded-bl-lg z-10">-${Math.round(((p.value - p.promoValue) / p.value) * 100)}%</span>` : '';
     const stockBadge = outOfStock ? `<span class="absolute inset-0 bg-white/60 flex items-center justify-center text-red-600 font-black text-xs uppercase z-20">Esgotado</span>` : '';
 
-    // Nota: window.openProductModal, toggleFavorite e quickAdd são globais (definidas no app.js)
     return `<div onclick="${outOfStock ? '' : `window.openProductModal('${p.id}')`}" class="product-card cursor-pointer group flex flex-col h-full relative ${outOfStock ? 'opacity-70 grayscale' : ''}">
         <div class="aspect-square bg-white relative overflow-hidden border-b border-slate-50">
             ${stockBadge}
@@ -63,7 +62,14 @@ export function mkProductCard(p) {
                 <i data-lucide="clock" class="w-3 h-3"></i>
                 <span class="text-[9px] font-black uppercase tracking-tighter countdown-text">Carregando...</span>
             </div>
-            <h4 class="text-sm font-semibold text-slate-700 leading-snug line-clamp-2 mb-2">${p.name}</h4>
+            
+            <h4 class="text-sm font-semibold text-slate-700 leading-snug line-clamp-2 mb-1">${p.name}</h4>
+            
+            <div class="flex items-center gap-1 mb-2 opacity-60">
+                <i data-lucide="eye" class="w-3 h-3"></i>
+                <span class="text-[10px] font-bold tracking-tight">${p.views || 0} visualizações</span>
+            </div>
+
             <div class="mt-auto pt-1">
                 <div class="flex flex-col">
                     <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
