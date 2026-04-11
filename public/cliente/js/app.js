@@ -456,25 +456,6 @@ function initReelObserver() {
     document.querySelectorAll('.reel-item').forEach(item => observer.observe(item));
 }
 
-window.trackView = function(productId) {
-    const key = `viewed_${productId}`;
-    if (sessionStorage.getItem(key)) return; 
-
-    sessionStorage.setItem(key, "true");
-    
-    // ATUALIZA O NÚMERO NA TELA NA HORA
-    const viewSpan = document.getElementById(`view-count-${productId}`);
-    if (viewSpan) {
-        let currentViews = parseInt(viewSpan.innerText) || 0;
-        viewSpan.innerText = currentViews + 1;
-    }
-
-    // ENVIA PARA O FIREBASE
-    if (typeof window.reportarMetrica === 'function') {
-        window.reportarMetrica(productId, 'view');
-    }
-};
-
 // Funções de apoio permanecem as mesmas (shareProduct, closeDiscoveryFeed, etc)
 // --- COMPARTILHAMENTO ---
 window.shareProduct = async function(id, name, img) {
