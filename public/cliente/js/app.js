@@ -335,8 +335,9 @@ document.addEventListener('change', (e) => {
     }
 });
 
-// Importante: Garante que o Firebase está carregado para usar o increment
-// Se não usar módulos, certifique-se de ter o Firebase Firestore disponível
+/* =========================================================================
+   DISCOVERY FEED COMPLETO (REELS STYLE)
+   ========================================================================= */
 
 window.openDiscoveryFeed = function() {
     const feed = document.getElementById('discoveryFeed');
@@ -346,6 +347,7 @@ window.openDiscoveryFeed = function() {
     
     if (!feed || !container) return;
 
+    // Interface
     if (app) app.classList.add('hidden');
     if (navBottom) navBottom.classList.add('hidden');
     document.body.style.overflow = 'hidden';
@@ -354,32 +356,28 @@ window.openDiscoveryFeed = function() {
     feed.style.display = 'flex'; 
 
     if (!state.allProducts || state.allProducts.length === 0) {
-        container.innerHTML = `<div class="text-white p-10">Nenhum produto disponível.</div>`;
+        container.innerHTML = `<div class="text-white p-10 text-center">Nenhum produto disponível.</div>`;
         return;
     }
 
+    // Renderização
     container.innerHTML = state.allProducts.map((p) => {
         const imgUrl = (p.images && p.images.length > 0) ? p.images[0] : '';
         const precoBruto = p.value || p.priceCard || 0;
         const formattedPrice = `R$ ${Number(precoBruto).toFixed(2).replace('.', ',')}`;
         const isFavorite = state.favorites && state.favorites.includes(p.id);
-        
-        // Quantidade de visualizações (se não existir no banco, mostra 0)
         const views = p.views || 0;
 
-        // Chamada para incrementar visualização ao carregar
-        window.trackView(p.id);
-
         return `
-            <div class="reel-item" style="height: 100dvh; scroll-snap-align: start; position: relative; background: #000; overflow: hidden;">
-                <div class="reel-media-cont" style="position: absolute; inset: 0; z-index: 1; background: #111;">
-                    <img src="${imgUrl}" class="zoom-animation"
-                         style="width: 100%; height: 100%; object-fit: cover;">
+            <div class="reel-item" data-id="${p.id}" style="height: 100dvh; scroll-snap-align: start; position: relative; background: #000; overflow: hidden;">
+                <div style="position: absolute; inset: 0; z-index: 1; background: #111;">
+                    <img src="${imgUrl}" class="zoom-img"
+                         style="width: 100%; height: 100%; object-fit: cover; transform: scale(1.1);">
                 </div>
 
-                <div class="reel-overlay" style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 60%); z-index: 2; pointer-events: none;"></div>
+                <div style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 60%); z-index: 2; pointer-events: none;"></div>
                 
-                <div class="reel-actions-sidebar" style="position: absolute; right: 16px; bottom: 180px; z-index: 10; display: flex; flex-direction: column; gap: 20px; align-items: center;">
+                <div style="position: absolute; right: 16px; bottom: 180px; z-index: 10; display: flex; flex-direction: column; gap: 20px; align-items: center;">
                     
                     <div class="flex flex-col items-center">
                         <i data-lucide="eye" class="text-white w-6 h-6 opacity-80"></i>
@@ -388,7 +386,7 @@ window.openDiscoveryFeed = function() {
 
                     <div class="flex flex-col items-center">
                         <button onclick="window.toggleFavorite('${p.id}')" 
-                                class="w-[50px] h-[50px] rounded-full flex items-center justify-center border border-white/20"
+                                class="w-[50px] h-[50px] rounded-full flex items-center justify-center border border-white/20 active:scale-90 transition-transform"
                                 style="background: rgba(255,255,255,0.2); backdrop-filter: blur(10px);">
                             <i data-lucide="heart" class="w-7 h-7 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-white'}"></i>
                         </button>
@@ -397,7 +395,7 @@ window.openDiscoveryFeed = function() {
 
                     <div class="flex flex-col items-center">
                         <button onclick="window.shareProduct('${p.id}', '${p.name}', '${imgUrl}')" 
-                                class="w-[50px] h-[50px] rounded-full flex items-center justify-center border border-white/20"
+                                class="w-[50px] h-[50px] rounded-full flex items-center justify-center border border-white/20 active:scale-90 transition-transform"
                                 style="background: rgba(255,255,255,0.2); backdrop-filter: blur(10px);">
                             <i data-lucide="share" class="w-7 h-7 text-white"></i>
                         </button>
@@ -405,11 +403,12 @@ window.openDiscoveryFeed = function() {
                     </div>
                 </div>
 
-                <div class="reel-text-info" style="position: absolute; left: 16px; bottom: 125px; z-index: 10; max-width: 80%;">
-                    <h2 class="text-xl font-bold text-white shadow-sm">${p.name}</h2>
+                <div style="position: absolute; left: 16px; bottom: 125px; z-index: 10; max-width: 80%;">
+                    <h2 class="text-xl font-bold text-white mb-1">${p.name}</h2>
+                    ${views > 30 ? '<span class="bg-red-600 text-[10px] text-white px-2 py-0.5 rounded-full font-black animate-pulse">🔥 EM ALTA</span>' : ''}
                 </div>
 
-                <div class="reel-product-card" onclick="window.openProductModalFromFeed('${p.id}')" 
+                <div onclick="window.openProductModalFromFeed('${p.id}')" 
                      style="position: absolute; bottom: 30px; left: 16px; right: 16px; background: white; border-radius: 20px; padding: 12px; display: flex; align-items: center; gap: 12px; z-index: 10; box-shadow: 0 15px 35px rgba(0,0,0,0.4);">
                     <img src="${imgUrl}" style="width: 50px; height: 50px; border-radius: 12px; object-fit: cover;">
                     <div style="flex: 1; min-width: 0;">
@@ -424,69 +423,73 @@ window.openDiscoveryFeed = function() {
         `;
     }).join('');
 
-   if (window.lucide) lucide.createIcons();
-
-    // ATIVA O OBSERVADOR DE ROLAGEM
+    if (window.lucide) lucide.createIcons();
     initReelObserver();
 };
 
-// FUNÇÃO MÁGICA PARA REINICIAR O ZOOM
+// --- OBSERVA ROLAGEM, REINICIA ZOOM E TRACKING ---
 function initReelObserver() {
+    const container = document.getElementById('reelsContainer');
     const observerOptions = {
-        root: document.getElementById('reelsContainer'),
-        threshold: 0.5 // Ativa quando 50% do item estiver visível
+        root: container,
+        threshold: 0.6 // Ativa quando 60% do item estiver visível
     };
 
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
-            const img = entry.target.querySelector('.reel-img');
-            if (!img) return;
+            const img = entry.target.querySelector('.zoom-img');
+            const productId = entry.target.dataset.id;
 
             if (entry.isIntersecting) {
-                // Reinicia a animação: remove e adiciona a classe após um micro-delay
-                img.classList.remove('animate-zoom');
-                void img.offsetWidth; // Truque para forçar o navegador a resetar o estado do elemento
-                img.classList.add('animate-zoom');
-            } else {
-                // Remove quando sai da tela para economizar processamento
-                img.classList.remove('animate-zoom');
+                // 1. Reinicia Zoom
+                if (img) {
+                    img.style.animation = 'none';
+                    void img.offsetWidth; // Force Reflow
+                    img.style.animation = 'zoomEffect 10s ease-out forwards';
+                }
+                
+                // 2. Track View (Firebase)
+                window.trackView(productId);
             }
         });
     }, observerOptions);
 
-    // Aplica o observador em cada item do feed
     document.querySelectorAll('.reel-item').forEach(item => observer.observe(item));
-};
+}
 
-// --- FUNÇÃO DE COMPARTILHAR (USA API NATIVA DO CELULAR) ---
+// --- COMPARTILHAMENTO ---
 window.shareProduct = async function(id, name, img) {
     const shareData = {
         title: name,
         text: `Olha esse produto na Vitrine: ${name}`,
-        url: window.location.href + (window.location.href.includes('?') ? '&' : '?') + `prod=${id}`
+        url: `${window.location.origin}${window.location.pathname}?prod=${id}`
     };
 
     try {
         if (navigator.share) {
             await navigator.share(shareData);
         } else {
-            // Fallback caso não suporte (Copia link)
             navigator.clipboard.writeText(shareData.url);
-            alert("Link copiado para a área de transferência!");
+            alert("Link copiado!");
         }
-    } catch (err) {
-        console.log("Erro ao compartilhar", err);
-    }
+    } catch (err) { console.log("Erro ao compartilhar", err); }
 };
 
-// --- FUNÇÃO DE VISUALIZAÇÃO (FIREBASE) ---
+// --- MÉTRICAS (FIREBASE) ---
 window.trackView = function(productId) {
-    // Aqui você deve usar a referência do seu Firestore
-    // Exemplo: const docRef = doc(db, "products", productId);
-    // updateDoc(docRef, { views: increment(1) });
-    console.log("👁️ Visualização registrada para:", productId);
+    const key = `viewed_${productId}`;
+    if (sessionStorage.getItem(key)) return; // Evita contar 2x na mesma sessão
+
+    sessionStorage.setItem(key, "true");
+    
+    // Se o reportarMetrica estiver configurado globalmente:
+    if (typeof window.reportarMetrica === 'function') {
+        window.reportarMetrica(productId, 'view');
+    }
+    console.log("👁️ View registrada:", productId);
 };
-// 2. Função para Fechar o Feed
+
+// --- NAVEGAÇÃO ---
 window.closeDiscoveryFeed = function() {
     const feed = document.getElementById('discoveryFeed');
     const app = document.getElementById('app');
@@ -496,17 +499,13 @@ window.closeDiscoveryFeed = function() {
         feed.classList.add('hidden');
         feed.style.display = 'none';
     }
-    
     if (app) app.classList.remove('hidden');
     if (navBottom) navBottom.classList.remove('hidden');
     document.body.style.overflow = ''; 
 };
 
-// 3. Função para Abrir o Modal do Produto vindo do Feed
 window.openProductModalFromFeed = function(productId) {
-    console.log("🎯 Abrindo produto:", productId);
     window.closeDiscoveryFeed();
-    
     setTimeout(() => {
         if (typeof window.openProductModal === 'function') {
             window.openProductModal(productId);
