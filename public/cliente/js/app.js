@@ -361,31 +361,25 @@ window.openDiscoveryFeed = function() {
         return;
     }
 
-   container.innerHTML = state.allProducts.map((p) => {
-    // --- DEBUG DOS DADOS (Verifica onde estão os valores) ---
-    // Alguns bancos usam 'preco' em vez de 'price' ou 'foto' em vez de 'image'
-    const precoBruto = p.price || p.preco || 0;
-    const imagemUrl = p.image || p.foto || p.imageUrl || '';
+container.innerHTML = state.allProducts.map((p) => {
+    // 1. Extrair a imagem da array 'images' (pega a primeira posição index 0)
+    const imgUrl = (p.images && p.images.length > 0) ? p.images[0] : '';
     
-    // Formatação de Preço Segura
+    // 2. Extrair o preço (usando o campo 'value' que está no seu Firebase)
+    const precoBruto = p.value || p.priceCard || 0;
+    
+    // 3. Formatação
     const safePrice = (typeof precoBruto === 'number') ? precoBruto : parseFloat(precoBruto) || 0;
-    const formattedPrice = safePrice > 0 
-        ? `R$ ${safePrice.toFixed(2).replace('.', ',')}` 
-        : 'Consulte o preço';
+    const formattedPrice = `R$ ${safePrice.toFixed(2).replace('.', ',')}`;
     
     const isFavorite = state.favorites && state.favorites.includes(p.id);
-    
-    // Placeholder caso a imagem realmente não exista no banco
-    const imgDisplay = imagemUrl.trim() !== '' 
-        ? imagemUrl 
-        : 'https://placehold.co/400x800/1a1a1a/ffffff?text=Produto+sem+Foto';
 
     return `
         <div class="reel-item" style="height: 100dvh; scroll-snap-align: start; position: relative; background: #000; overflow: hidden;">
             <div class="reel-media-cont" style="position: absolute; inset: 0; z-index: 1; background: #111;">
-                <img src="${imgDisplay}" 
+                <img src="${imgUrl}" 
                      style="width: 100%; height: 100%; object-fit: cover;" 
-                     onerror="this.src='https://placehold.co/400x800/1a1a1a/ffffff?text=Erro+ao+Carregar'">
+                     onerror="this.src='https://placehold.co/400x800/1a1a1a/ffffff?text=Sem+Imagem'">
             </div>
 
             <div class="reel-overlay" style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 60%); z-index: 2; pointer-events: none;"></div>
@@ -402,16 +396,16 @@ window.openDiscoveryFeed = function() {
             </div>
 
             <div class="reel-text-info" style="position: absolute; left: 16px; bottom: 120px; z-index: 10;">
-                <h2 class="text-xl font-bold text-white">${p.name || p.nome || 'Produto'}</h2>
+                <h2 class="text-xl font-bold text-white">${p.name || 'Produto'}</h2>
             </div>
 
-            <div class="reel-product-card" onclick="window.openProductModalFromFeed('${p.id}')" style="position: absolute; bottom: 25px; left: 16px; right: 16px; background: white; border-radius: 16px; padding: 12px; display: flex; align-items: center; gap: 12px; z-index: 10; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-                <img src="${imgDisplay}" style="width: 50px; height: 50px; border-radius: 8px; object-fit: cover;">
+            <div class="reel-product-card" onclick="window.openProductModalFromFeed('${p.id}')" style="position: absolute; bottom: 25px; left: 16px; right: 16px; background: white; border-radius: 16px; padding: 12px; display: flex; align-items: center; gap: 12px; z-index: 10;">
+                <img src="${imgUrl}" style="width: 50px; height: 50px; border-radius: 8px; object-fit: cover;">
                 <div style="flex: 1; min-width: 0;">
-                    <span class="block text-slate-900 font-bold text-sm truncate">${p.name || p.nome || 'Produto'}</span>
-                    <span class="block text-red-600 font-black text-base">${formattedPrice}</span>
+                    <span class="block text-slate-900 font-bold text-sm truncate">${p.name || 'Produto'}</span>
+                    <span class="block text-primary font-black text-base" style="color: #ef4444;">${formattedPrice}</span>
                 </div>
-                <div class="bg-red-600 p-2.5 rounded-xl text-white">
+                <div class="bg-red-600 p-2.5 rounded-xl text-white" style="background-color: #ef4444;">
                     <i data-lucide="shopping-bag" class="w-5 h-5"></i>
                 </div>
             </div>
