@@ -111,25 +111,47 @@ module.exports = (db, admin) => {
         }
     });
 
-    // --- ROTA DE MÉTRICAS (FAVORITOS E CARRINHO) ---
+        // --- ROTA DE MÉTRICAS (VIEWS, FAVORITOS E CARRINHO) ---
     router.post('/metricas', async (req, res) => {
         try {
             const { lojaId, produtoId, acao } = req.body;
-            const globalRef = db.collection('stores').doc(lojaId).collection('analytics').doc('global');
-            const campoDinamico = `stats.${produtoId}.${acao === 'fav' ? 'favs' : 'adds'}`;
+            if (!lojaId || !produtoId) return res.status(400).json({ error: "Dados incompletos" });
 
-            await globalRef.set({
-                [campoDinamico]: admin.firestore.FieldValue.increment(1),
-                "totalInteracoes": admin.firestore.FieldValue.increment(1),
-                "ultimaInteracao": admin.firestore.FieldValue.serverTimestamp()
-            }, { merge: true });
+            const batch = db.batch();
 
+            // 1. Atualiza o Global (como você já fazia para favs e adds)
+            if (acao === 'fav' || acao === 'cart') {
+                const globalRef = db.collection('stores').doc(lojaId).collection('analytics').doc('global');
+                const campoDinamico = `stats.${produtoId}.${acao === 'fav' ? 'favs' : 'adds'}`;
+                
+                batch.set(globalRef, {
+                    [campoDinamico]: admin.firestore.FieldValue.increment(1),
+                    "totalInteracoes": admin.firestore.FieldValue.increment(1),
+                    "ultimaInteracao": admin.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+            }
+
+            // 2. LOGICA PARA "MAIS VISTOS": Atualiza o documento product_views
+            if (acao === 'view') {
+                const viewsRef = db.collection('stores').doc(lojaId).collection('analytics').doc('product_views');
+                batch.set(viewsRef, {
+                    stats: {
+                        [produtoId]: {
+                            views: admin.firestore.FieldValue.increment(1),
+                            lastUpdate: admin.firestore.FieldValue.serverTimestamp()
+                        }
+                    }
+                }, { merge: true });
+            }
+
+            await batch.commit();
             res.status(200).json({ success: true });
         } catch (error) {
             console.error("❌ ERRO NO FIREBASE (Métricas):", error); 
             res.status(500).json({ error: "Erro interno no servidor" });
         }
     });
+
 
    // --- ROTA DE RANKING REFORMULADA ---
 router.get('/:lojaId/ranking', async (req, res) => {
