@@ -166,16 +166,39 @@ function applyStoreConfig(d) {
 
 window.toggleFavorite = (id) => { 
     const idx = state.favorites.indexOf(id); 
+    let isAdded = false;
+
     if(idx > -1) {
         state.favorites.splice(idx, 1); 
     } else {
         state.favorites.push(id);
+        isAdded = true;
         window.reportarMetrica(id, 'fav'); 
     }
+
     localStorage.setItem(state.FAV_KEY, JSON.stringify(state.favorites));
+
+    // 1. Atualiza o Catálogo principal (se estiver visível ao fundo)
     renderCatalog(); 
     updateFavoritesUI(); 
     window.updateNavigationBadges();
+
+    // 2. ATUALIZAÇÃO PARA O DISCOVERY FEED (REELS)
+    // Procura o botão de coração específico desse produto dentro do feed
+    const reelItem = document.querySelector(`.reel-item[data-id="${id}"]`);
+    if (reelItem) {
+        const heartIcon = reelItem.querySelector('[data-lucide="heart"]');
+        if (heartIcon) {
+            if (isAdded) {
+                heartIcon.classList.add('fill-red-500', 'text-red-500');
+                heartIcon.classList.remove('text-white');
+            } else {
+                heartIcon.classList.remove('fill-red-500', 'text-red-500');
+                heartIcon.classList.add('text-white');
+            }
+            // Força o Lucide a renderizar se necessário, mas as classes acima já resolvem
+        }
+    }
 };
 
 window.addToCart = (product, qty, options) => {
