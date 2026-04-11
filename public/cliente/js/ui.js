@@ -64,6 +64,11 @@ export function mkProductCard(p) {
             </div>
             
             <h4 class="text-sm font-semibold text-slate-700 leading-snug line-clamp-2 mb-1">${p.name}</h4>
+
+<div class="flex items-center gap-1 mb-2">
+    <i data-lucide="eye" class="w-3 h-3 text-slate-400"></i>
+    <span class="text-[10px] text-slate-400 font-bold">${p.views || 0} visualizações</span>
+</div>
             
             <div class="flex items-center gap-1 mb-2 opacity-60">
                 <i data-lucide="eye" class="w-3 h-3"></i>
