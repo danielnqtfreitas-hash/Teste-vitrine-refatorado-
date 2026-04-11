@@ -223,18 +223,12 @@ window.quickAdd = (id) => {
 
 // --- 5. ANALYTICS ---
 
+
 window.reportarMetrica = async function(produtoId, tipoAcao) {
     try {
-        // Validação básica
         if (!state.STORE_ID || !produtoId) return;
 
-        // Se quiser evitar spam de cliques de visualização na mesma sessão:
-        if (tipoAcao === 'view') {
-            const viewKey = `viewed_${produtoId}`;
-            if (sessionStorage.getItem(viewKey)) return;
-            sessionStorage.setItem(viewKey, "1");
-        }
-
+        // Chamada para o SEU backend (ajuste a URL se necessário)
         await fetch('/api/produtos/metricas', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -244,13 +238,11 @@ window.reportarMetrica = async function(produtoId, tipoAcao) {
                 acao: tipoAcao 
             })
         });
-        
         console.log(`📊 Métrica enviada: ${tipoAcao} no produto ${produtoId}`);
     } catch (err) { 
         console.warn("Métrica não enviada:", err); 
     }
 };
-
 
 async function registerVisit() {
     // 1. Só registra se houver um ID de loja válido e não for admin
@@ -529,23 +521,19 @@ window.shareProduct = async function(id, name, img) {
 
 // --- MÉTRICAS (FIREBASE) ---
 window.trackView = function(productId) {
-    // 1. Evita contar várias vezes na mesma visualização técnica
+    // Evita contar 2x na mesma sessão
     const key = `viewed_${productId}`;
     if (sessionStorage.getItem(key)) return; 
     sessionStorage.setItem(key, "true");
     
-    // 2. Localiza o SPAN que criamos no seu loop .map
+    // Atualiza o contador na tela (visual)
     const viewSpan = document.getElementById(`view-count-${productId}`);
-    
     if (viewSpan) {
-        // Pega o número atual que veio do state e soma +1 visualmente
         let currentViews = parseInt(viewSpan.innerText) || 0;
         viewSpan.innerText = currentViews + 1;
-        
-        console.log(`✨ Atualizando contador visual do produto ${productId}`);
     }
 
-    // 3. Chama sua função de salvamento que já existe
+    // CHAMA A MÉTRICA PARA SALVAR NO BANCO:
     if (typeof window.reportarMetrica === 'function') {
         window.reportarMetrica(productId, 'view');
     }
