@@ -65,53 +65,70 @@ document.addEventListener('DOMContentLoaded', async () => {
 // --- 2. FLUXO DE DADOS (API NODE.JS) ---
 async function initFlow() {
     try {
+        // 1. Início do carregamento
         updatePremiumLoader(10); 
 
+        // Busca dados da sua API Node.js
         const response = await fetch(`/api/produtos/${state.STORE_ID}`);
         if (!response.ok) throw new Error("Loja não encontrada no servidor");
         
         const data = await response.json(); 
         updatePremiumLoader(50); 
 
+        // Verifica status da assinatura
         if (data.config.subscriptionStatus === 'suspended') { 
             hideLoader(); 
-            // ... (HTML de suspensão)
+            document.body.innerHTML = `
+                <div class="flex flex-col h-screen items-center justify-center p-6 text-center bg-white">
+                    <div class="bg-red-50 p-4 rounded-full mb-4"><i data-lucide="shield-off" class="text-red-500 w-8 h-8"></i></div>
+                    <h1 class="text-slate-800 font-bold text-xl">Loja Suspensa</h1>
+                    <p class="text-slate-500 mt-2">Esta vitrine está temporariamente offline.</p>
+                </div>
+            `;
+            if (window.lucide) lucide.createIcons();
             return; 
         }
 
+        // Configurações Globais
         state.storeConfigGlobal = data.config;
 
-        // 1. BUSCA AS VIEWS NO FIREBASE
+        // --- BLOCO DE SINCRONIZAÇÃO DE VIEWS (FIREBASE) ---
         try {
+            // Busca o documento único que contém o mapa de visualizações
             const analyticsRef = doc(db, "stores", state.STORE_ID, "analytics", "product_views");
             const analyticsSnap = await getDoc(analyticsRef);
             const viewsData = analyticsSnap.exists() ? analyticsSnap.data() : {};
 
-            // 2. CRUZA OS DADOS (PRODUTOS + VIEWS)
+            // Cruza os produtos da API com as views do Firebase
             state.allProducts = data.produtos.map(p => ({
                 ...p,
+                // Procura o ID do produto dentro do mapa de views. Se não achar, assume 0.
                 views: (viewsData[p.id] && viewsData[p.id].views) ? viewsData[p.id].views : 0
             }));
             
-            console.log("✅ Views sincronizadas no state.");
+            console.log("✅ Dados de visualizações sincronizados com sucesso.");
         } catch (e) {
-            console.warn("Erro ao buscar views, usando dados padrão:", e);
+            console.warn("Erro ao buscar analytics, usando apenas dados da API:", e);
             state.allProducts = data.produtos; 
         }
+        // --------------------------------------------------
 
-        // 3. SEGUE O FLUXO (Sem a linha repetida de state.allProducts)
+        // Configurações restantes do estado
         checkStoreStatus(state.storeConfigGlobal);
         state.banners = data.banners || [];
         state.categories = Array.from(new Set(data.produtos.map(p => p.category).filter(Boolean))).sort();
 
+        // UI e Branding
         applyStoreConfig(data.config);
         renderHeroCarousel(state.banners);
         renderCategoryTabs();
         
+        // Renderiza o catálogo principal
         await renderCatalog();
         
         updatePremiumLoader(80); 
         
+        // Inicializa componentes de suporte
         populateFilterOptions();
         updateFavoritesUI();
         updateCartUI();
@@ -119,9 +136,10 @@ async function initFlow() {
         registerVisit(); 
         window.updateNavigationBadges();
 
+        // Finaliza o Loader com delay de branding
         setTimeout(() => {
             updatePremiumLoader(100);
-            console.log(`🚀 Vitrine [${state.STORE_ID}] carregada.`);
+            console.log(`🚀 Vitrine [${state.STORE_ID}] carregada com sucesso.`);
         }, 3000);
 
     } catch (error) {
@@ -477,16 +495,26 @@ window.shareProduct = async function(id, name, img) {
 
 // --- MÉTRICAS (FIREBASE) ---
 window.trackView = function(productId) {
+    // 1. Evita contar várias vezes na mesma visualização técnica
     const key = `viewed_${productId}`;
-    if (sessionStorage.getItem(key)) return; // Evita contar 2x na mesma sessão
-
+    if (sessionStorage.getItem(key)) return; 
     sessionStorage.setItem(key, "true");
     
-    // Se o reportarMetrica estiver configurado globalmente:
+    // 2. Localiza o SPAN que criamos no seu loop .map
+    const viewSpan = document.getElementById(`view-count-${productId}`);
+    
+    if (viewSpan) {
+        // Pega o número atual que veio do state e soma +1 visualmente
+        let currentViews = parseInt(viewSpan.innerText) || 0;
+        viewSpan.innerText = currentViews + 1;
+        
+        console.log(`✨ Atualizando contador visual do produto ${productId}`);
+    }
+
+    // 3. Chama sua função de salvamento que já existe
     if (typeof window.reportarMetrica === 'function') {
         window.reportarMetrica(productId, 'view');
     }
-    console.log("👁️ View registrada:", productId);
 };
 
 // --- NAVEGAÇÃO ---
