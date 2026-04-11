@@ -74,28 +74,27 @@ async function initFlow() {
 
         state.storeConfigGlobal = data.config;
 
-        // --- BLOCO DE SINCRONIZAÇÃO: BAIXA E INJETA AS VIEWS ---
-      try {
+        // --- BLOCO DE SINCRONIZAÇÃO DE VISUALIZAÇÕES (FIREBASE) ---
+try {
     const analyticsRef = doc(db, "stores", state.STORE_ID, "analytics", "product_views");
+    // getDocFromServer garante que pegamos o dado real do banco, não do cache
     const analyticsSnap = await getDocFromServer(analyticsRef); 
-    
-    // O Firebase retorna um objeto onde cada chave é um ID de produto (ex: prod_1767195688980)
-    const viewsData = analyticsSnap.exists() ? analyticsSnap.data() : {};
+    const viewsMap = analyticsSnap.exists() ? analyticsSnap.data() : {};
 
     state.allProducts = data.produtos.map(p => {
-        // Busca o produto dentro do mapa usando o ID dele
-        const stats = viewsData[p.id]; 
+        // Acessa o objeto do produto dentro do mapa (ex: viewsMap["prod_123"])
+        const stats = viewsMap[p.id]; 
         
         return {
             ...p,
-            // Se stats existe, pega .views, senão 0
+            // Pega o campo 'views' de dentro do mapa. Se não existir, põe 0.
             views: (stats && typeof stats.views === 'number') ? stats.views : 0
         };
     });
     
-    console.log("✅ Views sincronizadas:", viewsData);
+    console.log("✅ Visualizações sincronizadas com sucesso.");
 } catch (e) {
-    console.warn("Erro ao ler analytics:", e);
+    console.warn("Erro ao sincronizar analytics:", e);
     state.allProducts = data.produtos; 
 }
 
