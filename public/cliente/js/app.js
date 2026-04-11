@@ -340,6 +340,7 @@ document.addEventListener('change', (e) => {
    ========================================================================= */
 
 window.openDiscoveryFeed = function() {
+    console.log("Produtos carregados:", state.allProducts);
     const feed = document.getElementById('discoveryFeed');
     const app = document.getElementById('app'); 
     const navBottom = document.getElementById('mainNavBottom');
