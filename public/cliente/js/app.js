@@ -476,27 +476,39 @@ window.openDiscoveryFeed = function() {
     setTimeout(initReelObserver, 100);
 };
 
+
 function initReelObserver() {
     const container = document.getElementById('reelsContainer');
+    if (!container) return;
+
+    const observerOptions = {
+        root: container, // O container que tem o scroll
+        threshold: 0.6   // 60% do item precisa estar visível para contar
+    };
+
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
-            const img = entry.target.querySelector('.zoom-img');
-            const productId = entry.target.dataset.id;
-
             if (entry.isIntersecting) {
-                // 1. REINICIA E DISPARA O ZOOM
+                const productId = entry.target.dataset.id;
+                const img = entry.target.querySelector('.zoom-img');
+
+                // 1. Dispara o efeito visual de zoom
                 if (img) {
                     img.style.animation = 'none';
-                    void img.offsetWidth; // Força o browser a resetar o estado
+                    void img.offsetWidth; 
                     img.style.animation = 'zoomEffect 10s ease-out forwards';
                 }
                 
-                // 2. REGISTRA A VIEW (Local e Firebase)
-                window.trackView(productId);
+                // 2. REGISTRA A VIEW (Local e Backend)
+                // Usamos o window para garantir que acesse a função global
+                if (typeof window.trackView === 'function') {
+                    window.trackView(productId);
+                }
             }
         });
-    }, { root: container, threshold: 0.6 });
+    }, observerOptions);
 
+    // Seleciona todos os itens que acabaram de ser renderizados
     document.querySelectorAll('.reel-item').forEach(item => observer.observe(item));
 }
 
