@@ -361,72 +361,63 @@ window.openDiscoveryFeed = function() {
         return;
     }
 
-    container.innerHTML = state.allProducts.map((p) => {
-        const safePrice = (p.price && typeof p.price === 'number') ? p.price : 0;
-        const formattedPrice = `R$ ${safePrice.toFixed(2).replace('.',',')}`;
-        const isFavorite = state.favorites && state.favorites.includes(p.id);
-        
-        // Fallback elegante para imagem vazia ou erro
-        const imgUrl = p.image && p.image.trim() !== '' ? p.image : 'https://placehold.co/400x800/1a1a1a/666666?text=Sem+Foto';
+   container.innerHTML = state.allProducts.map((p) => {
+    // --- DEBUG DOS DADOS (Verifica onde estão os valores) ---
+    // Alguns bancos usam 'preco' em vez de 'price' ou 'foto' em vez de 'image'
+    const precoBruto = p.price || p.preco || 0;
+    const imagemUrl = p.image || p.foto || p.imageUrl || '';
+    
+    // Formatação de Preço Segura
+    const safePrice = (typeof precoBruto === 'number') ? precoBruto : parseFloat(precoBruto) || 0;
+    const formattedPrice = safePrice > 0 
+        ? `R$ ${safePrice.toFixed(2).replace('.', ',')}` 
+        : 'Consulte o preço';
+    
+    const isFavorite = state.favorites && state.favorites.includes(p.id);
+    
+    // Placeholder caso a imagem realmente não exista no banco
+    const imgDisplay = imagemUrl.trim() !== '' 
+        ? imagemUrl 
+        : 'https://placehold.co/400x800/1a1a1a/ffffff?text=Produto+sem+Foto';
 
-        return `
-            <div class="reel-item" style="height: 100dvh; scroll-snap-align: start; position: relative; background: #000; overflow: hidden;">
-                <div class="reel-media-cont" style="position: absolute; inset: 0; z-index: 1; background: #111;">
-                    <img src="${imgUrl}" 
-                         loading="lazy"
-                         style="width: 100%; height: 100%; object-fit: cover; transition: opacity 0.3s;" 
-                         onerror="this.onerror=null; this.src='https://placehold.co/400x800/1a1a1a/ffffff?text=Imagem+Indisponivel';">
-                </div>
+    return `
+        <div class="reel-item" style="height: 100dvh; scroll-snap-align: start; position: relative; background: #000; overflow: hidden;">
+            <div class="reel-media-cont" style="position: absolute; inset: 0; z-index: 1; background: #111;">
+                <img src="${imgDisplay}" 
+                     style="width: 100%; height: 100%; object-fit: cover;" 
+                     onerror="this.src='https://placehold.co/400x800/1a1a1a/ffffff?text=Erro+ao+Carregar'">
+            </div>
 
-                <div class="reel-overlay" style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.2) 50%, transparent 100%); z-index: 2; pointer-events: none;"></div>
-                
-                <div class="reel-actions-sidebar" style="position: absolute; right: 16px; bottom: 180px; z-index: 10; display: flex; flex-direction: column; gap: 20px;">
-                    <div class="action-btn-cont" style="display: flex; flex-direction: column; align-items: center;">
-                        <button onclick="window.toggleFavorite('${p.id}')" 
-                                class="w-[50px] h-[50px] rounded-full flex items-center justify-center border border-white/20 transition-all active:scale-90"
-                                style="background: rgba(255,255,255,0.15); backdrop-filter: blur(10px);">
-                            <i data-lucide="heart" class="w-7 h-7 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-white'}"></i>
-                        </button>
-                        <span class="text-white text-[10px] font-bold mt-1 shadow-sm">Gostar</span>
-                    </div>
-
-                    <div class="action-btn-cont" style="display: flex; flex-direction: column; align-items: center;">
-                        <button onclick="window.shareProduct('${p.id}')" 
-                                class="w-[50px] h-[50px] rounded-full flex items-center justify-center border border-white/20 transition-all active:scale-90"
-                                style="background: rgba(255,255,255,0.15); backdrop-filter: blur(10px);">
-                            <i data-lucide="share" class="w-7 h-7 text-white"></i>
-                        </button>
-                        <span class="text-white text-[10px] font-bold mt-1 shadow-sm">Enviar</span>
-                    </div>
-                </div>
-
-                <div class="reel-text-info" style="position: absolute; left: 16px; bottom: 125px; z-index: 10; max-width: 80%;">
-                    <h2 class="text-xl font-bold text-white mb-1" style="text-shadow: 0 2px 4px rgba(0,0,0,0.5);">${p.name || 'Produto sem nome'}</h2>
-                </div>
-
-                <div class="reel-product-card transition-all active:scale-95" 
-                     onclick="window.openProductModalFromFeed('${p.id}')" 
-                     style="position: absolute; bottom: 30px; left: 16px; right: 16px; background: white; border-radius: 20px; padding: 12px; display: flex; align-items: center; gap: 12px; z-index: 10; box-shadow: 0 15px 35px rgba(0,0,0,0.4); cursor: pointer;">
-                    
-                    <img src="${imgUrl}" style="width: 56px; height: 56px; border-radius: 12px; object-fit: cover; background: #f0f0f0;">
-                    
-                    <div style="flex: 1; min-width: 0;">
-                        <span class="block text-slate-900 font-bold text-sm truncate">${p.name || 'Produto'}</span>
-                        <span class="block text-primary font-black text-lg" style="color: var(--color-primary);">${formattedPrice}</span>
-                    </div>
-
-                    <div class="bg-primary flex items-center justify-center w-12 h-12 rounded-2xl text-white shadow-inner" style="background-color: var(--color-primary);">
-                        <i data-lucide="shopping-cart" class="w-6 h-6"></i>
-                    </div>
+            <div class="reel-overlay" style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 60%); z-index: 2; pointer-events: none;"></div>
+            
+            <div class="reel-actions-sidebar" style="position: absolute; right: 16px; bottom: 180px; z-index: 10;">
+                <div style="display: flex; flex-direction: column; gap: 20px; align-items: center;">
+                    <button onclick="window.toggleFavorite('${p.id}')" style="width: 50px; height: 50px; border-radius: 50%; background: rgba(255,255,255,0.2); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.3);">
+                        <i data-lucide="heart" class="w-7 h-7 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-white'}"></i>
+                    </button>
+                    <button onclick="window.shareProduct('${p.id}')" style="width: 50px; height: 50px; border-radius: 50%; background: rgba(255,255,255,0.2); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.3);">
+                        <i data-lucide="share" class="w-7 h-7 text-white"></i>
+                    </button>
                 </div>
             </div>
-        `;
-    }).join('');
 
-    setTimeout(() => {
-        if (window.lucide) lucide.createIcons();
-    }, 100);
-};
+            <div class="reel-text-info" style="position: absolute; left: 16px; bottom: 120px; z-index: 10;">
+                <h2 class="text-xl font-bold text-white">${p.name || p.nome || 'Produto'}</h2>
+            </div>
+
+            <div class="reel-product-card" onclick="window.openProductModalFromFeed('${p.id}')" style="position: absolute; bottom: 25px; left: 16px; right: 16px; background: white; border-radius: 16px; padding: 12px; display: flex; align-items: center; gap: 12px; z-index: 10; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                <img src="${imgDisplay}" style="width: 50px; height: 50px; border-radius: 8px; object-fit: cover;">
+                <div style="flex: 1; min-width: 0;">
+                    <span class="block text-slate-900 font-bold text-sm truncate">${p.name || p.nome || 'Produto'}</span>
+                    <span class="block text-red-600 font-black text-base">${formattedPrice}</span>
+                </div>
+                <div class="bg-red-600 p-2.5 rounded-xl text-white">
+                    <i data-lucide="shopping-bag" class="w-5 h-5"></i>
+                </div>
+            </div>
+        </div>
+    `;
+}).join('');
 
 // 1. Torne a função global para que o 'onclick' do HTML a encontre
 window.openProductModalFromFeed = function(productId) {
