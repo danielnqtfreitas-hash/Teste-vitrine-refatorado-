@@ -74,31 +74,31 @@ async function initFlow() {
 
         state.storeConfigGlobal = data.config;
 
-        // --- BLOCO DE SINCRONIZAÇÃO DE VISUALIZAÇÕES CORRIGIDO ---
-        try {
-            const analyticsRef = doc(db, "stores", state.STORE_ID, "analytics", "product_views");
-            const analyticsSnap = await getDocFromServer(analyticsRef); 
-            const viewsData = analyticsSnap.exists() ? analyticsSnap.data() : {};
+// --- BLOCO DE SINCRONIZAÇÃO DE VISUALIZAÇÕES (BLINDADO) ---
+try {
+    const analyticsRef = doc(db, "stores", state.STORE_ID, "analytics", "product_views");
+    const analyticsSnap = await getDocFromServer(analyticsRef).catch(() => null); 
+    
+    // Se o documento não existir, usamos um objeto vazio
+    const viewsData = (analyticsSnap && analyticsSnap.exists()) ? analyticsSnap.data() : {};
+    const statsMap = viewsData.stats || {};
 
-            // IMPORTANTE: Seus dados estão dentro de viewsData.stats
-            const statsMap = viewsData.stats || {};
-
-            state.allProducts = data.produtos.map(p => {
-                // Agora acessamos statsMap[id] que contém { views, name }
-                const productStats = statsMap[p.id]; 
-                
-                return {
-                    ...p,
-                    // Se encontrar o produto no mapa de stats, pega a view, senão 0
-                    views: (productStats && typeof productStats.views === 'number') ? productStats.views : 0
-                };
-            });
-            
-            console.log("✅ Visualizações mapeadas de .stats:", statsMap);
-        } catch (e) {
-            console.warn("⚠️ Erro ao sincronizar analytics:", e);
-            state.allProducts = data.produtos; 
-        }
+    state.allProducts = data.produtos.map(p => {
+        const productStats = statsMap[p.id]; 
+        // Garantimos que views seja sempre um número, mesmo que o produto não esteja no analytics
+        const vCount = (productStats && typeof productStats.views === 'number') ? productStats.views : 0;
+        
+        return {
+            ...p,
+            views: vCount
+        };
+    });
+    
+    console.log("✅ Visualizações sincronizadas");
+} catch (e) {
+    console.warn("⚠️ Usando produtos sem views devido a erro:", e);
+    state.allProducts = data.produtos.map(p => ({ ...p, views: 0 })); 
+}
         
         updatePremiumLoader(60);
 
@@ -118,6 +118,7 @@ async function initFlow() {
         updatePremiumLoader(100);
         window.updateNavigationBadges();
         registerVisit(); 
+        checkDeepLink();
 
     } catch (error) {
         console.error("❌ Erro fatal no initFlow:", error);
