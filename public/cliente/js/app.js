@@ -117,6 +117,7 @@ async function initFlow() {
         
         updatePremiumLoader(100);
         window.updateNavigationBadges();
+        registerVisit(); 
 
     } catch (error) {
         console.error("❌ Erro fatal no initFlow:", error);
@@ -223,24 +224,57 @@ window.quickAdd = (id) => {
 
 window.reportarMetrica = async function(produtoId, tipoAcao) {
     try {
+        // Validação básica
         if (!state.STORE_ID || !produtoId) return;
-        fetch('/api/produtos/metricas', {
+
+        // Se quiser evitar spam de cliques de visualização na mesma sessão:
+        if (tipoAcao === 'view') {
+            const viewKey = `viewed_${produtoId}`;
+            if (sessionStorage.getItem(viewKey)) return;
+            sessionStorage.setItem(viewKey, "1");
+        }
+
+        await fetch('/api/produtos/metricas', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ lojaId: state.STORE_ID, produtoId: produtoId, acao: tipoAcao })
+            body: JSON.stringify({ 
+                lojaId: state.STORE_ID, 
+                produtoId: produtoId, 
+                acao: tipoAcao 
+            })
         });
-    } catch (err) { console.warn("Métrica não enviada."); }
+        
+        console.log(`📊 Métrica enviada: ${tipoAcao} no produto ${produtoId}`);
+    } catch (err) { 
+        console.warn("Métrica não enviada:", err); 
+    }
 };
 
+
 async function registerVisit() {
-    if (!state.STORE_ID || ['admin', 'index'].includes(state.STORE_ID)) return;
+    // 1. Só registra se houver um ID de loja válido e não for admin
+    if (!state.STORE_ID || ['admin', 'index', 'undefined', ''].includes(state.STORE_ID)) return;
+
+    // 2. Evita duplicar visita na mesma aba/sessão
     const sessionKey = `vst_${state.STORE_ID}`;
     if (sessionStorage.getItem(sessionKey)) return;
+
     try {
-        const response = await fetch(`/api/produtos/${state.STORE_ID}/visit`, { method: 'POST' });
-        if (response.ok) sessionStorage.setItem(sessionKey, "1");
-    } catch (err) { console.warn("Log de visita offline."); }
+        // Chamada para o seu backend
+        const response = await fetch(`/api/produtos/${state.STORE_ID}/visit`, { 
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (response.ok) {
+            sessionStorage.setItem(sessionKey, "1");
+            console.log("🚀 Visita registrada com sucesso!");
+        }
+    } catch (err) { 
+        console.warn("⚠️ Não foi possível registrar a visita (offline ou erro de rede)."); 
+    }
 }
+
 
 // --- 6. HANDLERS DE UI ---
 
