@@ -767,3 +767,19 @@ header {
     scroll-snap-type: y mandatory;
     scroll-behavior: smooth;
 }
+/* Definição da animação */
+@keyframes reverseZoom {
+    0% { transform: scale(1.2); }
+    100% { transform: scale(1.0); }
+}
+
+/* Esta classe será adicionada via JS quando o item aparecer */
+.animate-zoom {
+    animation: reverseZoom 10s ease-out forwards !important;
+}
+
+/* Garante que a imagem comece no estado inicial antes da animação */
+.reel-item img {
+    transform: scale(1.2);
+    transition: transform 0.3s ease;
+}
