@@ -65,91 +65,55 @@ document.addEventListener('DOMContentLoaded', async () => {
 // --- 2. FLUXO DE DADOS (API NODE.JS + FIREBASE SYNC) ---
 async function initFlow() {
     try {
-        // 1. Início imediato (Progresso visual)
         updatePremiumLoader(10); 
 
-        // Busca o catálogo principal na sua API Node.js
+        // 1. Busca Catálogo via API
         const response = await fetch(`/api/produtos/${state.STORE_ID}`);
-        if (!response.ok) throw new Error("Loja não encontrada no servidor");
-        
+        if (!response.ok) throw new Error("Erro ao carregar catálogo");
         const data = await response.json(); 
         updatePremiumLoader(50); 
 
-        // Verificação de status da assinatura
         if (data.config.subscriptionStatus === 'suspended') { 
             hideLoader(); 
-            document.body.innerHTML = `
-                <div class="flex flex-col h-screen items-center justify-center p-6 text-center bg-white">
-                    <div class="bg-red-50 p-4 rounded-full mb-4"><i data-lucide="shield-off" class="text-red-500 w-8 h-8"></i></div>
-                    <h1 class="text-slate-800 font-bold text-xl">Loja Suspensa</h1>
-                    <p class="text-slate-500 mt-2">Esta vitrine está temporariamente offline.</p>
-                </div>
-            `;
-            if (window.lucide) lucide.createIcons();
+            document.body.innerHTML = `<h1 class="p-10 text-center">Loja Suspensa</h1>`;
             return; 
         }
 
-        // Configura o estado global com as definições da loja
         state.storeConfigGlobal = data.config;
 
-        // --- BLOCO DE SINCRONIZAÇÃO DE VISUALIZAÇÕES (FIREBASE) ---
+        // 2. SINCRONIZAÇÃO DE VIEWS (Leitura do Firebase)
         try {
-            // Referência ao documento exato: /stores/dandan/analytics/product_views
+            // Documento: stores/dandan/analytics/product_views
             const analyticsRef = doc(db, "stores", state.STORE_ID, "analytics", "product_views");
-            const analyticsSnap = await getDoc(analyticsRef); // Certifica-te que getDoc está importado
+            const analyticsSnap = await getDoc(analyticsRef);
             const viewsMap = analyticsSnap.exists() ? analyticsSnap.data() : {};
 
-            // Injeta as views reais em cada produto antes de salvar no state
-            state.allProducts = data.produtos.map(p => {
-                const stats = viewsMap[p.id]; 
-                return {
-                    ...p,
-                    // Se o ID do produto existir no mapa, pega o valor 'views', senão assume 0
-                    views: (stats && stats.views) ? stats.views : 0
-                };
-            });
-            
-            console.log("✅ Analytics sincronizado com sucesso.");
+            state.allProducts = data.produtos.map(p => ({
+                ...p,
+                views: (viewsMap[p.id] && viewsMap[p.id].views) ? viewsMap[p.id].views : 0
+            }));
+            console.log("✅ Views carregadas.");
         } catch (e) {
-            console.warn("Erro ao sincronizar analytics, carregando apenas produtos:", e);
-            // Fallback: se o analytics falhar, usa os produtos da API sem as views
+            console.warn("Erro ao ler views:", e);
             state.allProducts = data.produtos; 
         }
-        // -----------------------------------------------------------
 
-        // Processamento de categorias e banners
+        // 3. RENDERIZAÇÃO E UI
         checkStoreStatus(state.storeConfigGlobal);
         state.banners = data.banners || [];
         state.categories = Array.from(new Set(data.produtos.map(p => p.category).filter(Boolean))).sort();
-
-        // Aplica a identidade visual (Cores, Logos)
         applyStoreConfig(data.config);
-        
-        // Renderiza componentes da Interface
         renderHeroCarousel(state.banners);
         renderCategoryTabs();
-        
-        // Renderiza o catálogo principal (Home)
         await renderCatalog();
         
         updatePremiumLoader(80); 
-        
-        // Inicializa utilitários e badges de navegação
-        populateFilterOptions();
-        updateFavoritesUI();
-        updateCartUI();
-        checkDeepLink(); 
-        registerVisit(); 
         window.updateNavigationBadges();
 
-        // Finaliza o loader com delay para fixação da marca (branding)
-        setTimeout(() => {
-            updatePremiumLoader(100);
-            console.log(`🚀 Vitrine [${state.STORE_ID}] carregada e sincronizada.`);
-        }, 3000);
+        setTimeout(() => updatePremiumLoader(100), 3000);
 
     } catch (error) {
-        console.error("Erro crítico no carregamento do initFlow:", error);
+        console.error("Erro crítico no initFlow:", error);
         hideLoader(); 
     }
 }
