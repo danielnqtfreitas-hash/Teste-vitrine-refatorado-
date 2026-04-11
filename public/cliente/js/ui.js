@@ -44,7 +44,7 @@ export function mkProductCard(p) {
     const isFav = state.favorites.includes(p.id);
     const outOfStock = (parseInt(p.stock) || 0) <= 0;
     
-    // Badges
+    // Badges de desconto e estoque
     const disc = hasPromo && !outOfStock ? `<span class="absolute top-0 right-0 bg-red-600 text-white text-[10px] font-black px-2 py-1 rounded-bl-lg z-10">-${Math.round(((p.value - p.promoValue) / p.value) * 100)}%</span>` : '';
     const stockBadge = outOfStock ? `<span class="absolute inset-0 bg-white/60 flex items-center justify-center text-red-600 font-black text-xs uppercase z-20">Esgotado</span>` : '';
 
@@ -57,6 +57,7 @@ export function mkProductCard(p) {
                 <i data-lucide="heart" class="w-4 h-4 ${isFav ? 'heart-active' : 'text-slate-400'}"></i>
             </button>
         </div>
+        
         <div class="p-3 md:p-4 flex flex-col flex-grow bg-white">
             <div class="product-timer hidden mb-2 py-1 px-2 rounded-lg flex items-center gap-1.5 timer-accent animate-pulse" data-pid="${p.id}">
                 <i data-lucide="clock" class="w-3 h-3"></i>
@@ -65,16 +66,11 @@ export function mkProductCard(p) {
             
             <h4 class="text-sm font-semibold text-slate-700 leading-snug line-clamp-2 mb-1">${p.name}</h4>
 
-<div class="flex items-center gap-1 mb-2">
-    <i data-lucide="eye" class="w-3 h-3 text-slate-400"></i>
-    <span class="text-[10px] text-slate-400 font-bold">${p.views || 0} visualizações</span>
-</div>
-            
             <div class="flex items-center gap-1 mb-2 opacity-60">
-                <i data-lucide="eye" class="w-3 h-3"></i>
-                <span class="text-[10px] font-bold tracking-tight">${p.views || 0} visualizações</span>
+                <i data-lucide="eye" class="w-3 h-3 text-slate-400"></i>
+                <span class="text-[10px] text-slate-400 font-bold">${p.views || 0} visualizações</span>
             </div>
-
+            
             <div class="mt-auto pt-1">
                 <div class="flex flex-col">
                     <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
