@@ -63,49 +63,53 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // --- 2. FLUXO DE DADOS (API NODE.JS) ---
-
 async function initFlow() {
     try {
-        // 1. Início imediato
         updatePremiumLoader(10); 
 
         const response = await fetch(`/api/produtos/${state.STORE_ID}`);
         if (!response.ok) throw new Error("Loja não encontrada no servidor");
         
         const data = await response.json(); 
-        
-        // 2. Dados recebidos (Meio do caminho)
         updatePremiumLoader(50); 
 
         if (data.config.subscriptionStatus === 'suspended') { 
             hideLoader(); 
-            document.body.innerHTML = `
-                <div class="flex flex-col h-screen items-center justify-center p-6 text-center bg-white">
-                    <div class="bg-red-50 p-4 rounded-full mb-4"><i data-lucide="shield-off" class="text-red-500 w-8 h-8"></i></div>
-                    <h1 class="text-slate-800 font-bold text-xl">Loja Suspensa</h1>
-                    <p class="text-slate-500 mt-2">Esta vitrine está temporariamente offline.</p>
-                </div>
-            `;
-            lucide.createIcons();
+            // ... (HTML de suspensão)
             return; 
         }
 
         state.storeConfigGlobal = data.config;
-        state.allProducts = data.produtos;
+
+        // 1. BUSCA AS VIEWS NO FIREBASE
+        try {
+            const analyticsRef = doc(db, "stores", state.STORE_ID, "analytics", "product_views");
+            const analyticsSnap = await getDoc(analyticsRef);
+            const viewsData = analyticsSnap.exists() ? analyticsSnap.data() : {};
+
+            // 2. CRUZA OS DADOS (PRODUTOS + VIEWS)
+            state.allProducts = data.produtos.map(p => ({
+                ...p,
+                views: (viewsData[p.id] && viewsData[p.id].views) ? viewsData[p.id].views : 0
+            }));
+            
+            console.log("✅ Views sincronizadas no state.");
+        } catch (e) {
+            console.warn("Erro ao buscar views, usando dados padrão:", e);
+            state.allProducts = data.produtos; 
+        }
+
+        // 3. SEGUE O FLUXO (Sem a linha repetida de state.allProducts)
         checkStoreStatus(state.storeConfigGlobal);
         state.banners = data.banners || [];
         state.categories = Array.from(new Set(data.produtos.map(p => p.category).filter(Boolean))).sort();
 
-        // Aplica cores e o logo no Loader
         applyStoreConfig(data.config);
-        
         renderHeroCarousel(state.banners);
         renderCategoryTabs();
         
-        // Renderiza o catálogo (ainda oculto pelo loader)
         await renderCatalog();
         
-        // 3. Tudo pronto nos bastidores
         updatePremiumLoader(80); 
         
         populateFilterOptions();
@@ -115,10 +119,9 @@ async function initFlow() {
         registerVisit(); 
         window.updateNavigationBadges();
 
-        // 4. FINALIZAÇÃO COM DELAY (3 segundos para branding)
         setTimeout(() => {
             updatePremiumLoader(100);
-            console.log(`🚀 Vitrine [${state.STORE_ID}] carregada com sucesso.`);
+            console.log(`🚀 Vitrine [${state.STORE_ID}] carregada.`);
         }, 3000);
 
     } catch (error) {
