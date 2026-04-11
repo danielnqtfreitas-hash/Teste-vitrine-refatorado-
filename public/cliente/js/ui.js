@@ -238,28 +238,19 @@ async function renderMagicCategories(products, config) {
         }
     }
 
-    // Mais Vistos
-    if (config.magicCategories?.showTop) {
-        try {
-            const analyticsRef = doc(db, `stores/${state.STORE_ID}/analytics`, "product_views");
-            const snap = await getDocFromServer(analyticsRef).catch(() => null);
-            
-            if (snap && snap.exists()) {
-                const stats = snap.data().stats || {};
-                const top = [...products]
-                    .filter(p => stats[p.id] && stats[p.id].views > 0)
-                    .sort((a, b) => (stats[b.id]?.views || 0) - (stats[a.id]?.views || 0))
-                    .slice(0, 10);
-                
-                if (top.length > 0) {
-                    magicContainer.innerHTML += generateMagicSectionHTML("Mais Vistos 🔥", top, "bg-orange-500");
-                }
-            }
-        } catch (e) { 
-            console.warn("Analytics indisponível."); 
-        }
+    // Mais Vistos (Versão otimizada usando o state global)
+if (config.magicCategories?.showTop) {
+    // Filtramos e ordenamos usando os dados que já estão na memória (p.views)
+    const top = [...products]
+        .filter(p => (p.views || 0) > 0) // Pega só quem tem visualização
+        .sort((a, b) => (b.views || 0) - (a.views || 0)) // Ordena do maior para o menor
+        .slice(0, 10); // Pega os 10 primeiros
+    
+    if (top.length > 0) {
+        magicContainer.innerHTML += generateMagicSectionHTML("Mais Vistos 🔥", top, "bg-orange-500");
     }
 }
+
 
 function generateMagicSectionHTML(title, products, colorClass) {
     if (products.length === 0) return '';
@@ -285,6 +276,10 @@ export function openProductModal(id) {
     els.modalTimer()?.classList.add('hidden');
     const p = state.allProducts.find(x => x.id === id); 
     if(!p) return; 
+
+    if (typeof window.reportarMetrica === 'function') {
+        window.reportarMetrica(id, 'view');
+    }
 
     // Atualiza URL (Deep Link)
     const newURL = window.location.pathname + `?id=${p.id}`;
