@@ -747,3 +747,23 @@ header {
     z-index: 20 !important;
 }
 
+@keyframes reverseZoom {
+    0% {
+        transform: scale(1.2); /* Começa um pouco maior */
+    }
+    100% {
+        transform: scale(1.0); /* Termina no tamanho normal */
+    }
+}
+
+.zoom-animation {
+    animation: reverseZoom 10s ease-out forwards; /* 10 segundos de movimento lento */
+}
+
+/* Garante que o container de vídeos/fotos tenha scroll suave */
+#reelsContainer {
+    height: 100dvh;
+    overflow-y: scroll;
+    scroll-snap-type: y mandatory;
+    scroll-behavior: smooth;
+}
