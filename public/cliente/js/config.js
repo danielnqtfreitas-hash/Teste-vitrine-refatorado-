@@ -35,12 +35,6 @@ const app = initializeApp(FIREBASE_CONFIG);
 const db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
 const auth = getAuth(app);
 
-// --- EXPORTS DO FIREBASE ---
-export { 
-    app, db, auth, signInAnonymously, onAuthStateChanged,
-    collection, doc, getDocFromCache, getDocFromServer, getDocs, getDocsFromServer, 
-    query, where, addDoc, setDoc, updateDoc, increment, serverTimestamp, writeBatch, Timestamp 
-};
 
 // --- UTILS GERAIS (Funções puras) ---
 
@@ -90,6 +84,15 @@ export function sanitizeTerm(term) {
     return term.trim().toLowerCase().replace(forbiddenChars, '').substring(0, maxSearchLength);
 }
 
+
 export function isBotLikely() {
     return navigator.webdriver === true;
 }
+
+// --- COLE ISSO NO FINAL DO SEU config.js ---
+
+export { 
+    app, db, auth, signInAnonymously, onAuthStateChanged,
+    collection, doc, getDocFromCache, getDocFromServer, getDocs, getDocsFromServer, 
+    query, where, addDoc, setDoc, updateDoc, increment, serverTimestamp, writeBatch, Timestamp 
+};
