@@ -580,7 +580,6 @@ window.openProductModalFromFeed = function(productId) {
 function updatePremiumLoader(progress, logoUrl = null) {
     const bar = document.getElementById('loaderProgressBar');
     const loaderImg = document.getElementById('loaderStoreLogo');
-    const loaderIcon = document.getElementById('loaderDefaultIcon');
     const loader = document.getElementById('initialLoader');
 
     if (bar) bar.style.width = `${progress}%`;
@@ -588,25 +587,18 @@ function updatePremiumLoader(progress, logoUrl = null) {
     if (logoUrl && loaderImg) {
         loaderImg.src = logoUrl;
         loaderImg.classList.remove('hidden');
-        if(loaderIcon) loaderIcon.classList.add('hidden');
     }
 
     if (progress >= 100 && loader) {
-        // Inicia animação de saída (Slide up + Fade out)
-        loader.style.transform = 'translateY(-100%)';
-        loader.style.opacity = '0';
-        
         setTimeout(() => {
-            loader.classList.add('hidden');
+            loader.style.opacity = '0';
+            loader.style.pointerEvents = 'none';
             const app = document.getElementById('app');
             if(app) {
                 app.classList.remove('hidden');
-                app.classList.add('animate-reveal-up'); // Revelação suave do conteúdo
                 app.style.opacity = '1';
             }
-        }, 800);
+            setTimeout(() => loader.classList.add('hidden'), 500);
+        }, 500);
     }
 }
-
-
-
