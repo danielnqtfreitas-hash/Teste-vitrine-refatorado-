@@ -75,27 +75,29 @@ async function initFlow() {
         state.storeConfigGlobal = data.config;
 
         // --- BLOCO DE SINCRONIZAÇÃO: BAIXA E INJETA AS VIEWS ---
-        try {
-            // Referência: stores/dandan/analytics/product_views
-            const analyticsRef = doc(db, "stores", state.STORE_ID, "analytics", "product_views");
-            const analyticsSnap = await getDocFromServer(analyticsRef); // Usa a função do config.js
-            
-            const viewsMap = analyticsSnap.exists() ? analyticsSnap.data() : {};
+      try {
+    const analyticsRef = doc(db, "stores", state.STORE_ID, "analytics", "product_views");
+    const analyticsSnap = await getDocFromServer(analyticsRef); 
+    
+    // O Firebase retorna um objeto onde cada chave é um ID de produto (ex: prod_1767195688980)
+    const viewsData = analyticsSnap.exists() ? analyticsSnap.data() : {};
 
-            // Injeta o número de views em cada produto no state
-            state.allProducts = data.produtos.map(p => {
-                // p.id deve ser igual à chave que está no Firebase
-                const stats = viewsMap[p.id]; 
-                return {
-                    ...p,
-                    views: (stats && stats.views) ? stats.views : 0
-                };
-            });
-            console.log("✅ Visualizações sincronizadas nos produtos.");
-        } catch (e) {
-            console.warn("Erro ao baixar analytics, usando dados padrão:", e);
-            state.allProducts = data.produtos; 
-        }
+    state.allProducts = data.produtos.map(p => {
+        // Busca o produto dentro do mapa usando o ID dele
+        const stats = viewsData[p.id]; 
+        
+        return {
+            ...p,
+            // Se stats existe, pega .views, senão 0
+            views: (stats && typeof stats.views === 'number') ? stats.views : 0
+        };
+    });
+    
+    console.log("✅ Views sincronizadas:", viewsData);
+} catch (e) {
+    console.warn("Erro ao ler analytics:", e);
+    state.allProducts = data.produtos; 
+}
 
         // 2. Renderização da Interface
         checkStoreStatus(state.storeConfigGlobal);
