@@ -199,7 +199,6 @@ async function renderMagicCategories(products, config) {
     const magicContainer = els.magicSections();
     if (!magicContainer) return;
     
-    // Esconde se houver filtros ativos
     const hasActiveFilters = 
         state.filters.search.length > 0 || 
         state.filters.category !== null || 
@@ -238,17 +237,35 @@ async function renderMagicCategories(products, config) {
         }
     }
 
-    // Mais Vistos (Versão otimizada usando o state global)
-if (config.magicCategories?.showTop) {
-    // Filtramos e ordenamos usando os dados que já estão na memória (p.views)
-    const top = [...products]
-        .filter(p => (p.views || 0) > 0) // Pega só quem tem visualização
-        .sort((a, b) => (b.views || 0) - (a.views || 0)) // Ordena do maior para o menor
-        .slice(0, 10); // Pega os 10 primeiros
-    
-    if (top.length > 0) {
-        magicContainer.innerHTML += generateMagicSectionHTML("Mais Vistos 🔥", top, "bg-orange-500");
+    // Mais Vistos (Versão otimizada)
+    if (config.magicCategories?.showTop) {
+        const top = [...products]
+            .filter(p => (p.views || 0) > 0)
+            .sort((a, b) => (b.views || 0) - (a.views || 0))
+            .slice(0, 10);
+        
+        if (top.length > 0) {
+            magicContainer.innerHTML += generateMagicSectionHTML("Mais Vistos 🔥", top, "bg-orange-500");
+        }
     }
+} // <--- Faltava fechar esta chave aqui!
+
+function generateMagicSectionHTML(title, products, colorClass) {
+    if (products.length === 0) return '';
+    return `
+        <section class="animate-fade-in mb-8 px-4">
+            <h3 class="font-bold text-slate-800 mb-4 text-lg flex items-center gap-2">
+                <div class="w-1.5 h-6 ${colorClass} rounded-full"></div> ${title}
+            </h3>
+            <div class="flex overflow-x-auto gap-4 pb-4 hide-scroll snap-x snap-mandatory -mx-4 px-4">
+                ${products.map(p => `
+                    <div class="min-w-[155px] md:min-w-[205px] snap-start">
+                        ${mkProductCard(p)}
+                    </div>
+                `).join('')}
+            </div>
+        </section>
+    `;
 }
 
 
