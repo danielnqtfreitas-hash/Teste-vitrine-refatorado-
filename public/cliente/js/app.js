@@ -89,48 +89,52 @@ async function initFlow() {
             return; 
         }
 
+        // Configura o estado global com as definições da loja
         state.storeConfigGlobal = data.config;
 
-        // --- BLOCO CRÍTICO: SINCRONIZAÇÃO DE VISUALIZAÇÕES ---
+        // --- BLOCO DE SINCRONIZAÇÃO DE VISUALIZAÇÕES (FIREBASE) ---
         try {
-            // Referência ao documento de analytics: /stores/dandan/analytics/product_views
+            // Referência ao documento exato: /stores/dandan/analytics/product_views
             const analyticsRef = doc(db, "stores", state.STORE_ID, "analytics", "product_views");
-            const analyticsSnap = await getDoc(analyticsRef);
+            const analyticsSnap = await getDoc(analyticsRef); // Certifica-te que getDoc está importado
             const viewsMap = analyticsSnap.exists() ? analyticsSnap.data() : {};
 
-            // Injeta as views reais em cada produto do catálogo
+            // Injeta as views reais em cada produto antes de salvar no state
             state.allProducts = data.produtos.map(p => {
                 const stats = viewsMap[p.id]; 
                 return {
                     ...p,
-                    // Se o ID existir no mapa (ex: prod_1770108652615), pega .views, senão 0
+                    // Se o ID do produto existir no mapa, pega o valor 'views', senão assume 0
                     views: (stats && stats.views) ? stats.views : 0
                 };
             });
             
-            console.log("✅ Analytics sincronizado com o Catálogo.");
+            console.log("✅ Analytics sincronizado com sucesso.");
         } catch (e) {
-            console.warn("Erro ao buscar analytics, carregando produtos sem views:", e);
+            console.warn("Erro ao sincronizar analytics, carregando apenas produtos:", e);
+            // Fallback: se o analytics falhar, usa os produtos da API sem as views
             state.allProducts = data.produtos; 
         }
-        // ----------------------------------------------------
+        // -----------------------------------------------------------
 
         // Processamento de categorias e banners
         checkStoreStatus(state.storeConfigGlobal);
         state.banners = data.banners || [];
         state.categories = Array.from(new Set(data.produtos.map(p => p.category).filter(Boolean))).sort();
 
-        // Aplica a identidade visual da loja
+        // Aplica a identidade visual (Cores, Logos)
         applyStoreConfig(data.config);
         
-        // Renderiza a Home
+        // Renderiza componentes da Interface
         renderHeroCarousel(state.banners);
         renderCategoryTabs();
+        
+        // Renderiza o catálogo principal (Home)
         await renderCatalog();
         
         updatePremiumLoader(80); 
         
-        // Inicializa utilitários de navegação e badges
+        // Inicializa utilitários e badges de navegação
         populateFilterOptions();
         updateFavoritesUI();
         updateCartUI();
@@ -138,18 +142,17 @@ async function initFlow() {
         registerVisit(); 
         window.updateNavigationBadges();
 
-        // Finaliza o loader com delay de branding
+        // Finaliza o loader com delay para fixação da marca (branding)
         setTimeout(() => {
             updatePremiumLoader(100);
-            console.log(`🚀 Vitrine [${state.STORE_ID}] carregada com sucesso.`);
+            console.log(`🚀 Vitrine [${state.STORE_ID}] carregada e sincronizada.`);
         }, 3000);
 
     } catch (error) {
-        console.error("Erro crítico no carregamento:", error);
+        console.error("Erro crítico no carregamento do initFlow:", error);
         hideLoader(); 
     }
 }
-
 // --- 3. CONFIGURAÇÕES VISUAIS DINÂMICAS ---
 
 function applyStoreConfig(d) {
