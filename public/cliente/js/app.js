@@ -335,14 +335,10 @@ document.addEventListener('change', (e) => {
     }
 });
 
-/**
- * ESTE BLOCO DEVE FICAR NO ESCOPO GLOBAL DO SEU JS/APP.JS
- */
+// Importante: Garante que o Firebase está carregado para usar o increment
+// Se não usar módulos, certifique-se de ter o Firebase Firestore disponível
 
-// 1. Função para Abrir o Feed
 window.openDiscoveryFeed = function() {
-    console.log("🚀 Inicializando Discovery Feed...");
-    
     const feed = document.getElementById('discoveryFeed');
     const app = document.getElementById('app'); 
     const navBottom = document.getElementById('mainNavBottom');
@@ -350,7 +346,6 @@ window.openDiscoveryFeed = function() {
     
     if (!feed || !container) return;
 
-    // Esconde a interface principal
     if (app) app.classList.add('hidden');
     if (navBottom) navBottom.classList.add('hidden');
     document.body.style.overflow = 'hidden';
@@ -359,48 +354,50 @@ window.openDiscoveryFeed = function() {
     feed.style.display = 'flex'; 
 
     if (!state.allProducts || state.allProducts.length === 0) {
-        container.innerHTML = `
-            <div class="h-screen flex flex-col items-center justify-center text-white gap-4">
-                <i data-lucide="package-search" class="w-12 h-12 opacity-20"></i>
-                <p>Nenhum produto disponível.</p>
-            </div>`;
-        if (window.lucide) lucide.createIcons();
+        container.innerHTML = `<div class="text-white p-10">Nenhum produto disponível.</div>`;
         return;
     }
 
-    // Renderiza os produtos mapeando os campos reais do seu Firebase
     container.innerHTML = state.allProducts.map((p) => {
-        // Ajuste para o seu banco: Pega a primeira imagem da array 'images'
         const imgUrl = (p.images && p.images.length > 0) ? p.images[0] : '';
-        
-        // Ajuste para o seu banco: Usa o campo 'value' para o preço
         const precoBruto = p.value || p.priceCard || 0;
-        const safePrice = (typeof precoBruto === 'number') ? precoBruto : parseFloat(precoBruto) || 0;
-        const formattedPrice = `R$ ${safePrice.toFixed(2).replace('.', ',')}`;
-        
+        const formattedPrice = `R$ ${Number(precoBruto).toFixed(2).replace('.', ',')}`;
         const isFavorite = state.favorites && state.favorites.includes(p.id);
+        
+        // Quantidade de visualizações (se não existir no banco, mostra 0)
+        const views = p.views || 0;
+
+        // Chamada para incrementar visualização ao carregar
+        window.trackView(p.id);
 
         return `
             <div class="reel-item" style="height: 100dvh; scroll-snap-align: start; position: relative; background: #000; overflow: hidden;">
                 <div class="reel-media-cont" style="position: absolute; inset: 0; z-index: 1; background: #111;">
-                    <img src="${imgUrl}" 
-                         style="width: 100%; height: 100%; object-fit: cover;" 
-                         onerror="this.onerror=null; this.src='https://placehold.co/400x800/1a1a1a/ffffff?text=Imagem+Indisponivel';">
+                    <img src="${imgUrl}" class="zoom-animation"
+                         style="width: 100%; height: 100%; object-fit: cover;">
                 </div>
 
                 <div class="reel-overlay" style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 60%); z-index: 2; pointer-events: none;"></div>
                 
-                <div class="reel-actions-sidebar" style="position: absolute; right: 16px; bottom: 180px; z-index: 10;">
-                    <div style="display: flex; flex-direction: column; gap: 20px; align-items: center;">
+                <div class="reel-actions-sidebar" style="position: absolute; right: 16px; bottom: 180px; z-index: 10; display: flex; flex-direction: column; gap: 20px; align-items: center;">
+                    
+                    <div class="flex flex-col items-center">
+                        <i data-lucide="eye" class="text-white w-6 h-6 opacity-80"></i>
+                        <span class="text-white text-[10px] font-bold mt-1">${views}</span>
+                    </div>
+
+                    <div class="flex flex-col items-center">
                         <button onclick="window.toggleFavorite('${p.id}')" 
-                                class="w-[50px] h-[50px] rounded-full flex items-center justify-center border border-white/20 transition-all active:scale-90"
+                                class="w-[50px] h-[50px] rounded-full flex items-center justify-center border border-white/20"
                                 style="background: rgba(255,255,255,0.2); backdrop-filter: blur(10px);">
                             <i data-lucide="heart" class="w-7 h-7 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-white'}"></i>
                         </button>
                         <span class="text-white text-[10px] font-bold mt-1">Gostar</span>
-                        
-                        <button onclick="window.shareProduct('${p.id}')" 
-                                class="w-[50px] h-[50px] rounded-full flex items-center justify-center border border-white/20 transition-all active:scale-90"
+                    </div>
+
+                    <div class="flex flex-col items-center">
+                        <button onclick="window.shareProduct('${p.id}', '${p.name}', '${imgUrl}')" 
+                                class="w-[50px] h-[50px] rounded-full flex items-center justify-center border border-white/20"
                                 style="background: rgba(255,255,255,0.2); backdrop-filter: blur(10px);">
                             <i data-lucide="share" class="w-7 h-7 text-white"></i>
                         </button>
@@ -409,21 +406,17 @@ window.openDiscoveryFeed = function() {
                 </div>
 
                 <div class="reel-text-info" style="position: absolute; left: 16px; bottom: 125px; z-index: 10; max-width: 80%;">
-                    <h2 class="text-xl font-bold text-white shadow-sm">${p.name || 'Produto sem nome'}</h2>
+                    <h2 class="text-xl font-bold text-white shadow-sm">${p.name}</h2>
                 </div>
 
-                <div class="reel-product-card transition-all active:scale-95" 
-                     onclick="window.openProductModalFromFeed('${p.id}')" 
-                     style="position: absolute; bottom: 30px; left: 16px; right: 16px; background: white; border-radius: 20px; padding: 12px; display: flex; align-items: center; gap: 12px; z-index: 10; box-shadow: 0 15px 35px rgba(0,0,0,0.4); cursor: pointer;">
-                    
-                    <img src="${imgUrl}" style="width: 56px; height: 56px; border-radius: 12px; object-fit: cover; background: #f0f0f0;">
-                    
+                <div class="reel-product-card" onclick="window.openProductModalFromFeed('${p.id}')" 
+                     style="position: absolute; bottom: 30px; left: 16px; right: 16px; background: white; border-radius: 20px; padding: 12px; display: flex; align-items: center; gap: 12px; z-index: 10; box-shadow: 0 15px 35px rgba(0,0,0,0.4);">
+                    <img src="${imgUrl}" style="width: 50px; height: 50px; border-radius: 12px; object-fit: cover;">
                     <div style="flex: 1; min-width: 0;">
-                        <span class="block text-slate-900 font-bold text-sm truncate">${p.name || 'Produto'}</span>
+                        <span class="block text-slate-900 font-bold text-sm truncate">${p.name}</span>
                         <span class="block text-red-600 font-black text-lg">${formattedPrice}</span>
                     </div>
-
-                    <div class="bg-red-600 flex items-center justify-center w-12 h-12 rounded-2xl text-white">
+                    <div class="bg-red-600 p-3 rounded-2xl text-white">
                         <i data-lucide="shopping-cart" class="w-6 h-6"></i>
                     </div>
                 </div>
@@ -431,12 +424,37 @@ window.openDiscoveryFeed = function() {
         `;
     }).join('');
 
-    // Reinicializa ícones do Lucide
-    setTimeout(() => {
-        if (window.lucide) lucide.createIcons();
-    }, 200);
+    if (window.lucide) lucide.createIcons();
 };
 
+// --- FUNÇÃO DE COMPARTILHAR (USA API NATIVA DO CELULAR) ---
+window.shareProduct = async function(id, name, img) {
+    const shareData = {
+        title: name,
+        text: `Olha esse produto na Vitrine: ${name}`,
+        url: window.location.href + (window.location.href.includes('?') ? '&' : '?') + `prod=${id}`
+    };
+
+    try {
+        if (navigator.share) {
+            await navigator.share(shareData);
+        } else {
+            // Fallback caso não suporte (Copia link)
+            navigator.clipboard.writeText(shareData.url);
+            alert("Link copiado para a área de transferência!");
+        }
+    } catch (err) {
+        console.log("Erro ao compartilhar", err);
+    }
+};
+
+// --- FUNÇÃO DE VISUALIZAÇÃO (FIREBASE) ---
+window.trackView = function(productId) {
+    // Aqui você deve usar a referência do seu Firestore
+    // Exemplo: const docRef = doc(db, "products", productId);
+    // updateDoc(docRef, { views: increment(1) });
+    console.log("👁️ Visualização registrada para:", productId);
+};
 // 2. Função para Fechar o Feed
 window.closeDiscoveryFeed = function() {
     const feed = document.getElementById('discoveryFeed');
