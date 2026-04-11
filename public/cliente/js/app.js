@@ -336,7 +336,7 @@ document.addEventListener('change', (e) => {
 });
 
 /* =========================================================================
-   DISCOVERY FEED COMPLETO (REELS STYLE)
+   DISCOVERY FEED COMPLETO (REELS STYLE) - VERSÃO CORRIGIDA
    ========================================================================= */
 
 window.openDiscoveryFeed = function() {
@@ -347,7 +347,7 @@ window.openDiscoveryFeed = function() {
     
     if (!feed || !container) return;
 
-    // Interface
+    // Interface: Esconde o resto do app
     if (app) app.classList.add('hidden');
     if (navBottom) navBottom.classList.add('hidden');
     document.body.style.overflow = 'hidden';
@@ -360,7 +360,7 @@ window.openDiscoveryFeed = function() {
         return;
     }
 
-    // Renderização
+    // Renderização dos Itens
     container.innerHTML = state.allProducts.map((p) => {
         const imgUrl = (p.images && p.images.length > 0) ? p.images[0] : '';
         const precoBruto = p.value || p.priceCard || 0;
@@ -371,8 +371,7 @@ window.openDiscoveryFeed = function() {
         return `
             <div class="reel-item" data-id="${p.id}" style="height: 100dvh; scroll-snap-align: start; position: relative; background: #000; overflow: hidden;">
                 <div style="position: absolute; inset: 0; z-index: 1; background: #111;">
-                    <img src="${imgUrl}" class="zoom-img"
-                         style="width: 100%; height: 100%; object-fit: cover; transform: scale(1.1);">
+                    <img src="${imgUrl}" class="zoom-img">
                 </div>
 
                 <div style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 60%); z-index: 2; pointer-events: none;"></div>
@@ -381,7 +380,7 @@ window.openDiscoveryFeed = function() {
                     
                     <div class="flex flex-col items-center">
                         <i data-lucide="eye" class="text-white w-6 h-6 opacity-80"></i>
-                        <span class="text-white text-[10px] font-bold mt-1">${views}</span>
+                        <span id="view-count-${p.id}" class="text-white text-[10px] font-bold mt-1">${views}</span>
                     </div>
 
                     <div class="flex flex-col items-center">
@@ -424,39 +423,55 @@ window.openDiscoveryFeed = function() {
     }).join('');
 
     if (window.lucide) lucide.createIcons();
-    initReelObserver();
+    
+    // Pequeno atraso para garantir que o DOM renderizou antes de observar
+    setTimeout(initReelObserver, 100);
 };
 
-// --- OBSERVA ROLAGEM, REINICIA ZOOM E TRACKING ---
 function initReelObserver() {
     const container = document.getElementById('reelsContainer');
-    const observerOptions = {
-        root: container,
-        threshold: 0.6 // Ativa quando 60% do item estiver visível
-    };
-
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             const img = entry.target.querySelector('.zoom-img');
             const productId = entry.target.dataset.id;
 
             if (entry.isIntersecting) {
-                // 1. Reinicia Zoom
+                // 1. REINICIA E DISPARA O ZOOM
                 if (img) {
                     img.style.animation = 'none';
-                    void img.offsetWidth; // Force Reflow
+                    void img.offsetWidth; // Força o browser a resetar o estado
                     img.style.animation = 'zoomEffect 10s ease-out forwards';
                 }
                 
-                // 2. Track View (Firebase)
+                // 2. REGISTRA A VIEW (Local e Firebase)
                 window.trackView(productId);
             }
         });
-    }, observerOptions);
+    }, { root: container, threshold: 0.6 });
 
     document.querySelectorAll('.reel-item').forEach(item => observer.observe(item));
 }
 
+window.trackView = function(productId) {
+    const key = `viewed_${productId}`;
+    if (sessionStorage.getItem(key)) return; 
+
+    sessionStorage.setItem(key, "true");
+    
+    // ATUALIZA O NÚMERO NA TELA NA HORA
+    const viewSpan = document.getElementById(`view-count-${productId}`);
+    if (viewSpan) {
+        let currentViews = parseInt(viewSpan.innerText) || 0;
+        viewSpan.innerText = currentViews + 1;
+    }
+
+    // ENVIA PARA O FIREBASE
+    if (typeof window.reportarMetrica === 'function') {
+        window.reportarMetrica(productId, 'view');
+    }
+};
+
+// Funções de apoio permanecem as mesmas (shareProduct, closeDiscoveryFeed, etc)
 // --- COMPARTILHAMENTO ---
 window.shareProduct = async function(id, name, img) {
     const shareData = {
