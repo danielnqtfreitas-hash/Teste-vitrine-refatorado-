@@ -424,7 +424,38 @@ window.openDiscoveryFeed = function() {
         `;
     }).join('');
 
-    if (window.lucide) lucide.createIcons();
+   if (window.lucide) lucide.createIcons();
+
+    // ATIVA O OBSERVADOR DE ROLAGEM
+    initReelObserver();
+};
+
+// FUNÇÃO MÁGICA PARA REINICIAR O ZOOM
+function initReelObserver() {
+    const observerOptions = {
+        root: document.getElementById('reelsContainer'),
+        threshold: 0.5 // Ativa quando 50% do item estiver visível
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            const img = entry.target.querySelector('.reel-img');
+            if (!img) return;
+
+            if (entry.isIntersecting) {
+                // Reinicia a animação: remove e adiciona a classe após um micro-delay
+                img.classList.remove('animate-zoom');
+                void img.offsetWidth; // Truque para forçar o navegador a resetar o estado do elemento
+                img.classList.add('animate-zoom');
+            } else {
+                // Remove quando sai da tela para economizar processamento
+                img.classList.remove('animate-zoom');
+            }
+        });
+    }, observerOptions);
+
+    // Aplica o observador em cada item do feed
+    document.querySelectorAll('.reel-item').forEach(item => observer.observe(item));
 };
 
 // --- FUNÇÃO DE COMPARTILHAR (USA API NATIVA DO CELULAR) ---
