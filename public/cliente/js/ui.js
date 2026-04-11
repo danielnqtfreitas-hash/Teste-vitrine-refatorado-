@@ -216,7 +216,7 @@ async function renderMagicCategories(products, config) {
     magicContainer.classList.remove('hidden');
     magicContainer.innerHTML = '';
 
-    // Novidades
+    // 1. Seção de Novidades
     if (config.magicCategories?.showNew) {
         const news = [...products]
             .filter(p => p.status === 'active')
@@ -225,7 +225,6 @@ async function renderMagicCategories(products, config) {
                     if (typeof p.createdAt === 'number') return p.createdAt;
                     if (p.createdAt?.toMillis) return p.createdAt.toMillis();
                     if (p.createdAt?.seconds) return p.createdAt.seconds * 1000;
-                    if (p.createdAt instanceof Date) return p.createdAt.getTime();
                     return p.lastUpdate || 0;
                 };
                 return getTime(b) - getTime(a);
@@ -237,7 +236,7 @@ async function renderMagicCategories(products, config) {
         }
     }
 
-    // Mais Vistos (Versão otimizada)
+    // 2. Seção de Mais Vistos
     if (config.magicCategories?.showTop) {
         const top = [...products]
             .filter(p => (p.views || 0) > 0)
@@ -248,7 +247,7 @@ async function renderMagicCategories(products, config) {
             magicContainer.innerHTML += generateMagicSectionHTML("Mais Vistos 🔥", top, "bg-orange-500");
         }
     }
-} // <--- Faltava fechar esta chave aqui!
+}
 
 function generateMagicSectionHTML(title, products, colorClass) {
     if (products.length === 0) return '';
@@ -268,24 +267,6 @@ function generateMagicSectionHTML(title, products, colorClass) {
     `;
 }
 
-
-function generateMagicSectionHTML(title, products, colorClass) {
-    if (products.length === 0) return '';
-    return `
-        <section class="animate-fade-in mb-8 px-4">
-            <h3 class="font-bold text-slate-800 mb-4 text-lg flex items-center gap-2">
-                <div class="w-1.5 h-6 ${colorClass} rounded-full"></div> ${title}
-            </h3>
-            <div class="flex overflow-x-auto gap-4 pb-4 hide-scroll snap-x snap-mandatory -mx-4 px-4">
-                ${products.map(p => `
-                    <div class="min-w-[155px] md:min-w-[205px] snap-start">
-                        ${mkProductCard(p)}
-                    </div>
-                `).join('')}
-            </div>
-        </section>
-    `;
-}
 
 // --- MODAL DE DETALHES DO PRODUTO ---
 
