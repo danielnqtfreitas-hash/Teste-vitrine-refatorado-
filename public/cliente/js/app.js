@@ -74,43 +74,45 @@ async function initFlow() {
 
         state.storeConfigGlobal = data.config;
 
-        // --- BLOCO DE SINCRONIZAÇÃO DE VISUALIZAÇÕES (FIREBASE) ---
+        // --- BLOCO DE SINCRONIZAÇÃO DE VISUALIZAÇÕES CORRIGIDO ---
         try {
             const analyticsRef = doc(db, "stores", state.STORE_ID, "analytics", "product_views");
-            // getDocFromServer evita cache e garante o dado atualizado (os "11" do Baruk)
             const analyticsSnap = await getDocFromServer(analyticsRef); 
-            const viewsMap = analyticsSnap.exists() ? analyticsSnap.data() : {};
+            const viewsData = analyticsSnap.exists() ? analyticsSnap.data() : {};
+
+            // IMPORTANTE: Seus dados estão dentro de viewsData.stats
+            const statsMap = viewsData.stats || {};
 
             state.allProducts = data.produtos.map(p => {
-                // Buscamos o objeto dentro do mapa usando o ID do produto como chave
-                const stats = viewsMap[p.id]; 
+                // Agora acessamos statsMap[id] que contém { views, name }
+                const productStats = statsMap[p.id]; 
                 
                 return {
                     ...p,
-                    // Se stats existe e tem .views, usamos. Caso contrário, 0.
-                    views: (stats && typeof stats.views === 'number') ? stats.views : 0
+                    // Se encontrar o produto no mapa de stats, pega a view, senão 0
+                    views: (productStats && typeof productStats.views === 'number') ? productStats.views : 0
                 };
             });
             
-            console.log("✅ Visualizações sincronizadas:", viewsMap);
+            console.log("✅ Visualizações mapeadas de .stats:", statsMap);
         } catch (e) {
-            console.warn("⚠️ Erro ao sincronizar analytics, usando dados padrão:", e);
-            state.allProducts = data.produtos; // Fallback para não quebrar a loja
+            console.warn("⚠️ Erro ao sincronizar analytics:", e);
+            state.allProducts = data.produtos; 
         }
         
         updatePremiumLoader(60);
 
-        // 2. Processamento de Categorias e Banners
+        // 2. Processamento Restante
         checkStoreStatus(state.storeConfigGlobal);
         state.banners = data.banners || [];
         state.categories = Array.from(new Set(data.produtos.map(p => p.category).filter(Boolean))).sort();
 
-        // 3. Renderização da Interface
+        // 3. Renderização
         applyStoreConfig(data.config);
         renderHeroCarousel(state.banners);
         renderCategoryTabs();
         
-        // Renderiza o catálogo já com state.allProducts (que contém as views)
+        // Renderiza com as views injetadas
         await renderCatalog();
         
         updatePremiumLoader(100);
@@ -118,7 +120,6 @@ async function initFlow() {
 
     } catch (error) {
         console.error("❌ Erro fatal no initFlow:", error);
-        // Em caso de erro crítico, escondemos o loader para não travar a tela
         const loader = document.getElementById('premium-loader');
         if(loader) loader.style.display = 'none';
     }
