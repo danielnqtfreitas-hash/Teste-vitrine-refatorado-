@@ -806,6 +806,7 @@ header {
     100% { transform: translateY(0px); }
 }
 
+
 /* =========================================
    PROVADOR - INTERFACE FLUTUANTE ATUALIZADA
    ========================================= */
@@ -831,7 +832,8 @@ header {
     flex-direction: column;
     justify-content: center;
     z-index: 1;
-    gap: 10px;
+    /* Ajustado para aproximar os decks verticalmente */
+    gap: 0px; 
 }
 
 /* DECKS - Configuração de Carrossel Slide */
@@ -841,46 +843,48 @@ header {
     align-items: center;
     width: 100%;
     overflow-x: auto;
-    scroll-snap-type: x mandatory; /* Força o imã do slide */
+    scroll-snap-type: x mandatory;
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
 }
 
-/* Esconde as barras de rolagem */
 #deckTop::-webkit-scrollbar, 
 #deckBot::-webkit-scrollbar {
     display: none;
 }
 
-/* CARD DA PEÇA - Isso resolve o tamanho pequeno */
+/* CARD DA PEÇA - APROXIMADO */
 .p-card {
-    flex: 0 0 85vw; /* Cada peça ocupa 85% da largura da tela */
+    /* Aumentado para 92vw para que as imagens fiquem quase coladas */
+    flex: 0 0 92vw; 
     height: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
-    scroll-snap-align: center; /* Trava a peça no centro da tela */
+    scroll-snap-align: center;
     transition: all 0.4s ease;
     position: relative;
+    /* Remove margens extras */
+    margin: 0; 
 }
 
 .p-card img {
-    max-height: 85%;
-    max-width: 90%;
+    max-height: 95%; /* Imagem um pouco maior */
+    max-width: 95%;
     object-fit: contain;
     transition: all 0.3s ease;
     filter: drop-shadow(0 5px 15px rgba(0,0,0,0.08));
 }
 
-/* Estilo para peças que não estão no centro */
+/* Peças laterais agora ficam bem encostadas na central */
 .p-card:not(.active-piece) {
-    opacity: 0.3;
-    transform: scale(0.8);
+    opacity: 0.5;
+    transform: scale(0.9);
 }
 
 /* Zoom na peça ativa */
 .active-piece img {
-    transform: scale(1.1);
+    transform: scale(1.05);
     filter: drop-shadow(0 10px 25px rgba(0,0,0,0.15));
 }
 
@@ -920,7 +924,6 @@ header {
     transform: scale(0.96);
 }
 
-/* Animações de interface (usadas no JS) */
 .ui-element {
     transition: transform 0.4s ease, opacity 0.4s ease;
 }
