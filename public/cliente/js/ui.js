@@ -429,7 +429,6 @@ export function closeModalDetails() {
     els.modalDetails().classList.add('hidden');
     window.history.pushState({}, '', window.location.pathname);
 }
-
 // --- RENDERIZAÇÃO DE INTERFACE (FILTROS, TABS, CARROSSEL) ---
 export function renderHeroCarousel(banners) {
     const container = document.getElementById('heroGridContainer');
@@ -459,7 +458,6 @@ export function renderHeroCarousel(banners) {
 
     banners.forEach((b, index) => {
         const div = document.createElement('div');
-        // Adicionamos 'active' apenas no primeiro
         div.className = `hero-card rounded-3xl p-6 md:p-10 flex items-center justify-between gap-4 cursor-pointer text-white shadow-xl ${index === 0 ? 'active' : ''}`;
         
         div.style.background = `linear-gradient(135deg, ${b.color1 || '#333'}, ${b.color2 || '#000'})`;
@@ -490,7 +488,6 @@ export function renderHeroCarousel(banners) {
 
         container.appendChild(div);
 
-        // Dots
         const dot = document.createElement('div');
         dot.className = `carousel-dot h-1.5 transition-all duration-300 rounded-full cursor-pointer ${index === 0 ? 'w-6 bg-white' : 'w-1.5 bg-white/40'}`;
         dot.onclick = (e) => {
@@ -501,14 +498,12 @@ export function renderHeroCarousel(banners) {
         dotsContainer.appendChild(dot);
     });
 
-    // Auto-play: troca o slide a cada 5 segundos
     if (banners.length > 1) {
         autoPlayInterval = setInterval(() => {
             let next = (currentIndex + 1) % banners.length;
             goToSlide(next);
         }, 5000);
     }
-}
 }
 
 export function renderCategoryTabs() {
