@@ -807,7 +807,7 @@ header {
 }
 
 /* =========================================
-   PROVADOR STUDIO - CLEAN & MINIMAL
+   PROVADOR STUDIO - CORREÇÃO DE BOTÕES E VISUAL
    ========================================= */
 
 #provadorFullscreen {
@@ -818,70 +818,107 @@ header {
     top: 0;
     left: 0;
     background-color: #ffffff;
-    z-index: 9999;
+    /* Z-INDEX CRÍTICO: Deve ser maior que o Discovery Feed (200000) */
+    z-index: 999999 !important; 
     display: flex;
     flex-direction: column;
 }
 
-.no-scrollbar::-webkit-scrollbar { display: none; }
-.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-/* Interface */
-.ui-element { transition: all 0.3s ease; opacity: 1; z-index: 100; }
-.ui-hidden { opacity: 0 !important; pointer-events: none; transform: translateY(-10px); }
-.ui-hidden-bottom { opacity: 0 !important; pointer-events: none; transform: translateY(10px); }
-
-/* Palco das Peças */
-.peças-container {
-    flex: 1;
+/* Garantia que o conteúdo interno ocupe a tela toda */
+#provadorFullscreen > div {
+    height: 100%;
+    width: 100%;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+}
+
+/* 1. Header Fixo no Topo */
+#provHeader {
+    position: relative;
+    z-index: 1000;
+    padding: 16px;
+    background: white;
+    border-bottom: 1px solid #f8fafc;
+}
+
+/* Botão de fechar com área de clique maior */
+#btnCloseProvador {
+    cursor: pointer !important;
+    pointer-events: auto !important;
+    display: flex;
     align-items: center;
-    gap: 0; /* Remove espaço entre os carrosséis */
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: #f1f5f9;
+    border-radius: 50%;
+}
+
+/* 2. Palco das Peças (Centralizado) */
+.peças-container {
+    flex: 1; /* Ocupa o centro da tela */
+    display: flex;
+    flex-direction: column;
+    justify-content: center; 
+    align-items: center;
+    gap: 10px; /* Espaço pequeno entre as peças, sem sobrepor */
 }
 
 #deckTop, #deckBot {
-    height: 40dvh;
+    height: 35dvh; /* Altura controlada para não expulsar o footer */
     display: flex;
     align-items: center;
+    width: 100%;
 }
 
 .p-card {
-    min-width: 75vw;
+    min-width: 80vw;
     height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.4s ease;
     padding: 0;
 }
 
-/* Imagem sem bordas e sem fundo */
 .p-card img {
-    max-height: 95%;
-    max-width: 95%;
+    max-height: 100%;
+    max-width: 100%;
     object-fit: contain;
-    border-radius: 0; /* Remove arredondamento se preferir, ou deixe baixo */
     background: transparent;
-    border: none !important; /* Remove bordas grossas */
-    box-shadow: none !important; /* Visual mais flat/limpo */
+    border: none !important;
+    box-shadow: none !important;
 }
 
+/* Efeito de foco suave */
 .p-card.active-piece {
-    transform: scale(1.05);
     opacity: 1 !important;
+    transform: scale(1.05);
 }
 
 .p-card:not(.active-piece) {
-    opacity: 0.15;
+    opacity: 0.2;
     transform: scale(0.9);
 }
 
-/* Rodapé Fixo */
+/* 3. Footer Fixo na Base */
 #provFooter {
+    position: relative;
+    z-index: 1000;
     padding: 20px;
-    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+    padding-bottom: calc(24px + env(safe-area-inset-bottom));
     background: white;
     border-top: 1px solid #f1f5f9;
+}
+
+/* Botão de Adicionar */
+#btnFinalizarLook {
+    cursor: pointer !important;
+    pointer-events: auto !important;
+    background-color: #000000 !important;
+    color: #ffffff !important;
+    transition: transform 0.2s active;
+}
+
+#btnFinalizarLook:active {
+    transform: scale(0.96);
 }
