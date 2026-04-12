@@ -647,74 +647,79 @@ function updatePremiumLoader(progress, logoUrl = null) {
         }, 500);
     }
 }
-
 window.openProvador = function() {
     let container = document.getElementById('provadorFullscreen');
     if (!container) {
         container = document.createElement('div');
         container.id = 'provadorFullscreen';
-        container.className = 'fixed inset-0 z-[250] hidden animate-in slide-in-from-bottom duration-700';
+        container.className = 'fixed inset-0 z-[300] bg-white hidden flex-col animate-in slide-in-from-bottom duration-500';
         document.body.appendChild(container);
     }
 
-    let topSel = state.tops[0];
-    let bottomSel = state.bottoms[0];
+    // Estado interno para filtros
+    let currentSizeTop = 'Todos';
+    let currentSizeBottom = 'Todos';
 
     container.innerHTML = `
-        <div class="h-full w-full provador-premium flex flex-col overflow-hidden">
+        <div class="flex flex-col h-full bg-[#F8F9FA] overflow-hidden">
             
-            <div class="p-8 flex justify-between items-center">
-                <div class="leading-tight">
-                    <h2 class="text-4xl font-black italic tracking-tighter text-slate-900">STUDIO</h2>
-                    <p class="text-[10px] font-bold tracking-[0.4em] text-primary-600 uppercase">Mix & Match v3.0</p>
+            <div class="bg-white px-6 pt-8 pb-4 shadow-sm z-30">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-black italic tracking-tighter uppercase">Provador Virtual</h2>
+                    <button onclick="document.getElementById('provadorFullscreen').classList.add('hidden')" 
+                            class="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center">
+                        <i data-lucide="x" class="w-5 h-5 text-slate-600"></i>
+                    </button>
                 </div>
-                <button onclick="document.getElementById('provadorFullscreen').classList.add('hidden')" 
-                        class="w-14 h-14 bg-white shadow-xl rounded-full flex items-center justify-center active:scale-90 transition-all border border-slate-100">
-                    <i data-lucide="x" class="w-6 h-6 text-slate-800"></i>
-                </button>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="space-y-1">
+                        <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Tamanho Superior</span>
+                        <select id="filterTop" class="w-full bg-slate-50 border-none rounded-xl py-3 px-3 text-xs font-bold focus:ring-2 focus:ring-black">
+                            <option>Todos</option><option>P</option><option>M</option><option>G</option><option>GG</option>
+                        </select>
+                    </div>
+                    <div class="space-y-1">
+                        <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Tamanho Inferior</span>
+                        <select id="filterBottom" class="w-full bg-slate-50 border-none rounded-xl py-3 px-3 text-xs font-bold focus:ring-2 focus:ring-black">
+                            <option>Todos</option><option>36</option><option>38</option><option>40</option><option>42</option><option>44</option>
+                        </select>
+                    </div>
+                </div>
             </div>
 
-            <div class="flex-1 outfit-container flex flex-col justify-center -space-y-16">
+            <div class="flex-1 flex flex-col justify-center relative -space-y-24 py-4">
                 
-                <div id="deckTops" class="flex overflow-x-auto snap-x snap-mandatory no-scrollbar px-[25%] items-center py-10">
-                    ${state.tops.map(p => `
-                        <div class="product-slide snap-center min-w-[260px] mx-2" data-id="${p.id}">
-                            <img src="${p.images[0]}" class="img-luxury w-full h-72 object-cover rounded-[3rem]">
-                        </div>
-                    `).join('')}
-                </div>
+                <div class="absolute inset-x-0 top-1/2 -translate-y-1/2 h-[450px] border-y border-dashed border-slate-200 pointer-events-none z-0"></div>
 
-                <div class="relative z-[60] flex justify-center">
-                    <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-2xl border-4 border-slate-50">
-                        <i data-lucide="plus" class="w-6 h-6 text-primary-600 animate-bounce"></i>
+                <div id="scrollTops" class="flex overflow-x-auto snap-x snap-mandatory no-scrollbar gap-4 px-[20%] z-10 items-end">
+                    </div>
+
+                <div class="flex justify-center z-20">
+                    <div class="bg-black text-white p-2 rounded-full shadow-xl border-4 border-[#F8F9FA]">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
                     </div>
                 </div>
 
-                <div id="deckBottoms" class="flex overflow-x-auto snap-x snap-mandatory no-scrollbar px-[25%] items-center py-10">
-                    ${state.bottoms.map(p => `
-                        <div class="product-slide snap-center min-w-[260px] mx-2" data-id="${p.id}">
-                            <img src="${p.images[0]}" class="img-luxury w-full h-72 object-cover rounded-[3rem]">
-                        </div>
-                    `).join('')}
-                </div>
+                <div id="scrollBottoms" class="flex overflow-x-auto snap-x snap-mandatory no-scrollbar gap-4 px-[20%] z-10 items-start">
+                    </div>
             </div>
 
-            <div class="p-10 bg-white/40 backdrop-blur-2xl rounded-t-[4rem] border-t border-white/50">
-                <div class="flex justify-between items-end mb-8">
+            <div class="bg-white p-8 pb-10 rounded-t-[3rem] shadow-[0_-15px_40px_rgba(0,0,0,0.05)] z-30">
+                <div class="flex justify-between items-center mb-6">
                     <div>
-                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total do Look</span>
-                        <p id="totalLook" class="text-4xl font-black text-slate-900 tracking-tighter">R$ 0,00</p>
+                        <p id="totalPrice" class="text-4xl font-black text-slate-900 tracking-tighter">R$ 0,00</p>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Look Completo</p>
                     </div>
-                    <div class="text-right">
-                        <span class="block text-[10px] font-bold text-green-600 bg-green-50 px-3 py-1 rounded-full uppercase">Pronto para Enviar</span>
+                    <div class="flex -space-x-3">
+                         <div id="p-top" class="w-12 h-12 rounded-full border-2 border-white bg-slate-100 overflow-hidden shadow-sm"></div>
+                         <div id="p-bottom" class="w-12 h-12 rounded-full border-2 border-white bg-slate-100 overflow-hidden shadow-sm"></div>
                     </div>
                 </div>
 
-                <button id="btnFinishOutfit" class="w-full h-20 bg-slate-900 text-white rounded-[2.5rem] flex items-center justify-between px-8 group active:scale-95 transition-all shadow-2xl shadow-slate-300">
-                    <span class="text-lg font-bold tracking-tight">ADICIONAR LOOK</span>
-                    <div class="w-12 h-12 bg-primary-600 rounded-full flex items-center justify-center group-hover:rotate-45 transition-transform">
-                        <i data-lucide="shopping-bag" class="w-5 h-5"></i>
-                    </div>
+                <button id="btnFinalizarLook" class="w-full h-18 bg-black text-white rounded-2xl font-black flex items-center justify-center gap-3 active:scale-95 transition-all shadow-xl uppercase tracking-widest text-sm">
+                    <i data-lucide="shopping-bag" class="w-5 h-5"></i>
+                    Adicionar ao Carrinho
                 </button>
             </div>
         </div>
@@ -723,59 +728,76 @@ window.openProvador = function() {
     container.classList.remove('hidden');
     if (window.lucide) lucide.createIcons();
 
-    // Lógica de Sincronização e Estética Ativa
-    const syncOutfits = (el, list, type) => {
-        const update = () => {
-            const center = el.scrollLeft + (el.offsetWidth / 2);
-            let activeIdx = 0;
-            let minDiff = Infinity;
+    // Lógica de Renderização Filtrada
+    const renderSets = () => {
+        const tops = state.allProducts.filter(p => p.posicaoProvador === 'superior' && (currentSizeTop === 'Todos' || p.sizes?.includes(currentSizeTop)));
+        const bottoms = state.allProducts.filter(p => p.posicaoProvador === 'inferior' && (currentSizeBottom === 'Todos' || p.sizes?.includes(currentSizeBottom)));
 
-            el.querySelectorAll('.product-slide').forEach((slide, i) => {
-                const slideCenter = slide.offsetLeft + (slide.offsetWidth / 2);
-                const diff = Math.abs(center - slideCenter);
-                
-                if (diff < minDiff) {
-                    minDiff = diff;
-                    activeIdx = i;
-                }
-                slide.classList.remove('active');
+        document.getElementById('scrollTops').innerHTML = tops.map(p => `
+            <div class="product-item min-w-[240px] snap-center transition-all duration-500 grayscale-[0.8] scale-90 opacity-40" data-id="${p.id}" data-price="${p.value}" data-img="${p.images[0]}">
+                <img src="${p.images[0]}" class="w-full h-64 object-cover rounded-[2.5rem] shadow-lg border-2 border-transparent">
+            </div>
+        `).join('');
+
+        document.getElementById('scrollBottoms').innerHTML = bottoms.map(p => `
+            <div class="product-item min-w-[240px] snap-center transition-all duration-500 grayscale-[0.8] scale-90 opacity-40" data-id="${p.id}" data-price="${p.value}" data-img="${p.images[0]}">
+                <img src="${p.images[0]}" class="w-full h-64 object-cover rounded-[2.5rem] shadow-lg border-2 border-transparent">
+            </div>
+        `).join('');
+
+        setupSync('scrollTops', 'top');
+        setupSync('scrollBottoms', 'bottom');
+    };
+
+    const setupSync = (id, type) => {
+        const el = document.getElementById(id);
+        const update = () => {
+            const center = el.scrollLeft + el.offsetWidth / 2;
+            let active = null;
+            let minD = Infinity;
+
+            el.querySelectorAll('.product-item').forEach(item => {
+                const itemC = item.offsetLeft + item.offsetWidth / 2;
+                const d = Math.abs(center - itemC);
+                if (d < minD) { minD = d; active = item; }
+                item.className = "product-item min-w-[240px] snap-center transition-all duration-500 grayscale-[0.8] scale-90 opacity-40";
             });
 
-            const currentActive = el.querySelectorAll('.product-slide')[activeIdx];
-            if (currentActive) {
-                currentActive.classList.add('active');
-                if (type === 'top') topSel = list[activeIdx];
-                else bottomSel = list[activeIdx];
+            if (active) {
+                active.className = "product-item min-w-[240px] snap-center transition-all duration-500 grayscale-0 scale-105 opacity-100 z-10";
+                if(type === 'top') document.getElementById('p-top').innerHTML = `<img src="${active.dataset.img}" class="w-full h-full object-cover">`;
+                else document.getElementById('p-bottom').innerHTML = `<img src="${active.dataset.img}" class="w-full h-full object-cover">`;
                 
-                // Atualiza Preço Dinamicamente
-                const price = (Number(topSel?.value || 0) + Number(bottomSel?.value || 0));
-                document.getElementById('totalLook').innerText = `R$ ${price.toFixed(2).replace('.', ',')}`;
+                // Recalcular Preço
+                const activeTop = document.querySelector('#scrollTops .product-item.grayscale-0');
+                const activeBot = document.querySelector('#scrollBottoms .product-item.grayscale-0');
+                const total = (Number(activeTop?.dataset.price || 0) + Number(activeBot?.dataset.price || 0));
+                document.getElementById('totalPrice').innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
             }
         };
-
-        el.addEventListener('scroll', update);
+        el.onscroll = update;
         setTimeout(update, 100);
     };
 
-    syncOutfits(document.getElementById('deckTops'), state.tops, 'top');
-    syncOutfits(document.getElementById('deckBottoms'), state.bottoms, 'bottom');
+    // Eventos de Filtro
+    document.getElementById('filterTop').onchange = (e) => { currentSizeTop = e.target.value; renderSets(); };
+    document.getElementById('filterBottom').onchange = (e) => { currentSizeBottom = e.target.value; renderSets(); };
 
-    // Botão de Finalização com Efeito Confete
-    document.getElementById('btnFinishOutfit').onclick = () => {
-        if(topSel) window.addToCart(topSel, 1, {});
-        if(bottomSel) window.addToCart(bottomSel, 1, {});
+    // Botão Adicionar
+    document.getElementById('btnFinalizarLook').onclick = () => {
+        const tId = document.querySelector('#scrollTops .product-item.grayscale-0')?.dataset.id;
+        const bId = document.querySelector('#scrollBottoms .product-item.grayscale-0')?.dataset.id;
         
-        confetti({
-            particleCount: 150,
-            spread: 70,
-            origin: { y: 0.8 },
-            colors: ['#EA1D2C', '#000000', '#FFFFFF']
-        });
+        const prodT = state.allProducts.find(p => p.id == tId);
+        const prodB = state.allProducts.find(p => p.id == bId);
 
-        showToast("Look salvo com sucesso!");
-        setTimeout(() => {
-            container.classList.add('hidden');
-            if(window.openCartModal) window.openCartModal();
-        }, 1000);
+        if(prodT) window.addToCart(prodT, 1, {});
+        if(prodB) window.addToCart(prodB, 1, {});
+        
+        confetti({ particleCount: 100, spread: 70, origin: { y: 0.8 } });
+        showToast("Look adicionado!");
+        container.classList.add('hidden');
     };
+
+    renderSets();
 };
