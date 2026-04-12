@@ -851,3 +851,17 @@ header {
     object-fit: contain; /* Ajusta a foto ao espaço disponível sem esticar */
 }
 
+.ui-element {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    opacity: 1;
+}
+.ui-hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-10px);
+}
+.ui-hidden-bottom {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(20px);
+}
