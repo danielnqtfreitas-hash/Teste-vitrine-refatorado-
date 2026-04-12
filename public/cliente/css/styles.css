@@ -949,3 +949,15 @@ header {
     opacity: 0;
 }
 
+#provadorFullscreen {
+    z-index: 9999999 !important; /* Um número absurdo para ganhar de tudo */
+}
+
+#provHeader {
+    pointer-events: none; /* Deixa o toque passar para as roupas no fundo */
+}
+
+#provHeader button, 
+#provHeader select {
+    pointer-events: auto !important; /* Mas os botões e selects funcionam */
+}
