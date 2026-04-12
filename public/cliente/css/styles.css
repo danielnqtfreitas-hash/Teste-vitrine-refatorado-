@@ -799,3 +799,32 @@ header {
     scroll-snap-type: y mandatory;
     scroll-behavior: smooth;
 }
+
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0px); }
+}
+
+.provador-glass {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+}
+
+.product-card-luxury {
+    transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+    filter: grayscale(0.4) brightness(0.8);
+    transform: scale(0.85);
+}
+
+.product-card-luxury.active {
+    filter: grayscale(0) brightness(1.1);
+    transform: scale(1.05);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    border-color: var(--color-primary);
+}
+
+.snap-center-custom {
+    scroll-snap-align: center;
+}
