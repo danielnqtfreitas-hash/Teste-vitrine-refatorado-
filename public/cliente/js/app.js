@@ -660,7 +660,6 @@ window.openProvador = function() {
     let sizeT = 'Todos';
     let sizeB = 'Todos';
 
-    // Injeção do HTML
     container.innerHTML = `
         <div class="peças-container">
             <div id="deckTop" class="flex overflow-x-auto snap-x snap-mandatory no-scrollbar w-full px-[10%]"></div>
@@ -701,21 +700,30 @@ window.openProvador = function() {
         </div>
     `;
 
-    // FUNÇÃO ÚNICA PARA FECHAR
-    const fechar = () => {
+    // FUNÇÃO PARA VOLTAR À TELA INICIAL
+    const voltarParaInicial = () => {
+        // 1. Esconde o provador
         container.classList.add('hidden');
+        
+        // 2. Restaura o scroll do corpo
         document.body.style.overflow = '';
-    };
+        
+        // 3. Força o scroll para o topo da tela inicial
+        window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    // DELEGAÇÃO DE EVENTO (O "Segredo" para funcionar sempre)
-    container.onclick = (e) => {
-        // Se o clique foi no botão de fechar ou em qualquer coisa dentro dele (como o ícone X)
-        if (e.target.closest('#btnCloseProvador')) {
-            fechar();
+        // 4. Se você tiver uma função que troca de aba (ex: para a aba 'inicio')
+        if (window.showSection) {
+            window.showSection('inicio'); 
         }
     };
 
-    // Restante das configurações
+    // DELEGAÇÃO DE EVENTO NO CONTAINER
+    container.onclick = (e) => {
+        if (e.target.closest('#btnCloseProvador')) {
+            voltarParaInicial();
+        }
+    };
+
     document.getElementById('selTop').onchange = (e) => { sizeT = e.target.value; render(); };
     document.getElementById('selBot').onchange = (e) => { sizeB = e.target.value; render(); };
 
@@ -729,7 +737,7 @@ window.openProvador = function() {
         if(b) window.addToCart(state.allProducts.find(p => p.id == b.dataset.id), 1, {});
         
         if(window.showToast) showToast("Look adicionado!");
-        fechar(); 
+        voltarParaInicial(); 
     };
 
     if (window.lucide) lucide.createIcons();
@@ -745,8 +753,8 @@ window.openProvador = function() {
                 <img src="${p.images[0]}">
             </div>`).join('');
 
-        document.getElementById('deckTop').innerHTML = makeHtml(tops) || '<div class="w-full text-center text-xs opacity-40 text-black">Nenhum superior</div>';
-        document.getElementById('deckBot').innerHTML = makeHtml(bots) || '<div class="w-full text-center text-xs opacity-40 text-black">Nenhum inferior</div>';
+        document.getElementById('deckTop').innerHTML = makeHtml(tops) || '<div class="w-full text-center text-xs opacity-40 text-black font-bold">Nenhum superior</div>';
+        document.getElementById('deckBot').innerHTML = makeHtml(bots) || '<div class="w-full text-center text-xs opacity-40 text-black font-bold">Nenhum inferior</div>';
         
         setupScroll('deckTop');
         setupScroll('deckBot');
