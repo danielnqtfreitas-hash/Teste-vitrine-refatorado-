@@ -653,62 +653,56 @@ window.openProvador = function() {
     if (!container) {
         container = document.createElement('div');
         container.id = 'provadorFullscreen';
-        container.className = 'fixed inset-0 z-[500] bg-white hidden flex-col';
+        container.className = 'fixed inset-0 z-[500] bg-[#F8F9FA] hidden flex-col overflow-hidden';
         document.body.appendChild(container);
     }
 
+    // 1. EXTRAÇÃO DINÂMICA DE TAMANHOS
+    const allSizes = [...new Set(state.allProducts.flatMap(p => p.sizes || []))].sort();
     let currentSizeTop = 'Todos';
     let currentSizeBottom = 'Todos';
 
     container.innerHTML = `
-        <div class="flex flex-col h-full w-full bg-[#F8F9FA] overflow-hidden">
+        <div class="relative h-full w-full flex flex-col overflow-hidden">
             
-            <div class="h-[15%] bg-white px-4 flex flex-col justify-center shadow-sm z-50">
-                <div class="flex justify-between items-center mb-2">
-                    <h2 class="text-lg font-black italic uppercase tracking-tighter">Provador</h2>
+            <div id="provHeader" class="ui-element absolute top-0 left-0 right-0 bg-white/80 backdrop-blur-md p-4 z-50 border-b border-slate-100">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-lg font-black italic uppercase tracking-tighter">Personal Stylist</h2>
                     <button onclick="document.getElementById('provadorFullscreen').classList.add('hidden')" class="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center">
                         <i data-lucide="x" class="w-4 h-4 text-slate-600"></i>
                     </button>
                 </div>
                 <div class="grid grid-cols-2 gap-2">
-                    <select id="fTop" class="bg-slate-50 border-none rounded-lg py-1 px-2 text-[10px] font-bold uppercase">
-                        <option>Todos</option><option>P</option><option>M</option><option>G</option>
+                    <select id="fTop" class="bg-slate-100 border-none rounded-lg py-2 px-2 text-[10px] font-bold uppercase">
+                        <option>Todos</option>
+                        ${allSizes.map(s => `<option value="${s}">${s}</option>`).join('')}
                     </select>
-                    <select id="fBot" class="bg-slate-50 border-none rounded-lg py-1 px-2 text-[10px] font-bold uppercase">
-                        <option>Todos</option><option>38</option><option>40</option><option>42</option>
+                    <select id="fBot" class="bg-slate-100 border-none rounded-lg py-2 px-2 text-[10px] font-bold uppercase">
+                        <option>Todos</option>
+                        ${allSizes.map(s => `<option value="${s}">${s}</option>`).join('')}
                     </select>
                 </div>
             </div>
 
-            <div class="h-[65%] flex flex-col relative bg-white/50">
-                
-                <div id="scrTop" class="h-1/2 flex overflow-x-auto snap-x snap-mandatory no-scrollbar px-[20%] items-center">
-                    </div>
-
-                <div class="absolute top-1/2 left-0 right-0 h-px bg-slate-100 z-20">
-                    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black text-white p-1.5 rounded-full scale-75 shadow-lg">
-                        <i data-lucide="plus" class="w-3 h-3"></i>
-                    </div>
-                </div>
-
-                <div id="scrBot" class="h-1/2 flex overflow-x-auto snap-x snap-mandatory no-scrollbar px-[20%] items-center">
-                    </div>
+            <div class="flex-1 flex flex-col pt-[20%] pb-[25%]">
+                <div id="scrTop" class="h-1/2 flex overflow-x-auto snap-x snap-mandatory no-scrollbar px-[20%] items-center"></div>
+                <div id="scrBot" class="h-1/2 flex overflow-x-auto snap-x snap-mandatory no-scrollbar px-[20%] items-center"></div>
             </div>
 
-            <div class="h-[20%] bg-white p-4 flex flex-col justify-between border-t border-slate-100 z-50">
-                <div class="flex justify-between items-end">
-                    <div>
-                        <p id="pTotal" class="text-2xl font-black text-slate-900 leading-none">R$ 0,00</p>
-                        <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Look Selecionado</span>
-                    </div>
-                    <div class="flex -space-x-2" id="miniThumbs">
+            <div id="provFooter" class="ui-element absolute bottom-6 left-6 right-6 z-50">
+                <div class="bg-white p-5 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-slate-100">
+                    <div class="flex justify-between items-center mb-4">
+                        <div>
+                            <p id="pTotal" class="text-3xl font-black text-slate-900 tracking-tighter leading-none">R$ 0,00</p>
+                            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Look Completo</span>
                         </div>
+                        <div class="flex -space-x-2" id="miniThumbs"></div>
+                    </div>
+                    <button id="btnAddLook" class="w-full h-14 bg-black text-white rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 transition-all flex items-center justify-center gap-2">
+                        <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                        Adicionar ao Carrinho
+                    </button>
                 </div>
-
-                <button id="btnAddLook" class="w-full h-12 bg-black text-white rounded-xl font-bold text-xs uppercase tracking-widest active:scale-95 transition-all shadow-lg flex items-center justify-center gap-2">
-                    <i data-lucide="shopping-bag" class="w-4 h-4"></i>
-                    Adicionar Look
-                </button>
             </div>
         </div>
     `;
@@ -721,48 +715,66 @@ window.openProvador = function() {
         const bots = state.allProducts.filter(p => p.posicaoProvador === 'inferior' && (currentSizeBottom === 'Todos' || p.sizes?.includes(currentSizeBottom)));
 
         const makeCards = (list) => list.map(p => `
-            <div class="p-card min-w-[60vw] h-[90%] snap-center px-2 flex items-center justify-center" data-id="${p.id}" data-price="${p.value}" data-img="${p.images[0]}">
-                <img src="${p.images[0]}" class="img-provador rounded-2xl shadow-sm">
+            <div class="p-card min-w-[65vw] h-full snap-center px-4 flex items-center justify-center transition-all duration-500" data-id="${p.id}" data-price="${p.value}" data-img="${p.images[0]}">
+                <img src="${p.images[0]}" class="max-h-full max-w-full object-contain rounded-3xl shadow-lg border-4 border-white">
             </div>
         `).join('');
 
         document.getElementById('scrTop').innerHTML = makeCards(tops);
         document.getElementById('scrBot').innerHTML = makeCards(bots);
-
-        sync('scrTop');
-        sync('scrBot');
+        
+        setupSync('scrTop');
+        setupSync('scrBot');
     };
 
-    const sync = (id) => {
+    let scrollTimeout;
+    const setupSync = (id) => {
         const el = document.getElementById(id);
-        el.onscroll = () => {
+        const header = document.getElementById('provHeader');
+        const footer = document.getElementById('provFooter');
+
+        el.addEventListener('scroll', () => {
+            // EFEITO DE IMERSÃO: Esconde interface ao mover
+            header.classList.add('ui-hidden');
+            footer.classList.add('ui-hidden-bottom');
+
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(() => {
+                header.classList.remove('ui-hidden');
+                footer.classList.remove('ui-hidden-bottom');
+                updateActive();
+            }, 500);
+
             const center = el.scrollLeft + el.offsetWidth / 2;
             el.querySelectorAll('.p-card').forEach(card => {
                 const c = card.offsetLeft + card.offsetWidth / 2;
                 const d = Math.abs(center - c);
-                card.style.opacity = d < 50 ? "1" : "0.3";
-                card.style.transform = d < 50 ? "scale(1)" : "scale(0.85)";
+                card.style.opacity = d < 60 ? "1" : "0.2";
+                card.style.transform = d < 60 ? "scale(1.1)" : "scale(0.85)";
             });
-            updatePrice();
-        };
-        setTimeout(el.onscroll, 100);
+        });
+        setTimeout(() => el.dispatchEvent(new Event('scroll')), 100);
     };
 
-    const updatePrice = () => {
-        const activeT = [...document.querySelectorAll('#scrTop .p-card')].find(i => i.style.opacity === "1");
-        const activeB = [...document.querySelectorAll('#scrBot .p-card')].find(i => i.style.opacity === "1");
+    const updateActive = () => {
+        const activeT = [...document.querySelectorAll('#scrTop .p-card')].find(i => parseFloat(i.style.opacity) > 0.8);
+        const activeB = [...document.querySelectorAll('#scrBot .p-card')].find(i => parseFloat(i.style.opacity) > 0.8);
 
         const t = (Number(activeT?.dataset.price || 0) + Number(activeB?.dataset.price || 0));
         document.getElementById('pTotal').innerText = `R$ ${t.toFixed(2).replace('.', ',')}`;
         
         document.getElementById('miniThumbs').innerHTML = `
-            <img src="${activeT?.dataset.img || ''}" class="w-8 h-8 rounded-full border-2 border-white object-cover bg-slate-50">
-            <img src="${activeB?.dataset.img || ''}" class="w-8 h-8 rounded-full border-2 border-white object-cover bg-slate-50">
+            <div class="w-10 h-10 rounded-full border-2 border-white overflow-hidden bg-slate-100 shadow-sm">
+                <img src="${activeT?.dataset.img || ''}" class="w-full h-full object-cover">
+            </div>
+            <div class="w-10 h-10 rounded-full border-2 border-white overflow-hidden bg-slate-100 shadow-sm">
+                <img src="${activeB?.dataset.img || ''}" class="w-full h-full object-cover">
+            </div>
         `;
     };
 
+    document.getElementById('fTop').onchange = (e) => { currentSizeTop = e.target.value; render(); };
+    document.getElementById('fBot').onchange = (e) => { currentSizeBottom = e.target.value; render(); };
+
     render();
 };
-
-                
-
