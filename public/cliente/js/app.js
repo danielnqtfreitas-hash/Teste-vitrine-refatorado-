@@ -653,45 +653,79 @@ window.openProvador = function() {
     if (!container) {
         container = document.createElement('div');
         container.id = 'provadorFullscreen';
-        container.className = 'fixed inset-0 z-[200] bg-white hidden flex-col animate-in fade-in duration-300';
+        container.className = 'fixed inset-0 z-[200] bg-slate-50 hidden flex-col animate-in slide-in-from-bottom duration-500';
         document.body.appendChild(container);
     }
 
+    let topSel = state.tops[0];
+    let bottomSel = state.bottoms[0];
+
     container.innerHTML = `
-        <div class="flex flex-col h-full bg-slate-50">
-            <div class="px-6 pt-6 pb-4 bg-white flex justify-between items-center border-b">
+        <div class="flex flex-col h-full overflow-hidden bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-white via-slate-50 to-slate-200">
+            
+            <div class="px-8 pt-8 pb-4 flex justify-between items-end">
                 <div>
-                    <h3 class="text-lg font-black italic uppercase">Mix & Match</h3>
-                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Combine o seu estilo</p>
+                    <span class="text-[10px] font-bold tracking-[0.3em] text-primary-600 uppercase">Personal Stylist AI</span>
+                    <h3 class="text-3xl font-light tracking-tighter text-slate-900">Monte seu <span class="font-black italic">Outfit</span></h3>
                 </div>
-                <button onclick="document.getElementById('provadorFullscreen').classList.add('hidden')" class="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center">
-                    <i data-lucide="x" class="w-5 h-5"></i>
+                <button onclick="document.getElementById('provadorFullscreen').classList.add('hidden')" 
+                        class="w-12 h-12 rounded-full provador-glass flex items-center justify-center border border-white/50 shadow-sm active:scale-90 transition-all">
+                    <i data-lucide="x" class="w-5 h-5 text-slate-800"></i>
                 </button>
             </div>
 
-            <div class="flex-1 flex flex-col justify-center overflow-hidden py-4">
-                <div class="flex overflow-x-auto snap-x snap-mandatory no-scrollbar gap-4 px-[30%] pb-4">
-                    ${state.tops.map(p => `
-                        <div class="product-item min-w-[200px] snap-center">
-                            <img src="${p.images[0]}" class="w-full h-48 object-cover rounded-[2rem] shadow-lg border-4 border-white">
-                        </div>
-                    `).join('')}
+            <div class="flex-1 flex flex-col justify-around py-4">
+                
+                <div class="relative">
+                    <div id="scrollTops" class="flex overflow-x-auto snap-x snap-mandatory no-scrollbar gap-2 px-[30%] items-center">
+                        ${state.tops.map(p => `
+                            <div class="product-card-luxury snap-center-custom min-w-[240px] relative group" data-id="${p.id}">
+                                <img src="${p.images[0]}" class="w-full h-64 object-cover rounded-[2.5rem] border-2 border-transparent group-[.active]:border-white shadow-2xl">
+                                <div class="absolute inset-x-0 -bottom-2 flex justify-center opacity-0 group-[.active]:opacity-100 transition-opacity">
+                                    <span class="bg-white px-4 py-1 rounded-full text-[10px] font-bold shadow-sm uppercase">Superior</span>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
                 </div>
-                <div class="flex justify-center -my-2 z-10">
-                    <div class="bg-black text-white text-[8px] font-black px-3 py-1 rounded-full uppercase">Perfeito</div>
+
+                <div class="flex flex-col items-center z-10">
+                    <div class="w-px h-8 bg-gradient-to-b from-primary-600 to-transparent"></div>
+                    <div class="bg-primary-600 p-2 rounded-full shadow-lg shadow-primary-200 animate-pulse">
+                        <i data-lucide="refresh-cw" class="w-4 h-4 text-white"></i>
+                    </div>
+                    <div class="w-px h-8 bg-gradient-to-t from-primary-600 to-transparent"></div>
                 </div>
-                <div class="flex overflow-x-auto snap-x snap-mandatory no-scrollbar gap-4 px-[30%] pt-4">
-                    ${state.bottoms.map(p => `
-                        <div class="product-item min-w-[200px] snap-center">
-                            <img src="${p.images[0]}" class="w-full h-48 object-cover rounded-[2rem] shadow-lg border-4 border-white">
-                        </div>
-                    `).join('')}
+
+                <div class="relative">
+                    <div id="scrollBottoms" class="flex overflow-x-auto snap-x snap-mandatory no-scrollbar gap-2 px-[30%] items-center">
+                        ${state.bottoms.map(p => `
+                            <div class="product-card-luxury snap-center-custom min-w-[240px] relative group" data-id="${p.id}">
+                                <img src="${p.images[0]}" class="w-full h-64 object-cover rounded-[2.5rem] border-2 border-transparent group-[.active]:border-white shadow-2xl">
+                                <div class="absolute inset-x-0 -bottom-2 flex justify-center opacity-0 group-[.active]:opacity-100 transition-opacity">
+                                    <span class="bg-white px-4 py-1 rounded-full text-[10px] font-bold shadow-sm uppercase">Inferior</span>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
                 </div>
             </div>
 
-            <div class="p-8 bg-white rounded-t-[2.5rem] shadow-2xl">
-                <button onclick="alert('Look selecionado com sucesso!')" class="w-full bg-primary-600 text-white h-16 rounded-2xl font-bold flex items-center justify-center gap-3">
-                    <i data-lucide="shopping-bag" class="w-5 h-5"></i> ADICIONAR AO CARRINHO
+            <div class="p-8 bg-white/80 backdrop-blur-md rounded-t-[3rem] shadow-[0_-20px_50px_rgba(0,0,0,0.05)] border-t border-white">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <p id="lookPrice" class="text-2xl font-black text-slate-900 tracking-tighter">R$ 0,00</p>
+                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Preço do conjunto selecionado</p>
+                    </div>
+                    <div class="flex -space-x-3">
+                        <div class="w-10 h-10 rounded-full border-2 border-white bg-slate-200"></div>
+                        <div class="w-10 h-10 rounded-full border-2 border-white bg-slate-300"></div>
+                    </div>
+                </div>
+                
+                <button id="btnBuyLook" class="w-full h-18 bg-slate-900 hover:bg-primary-600 text-white rounded-[2rem] font-bold flex items-center justify-center gap-4 transition-all duration-500 group shadow-2xl shadow-slate-200">
+                    <span class="tracking-widest uppercase text-sm">Adicionar Look à Bag</span>
+                    <i data-lucide="arrow-right" class="w-5 h-5 group-hover:translate-x-2 transition-transform"></i>
                 </button>
             </div>
         </div>
@@ -699,4 +733,56 @@ window.openProvador = function() {
 
     container.classList.remove('hidden');
     if (window.lucide) lucide.createIcons();
+
+    const updateUI = (el, list, type) => {
+        const rect = el.getBoundingClientRect();
+        const center = rect.left + rect.width / 2;
+        
+        let closest = null;
+        let minDistance = Infinity;
+
+        el.querySelectorAll('.product-card-luxury').forEach((card, index) => {
+            const cardRect = card.getBoundingClientRect();
+            const cardCenter = cardRect.left + cardRect.width / 2;
+            const distance = Math.abs(center - cardCenter);
+
+            if (distance < minDistance) {
+                minDistance = distance;
+                closest = { card, index };
+            }
+            card.classList.remove('active');
+        });
+
+        if (closest) {
+            closest.card.classList.add('active');
+            if (type === 'top') topSel = list[closest.index];
+            else bottomSel = list[closest.index];
+            
+            // Haptic Feedback (se disponível no celular)
+            if (window.navigator.vibrate) window.navigator.vibrate(5);
+            
+            const totalPrice = (Number(topSel?.value || 0) + Number(bottomSel?.value || 0));
+            document.getElementById('lookPrice').innerText = `R$ ${totalPrice.toFixed(2).replace('.', ',')}`;
+        }
+    };
+
+    const topScroll = document.getElementById('scrollTops');
+    const bottomScroll = document.getElementById('scrollBottoms');
+
+    topScroll.addEventListener('scroll', () => updateUI(topScroll, state.tops, 'top'));
+    bottomScroll.addEventListener('scroll', () => updateUI(bottomScroll, state.bottoms, 'bottom'));
+    
+    // Trigger inicial
+    setTimeout(() => {
+        updateUI(topScroll, state.tops, 'top');
+        updateUI(bottomScroll, state.bottoms, 'bottom');
+    }, 100);
+
+    document.getElementById('btnBuyLook').onclick = () => {
+        if(topSel) window.addToCart(topSel, 1, {});
+        if(bottomSel) window.addToCart(bottomSel, 1, {});
+        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+        showToast("Look adicionado com sucesso!");
+        setTimeout(() => container.classList.add('hidden'), 800);
+    };
 };
