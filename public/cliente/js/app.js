@@ -648,16 +648,12 @@ function updatePremiumLoader(progress, logoUrl = null) {
     }
 }
 
-
 window.openProvador = function() {
-    // Bloqueia o scroll do fundo
-    document.body.classList.add('modal-open');
-    
     let container = document.getElementById('provadorFullscreen');
     if (!container) {
         container = document.createElement('div');
         container.id = 'provadorFullscreen';
-        container.className = 'fixed inset-0 z-[500] bg-white hidden flex-col overflow-hidden';
+        container.className = 'fixed inset-0 z-[500] bg-white hidden flex-col';
         document.body.appendChild(container);
     }
 
@@ -665,54 +661,53 @@ window.openProvador = function() {
     let currentSizeBottom = 'Todos';
 
     container.innerHTML = `
-        <div class="flex flex-col h-full w-full bg-[#F8F9FA] safe-top">
+        <div class="flex flex-col h-full w-full bg-[#F8F9FA] overflow-hidden">
             
-            <div class="bg-white px-4 pt-4 pb-2 shadow-sm z-50">
+            <div class="h-[15%] bg-white px-4 flex flex-col justify-center shadow-sm z-50">
                 <div class="flex justify-between items-center mb-2">
-                    <h2 class="text-xl font-black italic tracking-tighter uppercase">Provador Studio</h2>
-                    <button onclick="closeProvador()" class="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center">
-                        <i data-lucide="x" class="w-5 h-5 text-slate-600"></i>
+                    <h2 class="text-lg font-black italic uppercase tracking-tighter">Provador</h2>
+                    <button onclick="document.getElementById('provadorFullscreen').classList.add('hidden')" class="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center">
+                        <i data-lucide="x" class="w-4 h-4 text-slate-600"></i>
                     </button>
                 </div>
-
                 <div class="grid grid-cols-2 gap-2">
-                    <select id="filterTop" class="bg-slate-50 border-none rounded-lg py-2 px-3 text-[10px] font-bold uppercase">
-                        <option>Todos</option><option>P</option><option>M</option><option>G</option><option>GG</option>
+                    <select id="fTop" class="bg-slate-50 border-none rounded-lg py-1 px-2 text-[10px] font-bold uppercase">
+                        <option>Todos</option><option>P</option><option>M</option><option>G</option>
                     </select>
-                    <select id="filterBottom" class="bg-slate-50 border-none rounded-lg py-2 px-3 text-[10px] font-bold uppercase">
-                        <option>Todos</option><option>36</option><option>38</option><option>40</option><option>42</option><option>44</option>
+                    <select id="fBot" class="bg-slate-50 border-none rounded-lg py-1 px-2 text-[10px] font-bold uppercase">
+                        <option>Todos</option><option>38</option><option>40</option><option>42</option>
                     </select>
                 </div>
             </div>
 
-            <div class="flex-1 flex flex-col relative overflow-hidden">
+            <div class="h-[65%] flex flex-col relative bg-white/50">
                 
-                <div id="scrollTops" class="h-[45%] flex overflow-x-auto snap-x snap-mandatory no-scrollbar px-[25%] items-center">
+                <div id="scrTop" class="h-1/2 flex overflow-x-auto snap-x snap-mandatory no-scrollbar px-[20%] items-center">
                     </div>
 
-                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none">
-                    <div class="bg-black text-white p-2 rounded-full shadow-lg scale-75">
-                        <i data-lucide="plus" class="w-4 h-4"></i>
+                <div class="absolute top-1/2 left-0 right-0 h-px bg-slate-100 z-20">
+                    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black text-white p-1.5 rounded-full scale-75 shadow-lg">
+                        <i data-lucide="plus" class="w-3 h-3"></i>
                     </div>
                 </div>
 
-                <div id="scrollBottoms" class="h-[45%] flex overflow-x-auto snap-x snap-mandatory no-scrollbar px-[25%] items-center">
+                <div id="scrBot" class="h-1/2 flex overflow-x-auto snap-x snap-mandatory no-scrollbar px-[20%] items-center">
                     </div>
             </div>
 
-            <div class="bg-white p-6 pb-8 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] z-50">
-                <div class="flex justify-between items-center mb-4">
-                    <div class="leading-tight">
-                        <p id="totalPrice" class="text-3xl font-black text-slate-900 tracking-tight">R$ 0,00</p>
-                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Look Combinado</p>
+            <div class="h-[20%] bg-white p-4 flex flex-col justify-between border-t border-slate-100 z-50">
+                <div class="flex justify-between items-end">
+                    <div>
+                        <p id="pTotal" class="text-2xl font-black text-slate-900 leading-none">R$ 0,00</p>
+                        <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Look Selecionado</span>
                     </div>
-                    <div class="flex -space-x-3" id="previewThumbnails">
+                    <div class="flex -space-x-2" id="miniThumbs">
                         </div>
                 </div>
 
-                <button id="btnFinalizarLook" class="w-full h-14 bg-black text-white rounded-xl font-black flex items-center justify-center gap-3 active:scale-95 transition-all uppercase tracking-widest text-xs">
+                <button id="btnAddLook" class="w-full h-12 bg-black text-white rounded-xl font-bold text-xs uppercase tracking-widest active:scale-95 transition-all shadow-lg flex items-center justify-center gap-2">
                     <i data-lucide="shopping-bag" class="w-4 h-4"></i>
-                    Finalizar Look
+                    Adicionar Look
                 </button>
             </div>
         </div>
@@ -721,91 +716,53 @@ window.openProvador = function() {
     container.classList.remove('hidden');
     if (window.lucide) lucide.createIcons();
 
-    window.closeProvador = function() {
-        document.body.classList.remove('modal-open');
-        container.classList.add('hidden');
-    };
-
-    const renderSets = () => {
+    const render = () => {
         const tops = state.allProducts.filter(p => p.posicaoProvador === 'superior' && (currentSizeTop === 'Todos' || p.sizes?.includes(currentSizeTop)));
-        const bottoms = state.allProducts.filter(p => p.posicaoProvador === 'inferior' && (currentSizeBottom === 'Todos' || p.sizes?.includes(currentSizeBottom)));
+        const bots = state.allProducts.filter(p => p.posicaoProvador === 'inferior' && (currentSizeBottom === 'Todos' || p.sizes?.includes(currentSizeBottom)));
 
-        const generateCards = (list) => list.map(p => `
-            <div class="product-item min-w-[65vw] snap-center p-2" data-id="${p.id}" data-price="${p.value}" data-img="${p.images[0]}">
-                <img src="${p.images[0]}" class="w-full h-full aspect-[4/5] object-cover rounded-3xl shadow-md border-2 border-transparent">
+        const makeCards = (list) => list.map(p => `
+            <div class="p-card min-w-[60vw] h-[90%] snap-center px-2 flex items-center justify-center" data-id="${p.id}" data-price="${p.value}" data-img="${p.images[0]}">
+                <img src="${p.images[0]}" class="img-provador rounded-2xl shadow-sm">
             </div>
         `).join('');
 
-        document.getElementById('scrollTops').innerHTML = generateCards(tops);
-        document.getElementById('scrollBottoms').innerHTML = generateCards(bottoms);
+        document.getElementById('scrTop').innerHTML = makeCards(tops);
+        document.getElementById('scrBot').innerHTML = makeCards(bots);
 
-        setupSync('scrollTops', 'top');
-        setupSync('scrollBottoms', 'bottom');
+        sync('scrTop');
+        sync('scrBot');
     };
 
-    const setupSync = (id, type) => {
+    const sync = (id) => {
         const el = document.getElementById(id);
-        const onScroll = () => {
+        el.onscroll = () => {
             const center = el.scrollLeft + el.offsetWidth / 2;
-            let activeItem = null;
-            let minDistance = Infinity;
-
-            el.querySelectorAll('.product-item').forEach(item => {
-                const itemCenter = item.offsetLeft + item.offsetWidth / 2;
-                const dist = Math.abs(center - itemCenter);
-                if (dist < minDistance) {
-                    minDistance = dist;
-                    activeItem = item;
-                }
-                item.style.opacity = "0.3";
-                item.style.transform = "scale(0.85)";
-                item.style.filter = "grayscale(1)";
+            el.querySelectorAll('.p-card').forEach(card => {
+                const c = card.offsetLeft + card.offsetWidth / 2;
+                const d = Math.abs(center - c);
+                card.style.opacity = d < 50 ? "1" : "0.3";
+                card.style.transform = d < 50 ? "scale(1)" : "scale(0.85)";
             });
-
-            if (activeItem) {
-                activeItem.style.opacity = "1";
-                activeItem.style.transform = "scale(1)";
-                activeItem.style.filter = "grayscale(0)";
-                
-                // Atualiza Preço e Thumbs
-                updateCheckout();
-            }
+            updatePrice();
         };
-
-        el.onscroll = onScroll;
-        setTimeout(onScroll, 100);
+        setTimeout(el.onscroll, 100);
     };
 
-    const updateCheckout = () => {
-        const activeTop = [...document.querySelectorAll('#scrollTops .product-item')].find(i => i.style.opacity === "1");
-        const activeBot = [...document.querySelectorAll('#scrollBottoms .product-item')].find(i => i.style.opacity === "1");
+    const updatePrice = () => {
+        const activeT = [...document.querySelectorAll('#scrTop .p-card')].find(i => i.style.opacity === "1");
+        const activeB = [...document.querySelectorAll('#scrBot .p-card')].find(i => i.style.opacity === "1");
 
-        const price = (Number(activeTop?.dataset.price || 0) + Number(activeBot?.dataset.price || 0));
-        document.getElementById('totalPrice').innerText = `R$ ${price.toFixed(2).replace('.', ',')}`;
-
-        document.getElementById('previewThumbnails').innerHTML = `
-            <div class="w-10 h-10 rounded-full border-2 border-white overflow-hidden shadow-sm bg-slate-100">
-                ${activeTop ? `<img src="${activeTop.dataset.img}" class="w-full h-full object-cover">` : ''}
-            </div>
-            <div class="w-10 h-10 rounded-full border-2 border-white overflow-hidden shadow-sm bg-slate-100">
-                ${activeBot ? `<img src="${activeBot.dataset.img}" class="w-full h-full object-cover">` : ''}
-            </div>
+        const t = (Number(activeT?.dataset.price || 0) + Number(activeB?.dataset.price || 0));
+        document.getElementById('pTotal').innerText = `R$ ${t.toFixed(2).replace('.', ',')}`;
+        
+        document.getElementById('miniThumbs').innerHTML = `
+            <img src="${activeT?.dataset.img || ''}" class="w-8 h-8 rounded-full border-2 border-white object-cover bg-slate-50">
+            <img src="${activeB?.dataset.img || ''}" class="w-8 h-8 rounded-full border-2 border-white object-cover bg-slate-50">
         `;
     };
 
-    document.getElementById('filterTop').onchange = (e) => { currentSizeTop = e.target.value; renderSets(); };
-    document.getElementById('filterBottom').onchange = (e) => { currentSizeBottom = e.target.value; renderSets(); };
-    
-    document.getElementById('btnFinalizarLook').onclick = () => {
-        const tId = [...document.querySelectorAll('#scrollTops .product-item')].find(i => i.style.opacity === "1")?.dataset.id;
-        const bId = [...document.querySelectorAll('#scrollBottoms .product-item')].find(i => i.style.opacity === "1")?.dataset.id;
-        
-        if(tId) window.addToCart(state.allProducts.find(p => p.id == tId), 1, {});
-        if(bId) window.addToCart(state.allProducts.find(p => p.id == bId), 1, {});
-        
-        showToast("Look adicionado!");
-        closeProvador();
-    };
-
-    renderSets();
+    render();
 };
+
+                
+
