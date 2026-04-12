@@ -807,116 +807,81 @@ header {
 }
 
 /* =========================================
-   PROVADOR STUDIO - CORREÇÃO DE BOTÕES E VISUAL
+   PROVADOR - INTERFACE FLUTUANTE (OVERLAY)
    ========================================= */
 
 #provadorFullscreen {
     height: 100dvh;
     width: 100vw;
-    overflow: hidden;
     position: fixed;
     top: 0;
     left: 0;
     background-color: #ffffff;
-    /* Z-INDEX CRÍTICO: Deve ser maior que o Discovery Feed (200000) */
-    z-index: 999999 !important; 
+    z-index: 999999 !important;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
-/* Garantia que o conteúdo interno ocupe a tela toda */
-#provadorFullscreen > div {
-    height: 100%;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-}
-
-/* 1. Header Fixo no Topo */
-#provHeader {
-    position: relative;
-    z-index: 1000;
-    padding: 16px;
-    background: white;
-    border-bottom: 1px solid #f8fafc;
-}
-
-/* Botão de fechar com área de clique maior */
-#btnCloseProvador {
-    cursor: pointer !important;
-    pointer-events: auto !important;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    background: #f1f5f9;
-    border-radius: 50%;
-}
-
-/* 2. Palco das Peças (Centralizado) */
+/* Camada de Peças (Fundo) */
 .peças-container {
-    flex: 1; /* Ocupa o centro da tela */
+    position: absolute; /* Ocupa a tela toda ao fundo */
+    inset: 0;
     display: flex;
     flex-direction: column;
-    justify-content: center; 
-    align-items: center;
-    gap: 10px; /* Espaço pequeno entre as peças, sem sobrepor */
+    justify-content: center;
+    z-index: 1; 
 }
 
 #deckTop, #deckBot {
-    height: 35dvh; /* Altura controlada para não expulsar o footer */
+    height: 45dvh; /* Aumentado para ocupar mais tela */
     display: flex;
     align-items: center;
     width: 100%;
 }
 
-.p-card {
-    min-width: 80vw;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
+/* Header Flutuante */
+#provHeader {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    padding: 20px;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.9) 0%, transparent 100%);
+    pointer-events: none; /* Deixa o scroll passar por ele nas áreas vazias */
+}
+
+#provHeader * { pointer-events: auto; } /* Reativa cliques nos selects e botão x */
+
+/* Footer Flutuante */
+#provFooter {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    padding: 20px;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+    background: linear-gradient(to top, rgba(255,255,255,0.95) 40%, transparent 100%);
+}
+
+/* Botão de Adicionar - Agora com destaque flutuante */
+#btnFinalizarLook {
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    cursor: pointer !important;
+    pointer-events: auto !important;
 }
 
 .p-card img {
-    max-height: 100%;
-    max-width: 100%;
+    max-height: 90%;
+    max-width: 85%;
     object-fit: contain;
-    background: transparent;
-    border: none !important;
-    box-shadow: none !important;
+    transition: transform 0.3s ease;
 }
 
-/* Efeito de foco suave */
-.p-card.active-piece {
-    opacity: 1 !important;
-    transform: scale(1.05);
-}
-
-.p-card:not(.active-piece) {
-    opacity: 0.2;
-    transform: scale(0.9);
-}
-
-/* 3. Footer Fixo na Base */
-#provFooter {
-    position: relative;
-    z-index: 1000;
-    padding: 20px;
-    padding-bottom: calc(24px + env(safe-area-inset-bottom));
-    background: white;
-    border-top: 1px solid #f1f5f9;
-}
-
-/* Botão de Adicionar */
-#btnFinalizarLook {
-    cursor: pointer !important;
-    pointer-events: auto !important;
-    background-color: #000000 !important;
-    color: #ffffff !important;
-    transition: transform 0.2s active;
+.active-piece img {
+    transform: scale(1.1); /* Zoom na peça ativa */
 }
 
 #btnFinalizarLook:active {
