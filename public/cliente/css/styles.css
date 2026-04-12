@@ -58,36 +58,39 @@ body {
 .thumb-inactive { border-color: transparent; opacity: 0.6; }
 
 /* Carrossel Hero */
-/* Container do Hero - Ajuste de precisão */
+/* Container fixo, sem scroll */
 #heroGridContainer {
-    display: flex;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
+    position: relative;
     width: 100%;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none; /* Firefox */
+    overflow: hidden;
+    display: block; /* Mudamos de flex para block */
 }
 
-#heroGridContainer::-webkit-scrollbar {
-    display: none; /* Chrome/Safari */
-}
-
-/* O Card do Hero */
+/* Os cards agora ficam sobrepostos */
 .hero-card {
-    scroll-snap-align: center;
-    min-width: 100%; /* Ocupa exatamente 100% da largura do pai */
-    flex-shrink: 0;
-    box-sizing: border-box;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.6s ease-in-out, visibility 0.6s;
+    z-index: 1;
 }
 
-/* Animação para o logo não achatar */
-.animate-floating {
-    animation: floating 3s ease-in-out infinite;
+/* Card visível */
+.hero-card.active {
+    opacity: 1;
+    visibility: visible;
+    z-index: 10;
+    position: relative; /* O card ativo define a altura do pai */
 }
 
-@keyframes floating {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-10px); }
+/* Ajuste para imagens não quebrarem o layout */
+.hero-card img {
+    max-width: 100%;
+    height: auto;
+    object-fit: cover;
 }
 /* =========================================
    MODAIS & OVERLAYS
