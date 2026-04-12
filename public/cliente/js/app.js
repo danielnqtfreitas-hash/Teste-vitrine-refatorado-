@@ -647,7 +647,6 @@ function updatePremiumLoader(progress, logoUrl = null) {
         }, 500);
     }
 }
-
 window.openProvador = function() {
     let container = document.getElementById('provadorFullscreen');
     if (!container) {
@@ -656,14 +655,18 @@ window.openProvador = function() {
         document.body.appendChild(container);
     }
 
-    // --- 1. FILTROS RESTRITOS APENAS AO PROVADOR ---
+    // --- 1. FILTROS RESTRITOS APENAS AO QUE ESTÁ NO PROVADOR ---
     const provadorProducts = state.allProducts.filter(p => p.posicaoProvador === 'superior' || p.posicaoProvador === 'inferior');
     const sizesOnlyProvador = [...new Set(provadorProducts.flatMap(p => p.sizes || []))].sort();
     
     let sizeT = 'Todos';
     let sizeB = 'Todos';
 
+    // Injetamos o HTML (Note que adicionei estilos inline de segurança para garantir o fechamento)
     container.innerHTML = `
+        <style>
+            #provadorFullscreen.fechar-modal { display: none !important; }
+        </style>
         <div class="peças-container">
             <div id="deckTop" class="flex overflow-x-auto snap-x snap-mandatory no-scrollbar w-full"></div>
             <div id="deckBot" class="flex overflow-x-auto snap-x snap-mandatory no-scrollbar w-full"></div>
@@ -672,16 +675,16 @@ window.openProvador = function() {
         <div id="provHeader">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-black italic tracking-tighter uppercase">Mix & Match</h2>
-                <button id="btnCloseProvador" class="w-10 h-10 bg-black text-white rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform">
+                <button id="btnCloseProvador" class="w-10 h-10 bg-black text-white rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform" style="pointer-events: auto !important;">
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
             <div class="grid grid-cols-2 gap-2">
-                <select id="selTop" class="bg-white border border-slate-200 rounded-xl py-2 px-3 text-[11px] font-bold shadow-sm">
+                <select id="selTop" class="bg-white border border-slate-200 rounded-xl py-2 px-3 text-[11px] font-bold shadow-sm" style="pointer-events: auto !important;">
                     <option value="Todos">TOP: TODOS</option>
                     ${sizesOnlyProvador.map(s => `<option value="${s}">${s}</option>`).join('')}
                 </select>
-                <select id="selBot" class="bg-white border border-slate-200 rounded-xl py-2 px-3 text-[11px] font-bold shadow-sm">
+                <select id="selBot" class="bg-white border border-slate-200 rounded-xl py-2 px-3 text-[11px] font-bold shadow-sm" style="pointer-events: auto !important;">
                     <option value="Todos">BOTTOM: TODOS</option>
                     ${sizesOnlyProvador.map(s => `<option value="${s}">${s}</option>`).join('')}
                 </select>
@@ -696,71 +699,68 @@ window.openProvador = function() {
                 </div>
                 <div id="miniPrev" class="flex -space-x-2"></div>
             </div>
-            <button id="btnFinalizarLook" class="w-full h-16 bg-black text-white rounded-2xl font-black text-xs uppercase tracking-[0.1em] flex items-center justify-center gap-3 active:scale-95 transition-transform">
+            <button id="btnFinalizarLook" class="w-full h-16 bg-black text-white rounded-2xl font-black text-xs uppercase tracking-[0.1em] flex items-center justify-center gap-3 active:scale-95 transition-transform" style="pointer-events: auto !important;">
                 <i data-lucide="shopping-bag" class="w-5 h-5"></i>
                 Adicionar ao Carrinho
             </button>
         </div>
     `;
 
-    const fechar = () => {
-        container.classList.add('hidden');
-        document.body.style.overflow = '';
+    // --- FUNÇÃO DE FECHAMENTO FORÇADO ---
+    const fecharTotal = () => {
+        console.log("Fechando provador...");
+        container.classList.add('hidden'); // Classe padrão
+        container.style.display = 'none';   // Força via style inline
+        document.body.style.overflow = ''; // Devolve o scroll ao site
     };
 
-    // --- 2. GESTÃO DE EVENTOS (DELEGAÇÃO DE CLIQUE) ---
+    // --- GESTÃO DE EVENTOS ---
     container.onclick = function(e) {
-        // Clique no X para fechar
         if (e.target.closest('#btnCloseProvador')) {
-            fechar();
-            return;
+            fecharTotal();
         }
 
-        // Clique para Adicionar ao Carrinho
         if (e.target.closest('#btnFinalizarLook')) {
             const t = document.querySelector('#deckTop .active-piece');
             const b = document.querySelector('#deckBot .active-piece');
             
-            if(!t && !b) {
-                alert("Deslize para escolher pelo menos uma peça!");
-                return;
-            }
+            if(!t && !b) return alert("Selecione uma peça!");
 
             if(t) {
-                const prodT = state.allProducts.find(p => p.id == t.dataset.id);
-                window.addToCart(prodT, 1, { selectedSize: sizeT !== 'Todos' ? sizeT : (prodT.sizes?.[0] || 'UN') });
+                const p = state.allProducts.find(x => x.id == t.dataset.id);
+                window.addToCart(p, 1, { selectedSize: sizeT !== 'Todos' ? sizeT : (p.sizes?.[0] || 'UN') });
             }
             if(b) {
-                const prodB = state.allProducts.find(p => p.id == b.dataset.id);
-                window.addToCart(prodB, 1, { selectedSize: sizeB !== 'Todos' ? sizeB : (prodB.sizes?.[0] || 'UN') });
+                const p = state.allProducts.find(x => x.id == b.dataset.id);
+                window.addToCart(p, 1, { selectedSize: sizeB !== 'Todos' ? sizeB : (p.sizes?.[0] || 'UN') });
             }
             
-            if(window.showToast) showToast("Look adicionado ao carrinho!");
-            fechar();
+            if(window.showToast) showToast("Look adicionado!");
+            fecharTotal(); // Fecha após adicionar
         }
     };
 
-    // Eventos dos Selects
+    // Filtros
     container.querySelector('#selTop').onchange = (e) => { sizeT = e.target.value; render(); };
     container.querySelector('#selBot').onchange = (e) => { sizeB = e.target.value; render(); };
 
-    // Inicializa ícones e visibilidade
     if (window.lucide) lucide.createIcons();
     container.classList.remove('hidden');
+    container.style.display = 'flex'; // Garante que abra como flex
     document.body.style.overflow = 'hidden';
 
-    // --- 3. LÓGICA DE RENDERIZAÇÃO E SCROLL ---
+    // --- RENDERIZAÇÃO ---
     const render = () => {
         const tops = state.allProducts.filter(p => p.posicaoProvador === 'superior' && (sizeT === 'Todos' || p.sizes?.includes(sizeT)));
         const bots = state.allProducts.filter(p => p.posicaoProvador === 'inferior' && (sizeB === 'Todos' || p.sizes?.includes(sizeB)));
 
         const makeHtml = (list) => list.map(p => `
-            <div class="p-card" data-id="${p.id}" data-price="${p.value}" data-img="${p.images[0]}">
+            <div class="p-card snap-center" data-id="${p.id}" data-price="${p.value}" data-img="${p.images[0]}">
                 <img src="${p.images[0]}">
             </div>`).join('');
 
-        document.getElementById('deckTop').innerHTML = makeHtml(tops) || '<div class="w-full text-center text-xs opacity-40 py-20">Nenhum Top</div>';
-        document.getElementById('deckBot').innerHTML = makeHtml(bots) || '<div class="w-full text-center text-xs opacity-40 py-20">Nenhum Bottom</div>';
+        document.getElementById('deckTop').innerHTML = makeHtml(tops) || '<div class="w-full text-center py-10 opacity-40">Vazio</div>';
+        document.getElementById('deckBot').innerHTML = makeHtml(bots) || '<div class="w-full text-center py-10 opacity-40">Vazio</div>';
         
         setupScroll('deckTop');
         setupScroll('deckBot');
@@ -772,15 +772,11 @@ window.openProvador = function() {
             const center = el.scrollLeft + el.offsetWidth / 2;
             el.querySelectorAll('.p-card').forEach(card => {
                 const c = card.offsetLeft + card.offsetWidth / 2;
-                // Ajustamos a margem de detecção para ser mais precisa
-                const isActive = Math.abs(center - c) < (el.offsetWidth / 3);
-                card.classList.toggle('active-piece', isActive);
+                card.classList.toggle('active-piece', Math.abs(center - c) < 60);
             });
-
             clearTimeout(el.timer);
             el.timer = setTimeout(() => updateUI(), 100);
         };
-        // Dispara o scroll inicial para marcar a primeira peça como ativa
         setTimeout(() => el.dispatchEvent(new Event('scroll')), 200);
     };
 
@@ -788,7 +784,6 @@ window.openProvador = function() {
         const t = document.querySelector('#deckTop .active-piece');
         const b = document.querySelector('#deckBot .active-piece');
         const total = (Number(t?.dataset.price || 0) + Number(b?.dataset.price || 0));
-        
         document.getElementById('pTotal').innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
         document.getElementById('miniPrev').innerHTML = `
             ${t ? `<img src="${t.dataset.img}" class="w-10 h-10 rounded-full border-2 border-white object-cover bg-white shadow-sm">` : ''}
@@ -798,3 +793,4 @@ window.openProvador = function() {
 
     render();
 };
+
