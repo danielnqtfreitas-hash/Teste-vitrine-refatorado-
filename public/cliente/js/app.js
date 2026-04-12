@@ -653,128 +653,132 @@ window.openProvador = function() {
     if (!container) {
         container = document.createElement('div');
         container.id = 'provadorFullscreen';
-        container.className = 'fixed inset-0 z-[500] bg-[#F8F9FA] hidden flex-col overflow-hidden';
         document.body.appendChild(container);
     }
 
-    // 1. EXTRAÇÃO DINÂMICA DE TAMANHOS
+    // Filtros Dinâmicos baseados no que existe no estado
     const allSizes = [...new Set(state.allProducts.flatMap(p => p.sizes || []))].sort();
-    let currentSizeTop = 'Todos';
-    let currentSizeBottom = 'Todos';
+    let sizeT = 'Todos';
+    let sizeB = 'Todos';
 
     container.innerHTML = `
-        <div class="relative h-full w-full flex flex-col overflow-hidden">
+        <div class="relative h-full w-full flex flex-col">
             
-            <div id="provHeader" class="ui-element absolute top-0 left-0 right-0 bg-white/80 backdrop-blur-md p-4 z-50 border-b border-slate-100">
-                <div class="flex justify-between items-center mb-3">
-                    <h2 class="text-lg font-black italic uppercase tracking-tighter">Personal Stylist</h2>
-                    <button onclick="document.getElementById('provadorFullscreen').classList.add('hidden')" class="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center">
-                        <i data-lucide="x" class="w-4 h-4 text-slate-600"></i>
+            <div id="provHeader" class="ui-element absolute top-0 left-0 right-0 p-4 bg-white/70 backdrop-blur-md border-b border-slate-100">
+                <div class="flex justify-between items-center mb-4 pt-2">
+                    <h2 class="text-xl font-black italic tracking-tighter uppercase">Mix & Match</h2>
+                    <button onclick="document.getElementById('provadorFullscreen').classList.add('hidden')" class="w-10 h-10 bg-black text-white rounded-full flex items-center justify-center shadow-lg">
+                        <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
                 </div>
                 <div class="grid grid-cols-2 gap-2">
-                    <select id="fTop" class="bg-slate-100 border-none rounded-lg py-2 px-2 text-[10px] font-bold uppercase">
-                        <option>Todos</option>
+                    <select id="selTop" class="bg-white border-none rounded-xl py-3 px-3 text-[11px] font-bold uppercase shadow-sm">
+                        <option value="Todos">Tamanho Top</option>
                         ${allSizes.map(s => `<option value="${s}">${s}</option>`).join('')}
                     </select>
-                    <select id="fBot" class="bg-slate-100 border-none rounded-lg py-2 px-2 text-[10px] font-bold uppercase">
-                        <option>Todos</option>
+                    <select id="selBot" class="bg-white border-none rounded-xl py-3 px-3 text-[11px] font-bold uppercase shadow-sm">
+                        <option value="Todos">Tamanho Bottom</option>
                         ${allSizes.map(s => `<option value="${s}">${s}</option>`).join('')}
                     </select>
                 </div>
             </div>
 
-            <div class="flex-1 flex flex-col pt-[20%] pb-[25%]">
-                <div id="scrTop" class="h-1/2 flex overflow-x-auto snap-x snap-mandatory no-scrollbar px-[20%] items-center"></div>
-                <div id="scrBot" class="h-1/2 flex overflow-x-auto snap-x snap-mandatory no-scrollbar px-[20%] items-center"></div>
+            <div class="peças-container -space-y-12"> 
+                <div id="deckTop" class="flex overflow-x-auto snap-x snap-mandatory no-scrollbar w-full px-[12.5%] items-end"></div>
+                <div id="deckBot" class="flex overflow-x-auto snap-x snap-mandatory no-scrollbar w-full px-[12.5%] items-start"></div>
             </div>
 
-            <div id="provFooter" class="ui-element absolute bottom-6 left-6 right-6 z-50">
-                <div class="bg-white p-5 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-slate-100">
-                    <div class="flex justify-between items-center mb-4">
-                        <div>
-                            <p id="pTotal" class="text-3xl font-black text-slate-900 tracking-tighter leading-none">R$ 0,00</p>
-                            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Look Completo</span>
-                        </div>
-                        <div class="flex -space-x-2" id="miniThumbs"></div>
+            <div id="provFooter" class="ui-element absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-white via-white/90 to-transparent">
+                <div class="flex justify-between items-end mb-4">
+                    <div>
+                        <p id="pTotal" class="text-4xl font-black text-slate-900 leading-none tracking-tighter text-shadow-sm">R$ 0,00</p>
+                        <span class="text-[10px] font-bold text-primary-600 uppercase tracking-widest">Look Completo</span>
                     </div>
-                    <button id="btnAddLook" class="w-full h-14 bg-black text-white rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 transition-all flex items-center justify-center gap-2">
-                        <i data-lucide="shopping-bag" class="w-4 h-4"></i>
-                        Adicionar ao Carrinho
-                    </button>
+                    <div id="miniPrev" class="flex -space-x-3 mb-1"></div>
                 </div>
+                <button id="btnFinal" class="w-full h-16 bg-black text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-2xl active:scale-95 transition-all flex items-center justify-center gap-3">
+                    <i data-lucide="shopping-bag" class="w-5 h-5"></i>
+                    Adicionar Look ao Carrinho
+                </button>
             </div>
         </div>
     `;
 
-    container.classList.remove('hidden');
     if (window.lucide) lucide.createIcons();
+    container.classList.remove('hidden');
 
     const render = () => {
-        const tops = state.allProducts.filter(p => p.posicaoProvador === 'superior' && (currentSizeTop === 'Todos' || p.sizes?.includes(currentSizeTop)));
-        const bots = state.allProducts.filter(p => p.posicaoProvador === 'inferior' && (currentSizeBottom === 'Todos' || p.sizes?.includes(currentSizeBottom)));
+        const tops = state.allProducts.filter(p => p.posicaoProvador === 'superior' && (sizeT === 'Todos' || p.sizes?.includes(sizeT)));
+        const bots = state.allProducts.filter(p => p.posicaoProvador === 'inferior' && (sizeB === 'Todos' || p.sizes?.includes(sizeB)));
 
-        const makeCards = (list) => list.map(p => `
-            <div class="p-card min-w-[65vw] h-full snap-center px-4 flex items-center justify-center transition-all duration-500" data-id="${p.id}" data-price="${p.value}" data-img="${p.images[0]}">
-                <img src="${p.images[0]}" class="max-h-full max-w-full object-contain rounded-3xl shadow-lg border-4 border-white">
-            </div>
-        `).join('');
+        const tHTML = tops.map(p => `<div class="p-card snap-center" data-id="${p.id}" data-price="${p.value}" data-img="${p.images[0]}"><img src="${p.images[0]}"></div>`).join('');
+        const bHTML = bots.map(p => `<div class="p-card snap-center" data-id="${p.id}" data-price="${p.value}" data-img="${p.images[0]}"><img src="${p.images[0]}"></div>`).join('');
 
-        document.getElementById('scrTop').innerHTML = makeCards(tops);
-        document.getElementById('scrBot').innerHTML = makeCards(bots);
+        document.getElementById('deckTop').innerHTML = tHTML || `<div class="w-full text-center py-10 opacity-50 italic text-sm">Sem peças P</div>`;
+        document.getElementById('deckBot').innerHTML = bHTML || `<div class="w-full text-center py-10 opacity-50 italic text-sm">Sem peças P</div>`;
         
-        setupSync('scrTop');
-        setupSync('scrBot');
+        setup('deckTop');
+        setup('deckBot');
     };
 
-    let scrollTimeout;
-    const setupSync = (id) => {
+    const setup = (id) => {
         const el = document.getElementById(id);
-        const header = document.getElementById('provHeader');
-        const footer = document.getElementById('provFooter');
+        const h = document.getElementById('provHeader');
+        const f = document.getElementById('provFooter');
 
         el.addEventListener('scroll', () => {
-            // EFEITO DE IMERSÃO: Esconde interface ao mover
-            header.classList.add('ui-hidden');
-            footer.classList.add('ui-hidden-bottom');
+            // Esconde interface
+            h.classList.add('ui-hidden');
+            f.classList.add('ui-hidden-bottom');
 
-            clearTimeout(scrollTimeout);
-            scrollTimeout = setTimeout(() => {
-                header.classList.remove('ui-hidden');
-                footer.classList.remove('ui-hidden-bottom');
-                updateActive();
-            }, 500);
-
+            // Feedback Visual nas Peças
             const center = el.scrollLeft + el.offsetWidth / 2;
             el.querySelectorAll('.p-card').forEach(card => {
                 const c = card.offsetLeft + card.offsetWidth / 2;
                 const d = Math.abs(center - c);
-                card.style.opacity = d < 60 ? "1" : "0.2";
-                card.style.transform = d < 60 ? "scale(1.1)" : "scale(0.85)";
+                if (d < 50) card.classList.add('active-piece');
+                else {
+                    card.classList.remove('active-piece');
+                    card.style.opacity = "0.2";
+                    card.style.transform = "scale(0.85)";
+                }
             });
+
+            // Reaparece interface
+            clearTimeout(el.timer);
+            el.timer = setTimeout(() => {
+                h.classList.remove('ui-hidden');
+                f.classList.remove('ui-hidden-bottom');
+                updatePrice();
+            }, 600);
         });
-        setTimeout(() => el.dispatchEvent(new Event('scroll')), 100);
+        setTimeout(() => el.dispatchEvent(new Event('scroll')), 200);
     };
 
-    const updateActive = () => {
-        const activeT = [...document.querySelectorAll('#scrTop .p-card')].find(i => parseFloat(i.style.opacity) > 0.8);
-        const activeB = [...document.querySelectorAll('#scrBot .p-card')].find(i => parseFloat(i.style.opacity) > 0.8);
+    const updatePrice = () => {
+        const activeT = [...document.querySelectorAll('#deckTop .p-card')].find(i => i.classList.contains('active-piece'));
+        const activeB = [...document.querySelectorAll('#deckBot .p-card')].find(i => i.classList.contains('active-piece'));
 
-        const t = (Number(activeT?.dataset.price || 0) + Number(activeB?.dataset.price || 0));
-        document.getElementById('pTotal').innerText = `R$ ${t.toFixed(2).replace('.', ',')}`;
+        const total = (Number(activeT?.dataset.price || 0) + Number(activeB?.dataset.price || 0));
+        document.getElementById('pTotal').innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
         
-        document.getElementById('miniThumbs').innerHTML = `
-            <div class="w-10 h-10 rounded-full border-2 border-white overflow-hidden bg-slate-100 shadow-sm">
-                <img src="${activeT?.dataset.img || ''}" class="w-full h-full object-cover">
-            </div>
-            <div class="w-10 h-10 rounded-full border-2 border-white overflow-hidden bg-slate-100 shadow-sm">
-                <img src="${activeB?.dataset.img || ''}" class="w-full h-full object-cover">
-            </div>
+        document.getElementById('miniPrev').innerHTML = `
+            <img src="${activeT?.dataset.img || ''}" class="w-10 h-10 rounded-full border-2 border-white object-cover bg-slate-100 shadow-md">
+            <img src="${activeB?.dataset.img || ''}" class="w-10 h-10 rounded-full border-2 border-white object-cover bg-slate-100 shadow-md">
         `;
     };
 
-    document.getElementById('fTop').onchange = (e) => { currentSizeTop = e.target.value; render(); };
-    document.getElementById('fBot').onchange = (e) => { currentSizeBottom = e.target.value; render(); };
+    document.getElementById('selTop').onchange = (e) => { sizeT = e.target.value; render(); };
+    document.getElementById('selBot').onchange = (e) => { sizeB = e.target.value; render(); };
+
+    document.getElementById('btnFinal').onclick = () => {
+        const activeT = [...document.querySelectorAll('#deckTop .p-card')].find(i => i.classList.contains('active-piece'));
+        const activeB = [...document.querySelectorAll('#deckBot .p-card')].find(i => i.classList.contains('active-piece'));
+        if(activeT) window.addToCart(state.allProducts.find(p => p.id == activeT.dataset.id), 1, {});
+        if(activeB) window.addToCart(state.allProducts.find(p => p.id == activeB.dataset.id), 1, {});
+        showToast("Look adicionado!");
+        container.classList.add('hidden');
+    };
 
     render();
 };
