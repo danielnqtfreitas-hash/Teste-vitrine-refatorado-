@@ -659,6 +659,7 @@ window.openProvador = function() {
     let sizeT = 'Todos';
     let sizeB = 'Todos';
 
+    // Injeção do HTML
     container.innerHTML = `
         <div class="peças-container">
             <div id="deckTop" class="flex overflow-x-auto snap-x snap-mandatory no-scrollbar w-full px-[10%]"></div>
@@ -668,7 +669,7 @@ window.openProvador = function() {
         <div id="provHeader">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-black italic tracking-tighter uppercase">Mix & Match</h2>
-                <button id="btnCloseProvador" class="w-10 h-10 bg-black text-white rounded-full flex items-center justify-center shadow-lg">
+                <button id="btnCloseProvador" class="w-10 h-10 bg-black text-white rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform">
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
@@ -699,32 +700,37 @@ window.openProvador = function() {
         </div>
     `;
 
-    // FUNÇÃO PARA FECHAR O PROVADOR
+    // 1. Função de fechar unificada
     const fechar = () => {
         container.classList.add('hidden');
         document.body.style.overflow = '';
     };
 
-    // ATRIBUIÇÃO DOS EVENTOS (Logo após criar o HTML)
-    document.getElementById('btnCloseProvador').onclick = fechar;
-    
+    // 2. Event Listener de Delegação (Mais robusto que o .onclick direto)
+    container.addEventListener('click', (e) => {
+        // Verifica se clicou no botão ou no ícone dentro dele
+        if (e.target.closest('#btnCloseProvador')) {
+            fechar();
+        }
+    });
+
+    // 3. Configuração dos outros inputs
     document.getElementById('selTop').onchange = (e) => { sizeT = e.target.value; render(); };
     document.getElementById('selBot').onchange = (e) => { sizeB = e.target.value; render(); };
 
     document.getElementById('btnFinalizarLook').onclick = () => {
         const t = document.querySelector('#deckTop .active-piece');
         const b = document.querySelector('#deckBot .active-piece');
-        
         if(!t && !b) return alert("Arraste para escolher uma peça!");
 
         if(t) window.addToCart(state.allProducts.find(p => p.id == t.dataset.id), 1, {});
         if(b) window.addToCart(state.allProducts.find(p => p.id == b.dataset.id), 1, {});
         
         if(window.showToast) showToast("Look adicionado!");
-        fechar(); // Fecha automaticamente ao adicionar
+        fechar();
     };
 
-    // INICIALIZAÇÃO DA INTERFACE
+    // 4. Inicialização Visual
     if (window.lucide) lucide.createIcons();
     container.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
@@ -734,7 +740,7 @@ window.openProvador = function() {
         const bots = state.allProducts.filter(p => p.posicaoProvador === 'inferior' && (sizeB === 'Todos' || p.sizes?.includes(sizeB)));
 
         const makeHtml = (list) => list.map(p => `
-            <div class="p-card snap-center" data-id="${p.id}" data-price="${p.value}" data-img="${p.images[0]}">
+            <div class="p-card" data-id="${p.id}" data-price="${p.value}" data-img="${p.images[0]}">
                 <img src="${p.images[0]}">
             </div>`).join('');
 
@@ -747,6 +753,7 @@ window.openProvador = function() {
 
     const setupScroll = (id) => {
         const el = document.getElementById(id);
+        if(!el) return;
         el.onscroll = () => {
             const center = el.scrollLeft + el.offsetWidth / 2;
             el.querySelectorAll('.p-card').forEach(card => {
@@ -759,7 +766,8 @@ window.openProvador = function() {
                 updateUI();
             }, 100);
         };
-        setTimeout(() => el.dispatchEvent(new Event('scroll')), 100);
+        // Pequeno delay para o navegador calcular o layout antes do primeiro scroll disparar
+        setTimeout(() => el.dispatchEvent(new Event('scroll')), 200);
     };
 
     const updateUI = () => {
@@ -767,11 +775,16 @@ window.openProvador = function() {
         const b = document.querySelector('#deckBot .active-piece');
         const total = (Number(t?.dataset.price || 0) + Number(b?.dataset.price || 0));
         
-        document.getElementById('pTotal').innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
-        document.getElementById('miniPrev').innerHTML = `
-            ${t ? `<img src="${t.dataset.img}" class="w-10 h-10 rounded-full border-2 border-white object-cover shadow-md bg-white">` : ''}
-            ${b ? `<img src="${b.dataset.img}" class="w-10 h-10 rounded-full border-2 border-white object-cover shadow-md bg-white">` : ''}
-        `;
+        const pTotal = document.getElementById('pTotal');
+        if(pTotal) pTotal.innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
+        
+        const miniPrev = document.getElementById('miniPrev');
+        if(miniPrev) {
+            miniPrev.innerHTML = `
+                ${t ? `<img src="${t.dataset.img}" class="w-10 h-10 rounded-full border-2 border-white object-cover shadow-md bg-white">` : ''}
+                ${b ? `<img src="${b.dataset.img}" class="w-10 h-10 rounded-full border-2 border-white object-cover shadow-md bg-white">` : ''}
+            `;
+        }
     };
 
     render();
