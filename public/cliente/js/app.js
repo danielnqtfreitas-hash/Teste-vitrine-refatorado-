@@ -656,60 +656,34 @@ window.openProvador = function() {
         document.body.appendChild(container);
     }
 
-    // 1. FUNÇÃO GLOBAL DE FECHAMENTO (Força a volta para a vitrine/home)
-    window.fecharProvadorEIrHome = () => {
-        const prov = document.getElementById('provadorFullscreen');
-        if (prov) {
-            prov.classList.add('hidden');
-            // Remove o elemento do DOM se preferir resetar totalmente
-            // prov.remove(); 
-        }
-        document.body.style.overflow = '';
-        
-        // Garante o retorno visual para a tela inicial
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        
-        // Se o seu app usa abas, ativa a aba inicial
-        if (window.showSection) {
-            window.showSection('inicio');
-        } else {
-            // Caso não use showSection, tenta mostrar o container principal
-            const home = document.getElementById('catalogContainer');
-            if(home) home.classList.remove('hidden');
-        }
-    };
-
-    const allSizes = [...new Set(state.allProducts.flatMap(p => p.sizes || []))].sort();
+    // --- 1. FILTROS RESTRITOS APENAS AO PROVADOR ---
+    const provadorProducts = state.allProducts.filter(p => p.posicaoProvador === 'superior' || p.posicaoProvador === 'inferior');
+    const sizesOnlyProvador = [...new Set(provadorProducts.flatMap(p => p.sizes || []))].sort();
+    
     let sizeT = 'Todos';
     let sizeB = 'Todos';
 
-    // 2. ESTRUTURA HTML COM ONCLICK DIRETO NO BOTÃO
     container.innerHTML = `
         <div class="peças-container">
-            <div id="deckTop" class="flex overflow-x-auto snap-x snap-mandatory no-scrollbar w-full px-[10%]"></div>
-            <div id="deckBot" class="flex overflow-x-auto snap-x snap-mandatory no-scrollbar w-full px-[10%]"></div>
+            <div id="deckTop" class="flex overflow-x-auto snap-x snap-mandatory no-scrollbar w-full"></div>
+            <div id="deckBot" class="flex overflow-x-auto snap-x snap-mandatory no-scrollbar w-full"></div>
         </div>
 
-        <div id="provHeader" style="pointer-events: none;">
+        <div id="provHeader">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-black italic tracking-tighter uppercase">Mix & Match</h2>
-                
-                <button onclick="fecharProvadorEIrHome()" 
-                        id="btnCloseProvador"
-                        style="pointer-events: auto !important; z-index: 999999 !important; position: relative;"
-                        class="w-12 h-12 bg-black text-white rounded-full flex items-center justify-center shadow-2xl active:scale-90 transition-transform">
-                    <i data-lucide="x" class="w-6 h-6"></i>
+                <button id="btnCloseProvador" class="w-10 h-10 bg-black text-white rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform">
+                    <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
-            
-            <div class="grid grid-cols-2 gap-2" style="pointer-events: auto;">
-                <select id="selTop" class="bg-white/80 backdrop-blur-sm border border-slate-200 rounded-xl py-2 px-3 text-[11px] font-bold shadow-sm">
+            <div class="grid grid-cols-2 gap-2">
+                <select id="selTop" class="bg-white border border-slate-200 rounded-xl py-2 px-3 text-[11px] font-bold shadow-sm">
                     <option value="Todos">TOP: TODOS</option>
-                    ${allSizes.map(s => `<option value="${s}">${s}</option>`).join('')}
+                    ${sizesOnlyProvador.map(s => `<option value="${s}">${s}</option>`).join('')}
                 </select>
-                <select id="selBot" class="bg-white/80 backdrop-blur-sm border border-slate-200 rounded-xl py-2 px-3 text-[11px] font-bold shadow-sm">
+                <select id="selBot" class="bg-white border border-slate-200 rounded-xl py-2 px-3 text-[11px] font-bold shadow-sm">
                     <option value="Todos">BOTTOM: TODOS</option>
-                    ${allSizes.map(s => `<option value="${s}">${s}</option>`).join('')}
+                    ${sizesOnlyProvador.map(s => `<option value="${s}">${s}</option>`).join('')}
                 </select>
             </div>
         </div>
@@ -729,40 +703,64 @@ window.openProvador = function() {
         </div>
     `;
 
-    // Configuração dos selects
-    document.getElementById('selTop').onchange = (e) => { sizeT = e.target.value; render(); };
-    document.getElementById('selBot').onchange = (e) => { sizeB = e.target.value; render(); };
-
-    // Botão Adicionar ao Carrinho
-    document.getElementById('btnFinalizarLook').onclick = () => {
-        const t = document.querySelector('#deckTop .active-piece');
-        const b = document.querySelector('#deckBot .active-piece');
-        
-        if(!t && !b) return alert("Escolha uma peça deslizando para os lados!");
-
-        if(t) window.addToCart(state.allProducts.find(p => p.id == t.dataset.id), 1, {});
-        if(b) window.addToCart(state.allProducts.find(p => p.id == b.dataset.id), 1, {});
-        
-        if(window.showToast) showToast("Look adicionado!");
-        window.fecharProvadorEIrHome(); 
+    const fechar = () => {
+        container.classList.add('hidden');
+        document.body.style.overflow = '';
     };
 
-    // Inicialização Lucide e Visibilidade
+    // --- 2. GESTÃO DE EVENTOS (DELEGAÇÃO DE CLIQUE) ---
+    container.onclick = function(e) {
+        // Clique no X para fechar
+        if (e.target.closest('#btnCloseProvador')) {
+            fechar();
+            return;
+        }
+
+        // Clique para Adicionar ao Carrinho
+        if (e.target.closest('#btnFinalizarLook')) {
+            const t = document.querySelector('#deckTop .active-piece');
+            const b = document.querySelector('#deckBot .active-piece');
+            
+            if(!t && !b) {
+                alert("Deslize para escolher pelo menos uma peça!");
+                return;
+            }
+
+            if(t) {
+                const prodT = state.allProducts.find(p => p.id == t.dataset.id);
+                window.addToCart(prodT, 1, { selectedSize: sizeT !== 'Todos' ? sizeT : (prodT.sizes?.[0] || 'UN') });
+            }
+            if(b) {
+                const prodB = state.allProducts.find(p => p.id == b.dataset.id);
+                window.addToCart(prodB, 1, { selectedSize: sizeB !== 'Todos' ? sizeB : (prodB.sizes?.[0] || 'UN') });
+            }
+            
+            if(window.showToast) showToast("Look adicionado ao carrinho!");
+            fechar();
+        }
+    };
+
+    // Eventos dos Selects
+    container.querySelector('#selTop').onchange = (e) => { sizeT = e.target.value; render(); };
+    container.querySelector('#selBot').onchange = (e) => { sizeB = e.target.value; render(); };
+
+    // Inicializa ícones e visibilidade
     if (window.lucide) lucide.createIcons();
     container.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
 
+    // --- 3. LÓGICA DE RENDERIZAÇÃO E SCROLL ---
     const render = () => {
         const tops = state.allProducts.filter(p => p.posicaoProvador === 'superior' && (sizeT === 'Todos' || p.sizes?.includes(sizeT)));
         const bots = state.allProducts.filter(p => p.posicaoProvador === 'inferior' && (sizeB === 'Todos' || p.sizes?.includes(sizeB)));
 
         const makeHtml = (list) => list.map(p => `
-            <div class="p-card snap-center" data-id="${p.id}" data-price="${p.value}" data-img="${p.images[0]}">
+            <div class="p-card" data-id="${p.id}" data-price="${p.value}" data-img="${p.images[0]}">
                 <img src="${p.images[0]}">
             </div>`).join('');
 
-        document.getElementById('deckTop').innerHTML = makeHtml(tops) || '<div class="w-full text-center text-xs opacity-40 py-10">Nenhum superior</div>';
-        document.getElementById('deckBot').innerHTML = makeHtml(bots) || '<div class="w-full text-center text-xs opacity-40 py-10">Nenhum inferior</div>';
+        document.getElementById('deckTop').innerHTML = makeHtml(tops) || '<div class="w-full text-center text-xs opacity-40 py-20">Nenhum Top</div>';
+        document.getElementById('deckBot').innerHTML = makeHtml(bots) || '<div class="w-full text-center text-xs opacity-40 py-20">Nenhum Bottom</div>';
         
         setupScroll('deckTop');
         setupScroll('deckBot');
@@ -774,12 +772,15 @@ window.openProvador = function() {
             const center = el.scrollLeft + el.offsetWidth / 2;
             el.querySelectorAll('.p-card').forEach(card => {
                 const c = card.offsetLeft + card.offsetWidth / 2;
-                card.classList.toggle('active-piece', Math.abs(center - c) < 60);
+                // Ajustamos a margem de detecção para ser mais precisa
+                const isActive = Math.abs(center - c) < (el.offsetWidth / 3);
+                card.classList.toggle('active-piece', isActive);
             });
 
             clearTimeout(el.timer);
             el.timer = setTimeout(() => updateUI(), 100);
         };
+        // Dispara o scroll inicial para marcar a primeira peça como ativa
         setTimeout(() => el.dispatchEvent(new Event('scroll')), 200);
     };
 
@@ -790,8 +791,8 @@ window.openProvador = function() {
         
         document.getElementById('pTotal').innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
         document.getElementById('miniPrev').innerHTML = `
-            ${t ? `<img src="${t.dataset.img}" class="w-10 h-10 rounded-full border-2 border-white object-cover shadow-md bg-white">` : ''}
-            ${b ? `<img src="${b.dataset.img}" class="w-10 h-10 rounded-full border-2 border-white object-cover shadow-md bg-white">` : ''}
+            ${t ? `<img src="${t.dataset.img}" class="w-10 h-10 rounded-full border-2 border-white object-cover bg-white shadow-sm">` : ''}
+            ${b ? `<img src="${b.dataset.img}" class="w-10 h-10 rounded-full border-2 border-white object-cover bg-white shadow-sm">` : ''}
         `;
     };
 
