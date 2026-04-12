@@ -888,18 +888,31 @@ header {
     filter: drop-shadow(0 10px 25px rgba(0,0,0,0.15));
 }
 
-/* Header Flutuante */
+/* Header Flutuante - AJUSTADO PARA CLIQUE */
 #provHeader {
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
-    z-index: 10;
+    z-index: 9999999 !important; /* Maior que o container pai */
     padding: 20px;
     background: linear-gradient(to bottom, rgba(255,255,255,0.95) 0%, transparent 100%);
-    pointer-events: none;
+    pointer-events: none; /* Mantém para o scroll passar por trás */
 }
-#provHeader * { pointer-events: auto; }
+
+/* Garante que os botões dentro do Header SEJAM clicáveis */
+#provHeader button, 
+#provHeader select { 
+    pointer-events: auto !important; 
+    position: relative;
+    z-index: 10;
+}
+
+/* Botão de Fechar específico */
+#btnCloseProvador {
+    cursor: pointer !important;
+    touch-action: manipulation;
+}
 
 /* Footer Flutuante */
 #provFooter {
