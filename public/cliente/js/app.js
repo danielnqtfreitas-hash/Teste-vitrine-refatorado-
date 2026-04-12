@@ -647,7 +647,6 @@ function updatePremiumLoader(progress, logoUrl = null) {
         }, 500);
     }
 }
-
 window.openProvador = function() {
     let container = document.getElementById('provadorFullscreen');
     if (!container) {
@@ -660,7 +659,6 @@ window.openProvador = function() {
     let sizeT = 'Todos';
     let sizeB = 'Todos';
 
-    // A ordem aqui importa: Peças primeiro (fundo), depois Header e Footer (frente)
     container.innerHTML = `
         <div class="peças-container">
             <div id="deckTop" class="flex overflow-x-auto snap-x snap-mandatory no-scrollbar w-full px-[10%]"></div>
@@ -701,37 +699,35 @@ window.openProvador = function() {
         </div>
     `;
 
-    // 1. Defina a função de fechar
-const fecharProvador = () => {
-    container.classList.add('hidden');
-    document.body.style.overflow = ''; // Devolve o scroll para a página inicial
-};
-
-// 2. Configure o clique no botão de fechar (X)
-const btnClose = document.getElementById('btnCloseProvador') || container.querySelector('button');
-if (btnClose) {
-    btnClose.onclick = fecharProvador;
-}
-
-// 3. Opcional: Fechar ao clicar no botão de "Adicionar Look" (se desejar)
-const btnFinal = document.getElementById('btnFinal');
-if (btnFinal) {
-    const originalClick = btnFinal.onclick;
-    btnFinal.onclick = () => {
-        if (originalClick) originalClick();
-        fecharProvador();
-    };
-}
-    
-    if (window.lucide) lucide.createIcons();
-    container.classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
-
-    // Eventos de clique (IDs agora garantidos)
-    document.getElementById('btnCloseProvador').onclick = () => {
+    // FUNÇÃO PARA FECHAR O PROVADOR
+    const fechar = () => {
         container.classList.add('hidden');
         document.body.style.overflow = '';
     };
+
+    // ATRIBUIÇÃO DOS EVENTOS (Logo após criar o HTML)
+    document.getElementById('btnCloseProvador').onclick = fechar;
+    
+    document.getElementById('selTop').onchange = (e) => { sizeT = e.target.value; render(); };
+    document.getElementById('selBot').onchange = (e) => { sizeB = e.target.value; render(); };
+
+    document.getElementById('btnFinalizarLook').onclick = () => {
+        const t = document.querySelector('#deckTop .active-piece');
+        const b = document.querySelector('#deckBot .active-piece');
+        
+        if(!t && !b) return alert("Arraste para escolher uma peça!");
+
+        if(t) window.addToCart(state.allProducts.find(p => p.id == t.dataset.id), 1, {});
+        if(b) window.addToCart(state.allProducts.find(p => p.id == b.dataset.id), 1, {});
+        
+        if(window.showToast) showToast("Look adicionado!");
+        fechar(); // Fecha automaticamente ao adicionar
+    };
+
+    // INICIALIZAÇÃO DA INTERFACE
+    if (window.lucide) lucide.createIcons();
+    container.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
 
     const render = () => {
         const tops = state.allProducts.filter(p => p.posicaoProvador === 'superior' && (sizeT === 'Todos' || p.sizes?.includes(sizeT)));
@@ -742,8 +738,8 @@ if (btnFinal) {
                 <img src="${p.images[0]}">
             </div>`).join('');
 
-        document.getElementById('deckTop').innerHTML = makeHtml(tops) || '<div class="w-full text-center text-xs opacity-40">Nenhum superior</div>';
-        document.getElementById('deckBot').innerHTML = makeHtml(bots) || '<div class="w-full text-center text-xs opacity-40">Nenhum inferior</div>';
+        document.getElementById('deckTop').innerHTML = makeHtml(tops) || '<div class="w-full text-center text-xs opacity-40 text-black">Nenhum superior</div>';
+        document.getElementById('deckBot').innerHTML = makeHtml(bots) || '<div class="w-full text-center text-xs opacity-40 text-black">Nenhum inferior</div>';
         
         setupScroll('deckTop');
         setupScroll('deckBot');
@@ -761,7 +757,7 @@ if (btnFinal) {
             clearTimeout(el.timer);
             el.timer = setTimeout(() => {
                 updateUI();
-            }, 150); // Feedback mais rápido
+            }, 100);
         };
         setTimeout(() => el.dispatchEvent(new Event('scroll')), 100);
     };
@@ -778,21 +774,6 @@ if (btnFinal) {
         `;
     };
 
-    document.getElementById('selTop').onchange = (e) => { sizeT = e.target.value; render(); };
-    document.getElementById('selBot').onchange = (e) => { sizeB = e.target.value; render(); };
-
-    document.getElementById('btnFinalizarLook').onclick = () => {
-        const t = document.querySelector('#deckTop .active-piece');
-        const b = document.querySelector('#deckBot .active-piece');
-        
-        if(!t && !b) return alert("Arraste para escolher uma peça!");
-
-        if(t) window.addToCart(state.allProducts.find(p => p.id == t.dataset.id), 1, {});
-        if(b) window.addToCart(state.allProducts.find(p => p.id == b.dataset.id), 1, {});
-        
-        if(window.showToast) showToast("Look adicionado!");
-        document.getElementById('btnCloseProvador').click();
-    };
-
     render();
 };
+
