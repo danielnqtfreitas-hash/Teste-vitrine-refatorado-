@@ -102,6 +102,20 @@ try {
         
         updatePremiumLoader(60);
 
+        // --- LOGICA DE DETECÇÃO DO PROVADOR ---
+try {
+    // Filtramos os produtos que o lojista marcou no painel
+    state.tops = state.allProducts.filter(p => p.disponivelProvador && p.posicaoProvador === 'superior');
+    state.bottoms = state.allProducts.filter(p => p.disponivelProvador && p.posicaoProvador === 'inferior');
+
+    // Se a loja tiver pelo menos 1 de cada, ativamos o modo Provador
+    const isFashionStore = state.tops.length > 0 && state.bottoms.length > 0;
+    setupFooterButton(isFashionStore);
+
+} catch (e) {
+    console.error("Erro ao configurar provador:", e);
+}
+
         // 2. Processamento Restante
         checkStoreStatus(state.storeConfigGlobal);
         state.banners = data.banners || [];
@@ -220,7 +234,38 @@ window.quickAdd = (id) => {
     }
     window.updateNavigationBadges();
 };
+// FUNÇÃO PARA CONFIGURAR O BOTÃO DO RODAPÉ
+function setupFooterButton(useProvador) {
+    const btnEntrega = document.getElementById('btnOpenDelivery'); 
+    if (!btnEntrega) return;
 
+    if (useProvador) {
+        btnEntrega.innerHTML = `
+            <div class="flex flex-col items-center gap-0.5 text-primary-600">
+                <div class="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center shadow-sm border border-primary-200">
+                    <i data-lucide="shirt" class="w-5 h-5"></i>
+                </div>
+                <span class="text-[9px] font-black uppercase tracking-tighter">Provador</span>
+            </div>
+        `;
+        btnEntrega.onclick = (e) => {
+            e.preventDefault();
+            window.openProvador();
+        };
+    } else {
+        // Se não for loja de roupa, o botão continua o padrão de entregas
+        btnEntrega.innerHTML = `
+            <div class="flex flex-col items-center gap-0.5 text-slate-500">
+                <div class="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center">
+                    <i data-lucide="truck" class="w-5 h-5"></i>
+                </div>
+                <span class="text-[9px] font-black uppercase tracking-tighter">Entrega</span>
+            </div>
+        `;
+        btnEntrega.onclick = () => window.openDeliveryModal();
+    }
+    if (window.lucide) lucide.createIcons();
+}
 // --- 5. ANALYTICS ---
 
 
@@ -602,3 +647,56 @@ function updatePremiumLoader(progress, logoUrl = null) {
         }, 500);
     }
 }
+
+window.openProvador = function() {
+    let container = document.getElementById('provadorFullscreen');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'provadorFullscreen';
+        container.className = 'fixed inset-0 z-[200] bg-white hidden flex-col animate-in fade-in duration-300';
+        document.body.appendChild(container);
+    }
+
+    container.innerHTML = `
+        <div class="flex flex-col h-full bg-slate-50">
+            <div class="px-6 pt-6 pb-4 bg-white flex justify-between items-center border-b">
+                <div>
+                    <h3 class="text-lg font-black italic uppercase">Mix & Match</h3>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Combine o seu estilo</p>
+                </div>
+                <button onclick="document.getElementById('provadorFullscreen').classList.add('hidden')" class="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="flex-1 flex flex-col justify-center overflow-hidden py-4">
+                <div class="flex overflow-x-auto snap-x snap-mandatory no-scrollbar gap-4 px-[30%] pb-4">
+                    ${state.tops.map(p => `
+                        <div class="product-item min-w-[200px] snap-center">
+                            <img src="${p.images[0]}" class="w-full h-48 object-cover rounded-[2rem] shadow-lg border-4 border-white">
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="flex justify-center -my-2 z-10">
+                    <div class="bg-black text-white text-[8px] font-black px-3 py-1 rounded-full uppercase">Perfeito</div>
+                </div>
+                <div class="flex overflow-x-auto snap-x snap-mandatory no-scrollbar gap-4 px-[30%] pt-4">
+                    ${state.bottoms.map(p => `
+                        <div class="product-item min-w-[200px] snap-center">
+                            <img src="${p.images[0]}" class="w-full h-48 object-cover rounded-[2rem] shadow-lg border-4 border-white">
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+
+            <div class="p-8 bg-white rounded-t-[2.5rem] shadow-2xl">
+                <button onclick="alert('Look selecionado com sucesso!')" class="w-full bg-primary-600 text-white h-16 rounded-2xl font-bold flex items-center justify-center gap-3">
+                    <i data-lucide="shopping-bag" class="w-5 h-5"></i> ADICIONAR AO CARRINHO
+                </button>
+            </div>
+        </div>
+    `;
+
+    container.classList.remove('hidden');
+    if (window.lucide) lucide.createIcons();
+};
