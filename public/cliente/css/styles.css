@@ -833,3 +833,21 @@ header {
     box-shadow: 0 30px 60px -12px rgba(0,0,0,0.2), 0 18px 36px -18px rgba(0,0,0,0.25);
     border: 6px solid white;
 }
+#provadorFullscreen {
+    height: 100dvh; /* Usa a altura dinâmica real do mobile */
+    width: 100vw;
+    overflow: hidden;
+    position: fixed;
+    top: 0;
+    left: 0;
+}
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* Garante que a imagem se ajuste ao espaço sem empurrar o layout */
+.img-provador {
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* Ajusta a foto ao espaço disponível sem esticar */
+}
+
