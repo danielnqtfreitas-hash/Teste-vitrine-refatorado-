@@ -656,21 +656,34 @@ window.openProvador = function() {
         document.body.appendChild(container);
     }
 
-    // FUNÇÃO GLOBAL DE FECHAMENTO (Para o botão HTML encontrar)
+    // 1. FUNÇÃO GLOBAL DE FECHAMENTO (Força a volta para a vitrine/home)
     window.fecharProvadorEIrHome = () => {
         const prov = document.getElementById('provadorFullscreen');
-        if (prov) prov.classList.add('hidden');
+        if (prov) {
+            prov.classList.add('hidden');
+            // Remove o elemento do DOM se preferir resetar totalmente
+            // prov.remove(); 
+        }
         document.body.style.overflow = '';
         
-        // Garante que volta para a tela inicial
+        // Garante o retorno visual para a tela inicial
         window.scrollTo({ top: 0, behavior: 'smooth' });
-        if (window.showSection) window.showSection('inicio');
+        
+        // Se o seu app usa abas, ativa a aba inicial
+        if (window.showSection) {
+            window.showSection('inicio');
+        } else {
+            // Caso não use showSection, tenta mostrar o container principal
+            const home = document.getElementById('catalogContainer');
+            if(home) home.classList.remove('hidden');
+        }
     };
 
     const allSizes = [...new Set(state.allProducts.flatMap(p => p.sizes || []))].sort();
     let sizeT = 'Todos';
     let sizeB = 'Todos';
 
+    // 2. ESTRUTURA HTML COM ONCLICK DIRETO NO BOTÃO
     container.innerHTML = `
         <div class="peças-container">
             <div id="deckTop" class="flex overflow-x-auto snap-x snap-mandatory no-scrollbar w-full px-[10%]"></div>
@@ -682,6 +695,7 @@ window.openProvador = function() {
                 <h2 class="text-xl font-black italic tracking-tighter uppercase">Mix & Match</h2>
                 
                 <button onclick="fecharProvadorEIrHome()" 
+                        id="btnCloseProvador"
                         style="pointer-events: auto !important; z-index: 999999 !important; position: relative;"
                         class="w-12 h-12 bg-black text-white rounded-full flex items-center justify-center shadow-2xl active:scale-90 transition-transform">
                     <i data-lucide="x" class="w-6 h-6"></i>
@@ -715,24 +729,25 @@ window.openProvador = function() {
         </div>
     `;
 
-    // Eventos de mudança nos filtros
+    // Configuração dos selects
     document.getElementById('selTop').onchange = (e) => { sizeT = e.target.value; render(); };
     document.getElementById('selBot').onchange = (e) => { sizeB = e.target.value; render(); };
 
-    // Evento de Finalizar
+    // Botão Adicionar ao Carrinho
     document.getElementById('btnFinalizarLook').onclick = () => {
         const t = document.querySelector('#deckTop .active-piece');
         const b = document.querySelector('#deckBot .active-piece');
         
-        if(!t && !b) return alert("Escolha pelo menos uma peça!");
+        if(!t && !b) return alert("Escolha uma peça deslizando para os lados!");
 
         if(t) window.addToCart(state.allProducts.find(p => p.id == t.dataset.id), 1, {});
         if(b) window.addToCart(state.allProducts.find(p => p.id == b.dataset.id), 1, {});
         
-        if(window.showToast) showToast("Look adicionado com sucesso!");
+        if(window.showToast) showToast("Look adicionado!");
         window.fecharProvadorEIrHome(); 
     };
 
+    // Inicialização Lucide e Visibilidade
     if (window.lucide) lucide.createIcons();
     container.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
@@ -743,11 +758,11 @@ window.openProvador = function() {
 
         const makeHtml = (list) => list.map(p => `
             <div class="p-card snap-center" data-id="${p.id}" data-price="${p.value}" data-img="${p.images[0]}">
-                <img src="${p.images[0]}" loading="lazy">
+                <img src="${p.images[0]}">
             </div>`).join('');
 
-        document.getElementById('deckTop').innerHTML = makeHtml(tops) || '<div class="w-full text-center text-xs opacity-40 py-10">Sem opções de topo</div>';
-        document.getElementById('deckBot').innerHTML = makeHtml(bots) || '<div class="w-full text-center text-xs opacity-40 py-10">Sem opções de baixo</div>';
+        document.getElementById('deckTop').innerHTML = makeHtml(tops) || '<div class="w-full text-center text-xs opacity-40 py-10">Nenhum superior</div>';
+        document.getElementById('deckBot').innerHTML = makeHtml(bots) || '<div class="w-full text-center text-xs opacity-40 py-10">Nenhum inferior</div>';
         
         setupScroll('deckTop');
         setupScroll('deckBot');
@@ -773,16 +788,11 @@ window.openProvador = function() {
         const b = document.querySelector('#deckBot .active-piece');
         const total = (Number(t?.dataset.price || 0) + Number(b?.dataset.price || 0));
         
-        const pTotal = document.getElementById('pTotal');
-        const miniPrev = document.getElementById('miniPrev');
-        
-        if(pTotal) pTotal.innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
-        if(miniPrev) {
-            miniPrev.innerHTML = `
-                ${t ? `<img src="${t.dataset.img}" class="w-10 h-10 rounded-full border-2 border-white object-cover shadow-md bg-white">` : ''}
-                ${b ? `<img src="${b.dataset.img}" class="w-10 h-10 rounded-full border-2 border-white object-cover shadow-md bg-white">` : ''}
-            `;
-        }
+        document.getElementById('pTotal').innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
+        document.getElementById('miniPrev').innerHTML = `
+            ${t ? `<img src="${t.dataset.img}" class="w-10 h-10 rounded-full border-2 border-white object-cover shadow-md bg-white">` : ''}
+            ${b ? `<img src="${b.dataset.img}" class="w-10 h-10 rounded-full border-2 border-white object-cover shadow-md bg-white">` : ''}
+        `;
     };
 
     render();
