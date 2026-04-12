@@ -647,79 +647,72 @@ function updatePremiumLoader(progress, logoUrl = null) {
         }, 500);
     }
 }
+
+
 window.openProvador = function() {
+    // Bloqueia o scroll do fundo
+    document.body.classList.add('modal-open');
+    
     let container = document.getElementById('provadorFullscreen');
     if (!container) {
         container = document.createElement('div');
         container.id = 'provadorFullscreen';
-        container.className = 'fixed inset-0 z-[300] bg-white hidden flex-col animate-in slide-in-from-bottom duration-500';
+        container.className = 'fixed inset-0 z-[500] bg-white hidden flex-col overflow-hidden';
         document.body.appendChild(container);
     }
 
-    // Estado interno para filtros
     let currentSizeTop = 'Todos';
     let currentSizeBottom = 'Todos';
 
     container.innerHTML = `
-        <div class="flex flex-col h-full bg-[#F8F9FA] overflow-hidden">
+        <div class="flex flex-col h-full w-full bg-[#F8F9FA] safe-top">
             
-            <div class="bg-white px-6 pt-8 pb-4 shadow-sm z-30">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-black italic tracking-tighter uppercase">Provador Virtual</h2>
-                    <button onclick="document.getElementById('provadorFullscreen').classList.add('hidden')" 
-                            class="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center">
+            <div class="bg-white px-4 pt-4 pb-2 shadow-sm z-50">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-xl font-black italic tracking-tighter uppercase">Provador Studio</h2>
+                    <button onclick="closeProvador()" class="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center">
                         <i data-lucide="x" class="w-5 h-5 text-slate-600"></i>
                     </button>
                 </div>
 
-                <div class="grid grid-cols-2 gap-3">
-                    <div class="space-y-1">
-                        <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Tamanho Superior</span>
-                        <select id="filterTop" class="w-full bg-slate-50 border-none rounded-xl py-3 px-3 text-xs font-bold focus:ring-2 focus:ring-black">
-                            <option>Todos</option><option>P</option><option>M</option><option>G</option><option>GG</option>
-                        </select>
-                    </div>
-                    <div class="space-y-1">
-                        <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Tamanho Inferior</span>
-                        <select id="filterBottom" class="w-full bg-slate-50 border-none rounded-xl py-3 px-3 text-xs font-bold focus:ring-2 focus:ring-black">
-                            <option>Todos</option><option>36</option><option>38</option><option>40</option><option>42</option><option>44</option>
-                        </select>
-                    </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <select id="filterTop" class="bg-slate-50 border-none rounded-lg py-2 px-3 text-[10px] font-bold uppercase">
+                        <option>Todos</option><option>P</option><option>M</option><option>G</option><option>GG</option>
+                    </select>
+                    <select id="filterBottom" class="bg-slate-50 border-none rounded-lg py-2 px-3 text-[10px] font-bold uppercase">
+                        <option>Todos</option><option>36</option><option>38</option><option>40</option><option>42</option><option>44</option>
+                    </select>
                 </div>
             </div>
 
-            <div class="flex-1 flex flex-col justify-center relative -space-y-24 py-4">
+            <div class="flex-1 flex flex-col relative overflow-hidden">
                 
-                <div class="absolute inset-x-0 top-1/2 -translate-y-1/2 h-[450px] border-y border-dashed border-slate-200 pointer-events-none z-0"></div>
-
-                <div id="scrollTops" class="flex overflow-x-auto snap-x snap-mandatory no-scrollbar gap-4 px-[20%] z-10 items-end">
+                <div id="scrollTops" class="h-[45%] flex overflow-x-auto snap-x snap-mandatory no-scrollbar px-[25%] items-center">
                     </div>
 
-                <div class="flex justify-center z-20">
-                    <div class="bg-black text-white p-2 rounded-full shadow-xl border-4 border-[#F8F9FA]">
+                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none">
+                    <div class="bg-black text-white p-2 rounded-full shadow-lg scale-75">
                         <i data-lucide="plus" class="w-4 h-4"></i>
                     </div>
                 </div>
 
-                <div id="scrollBottoms" class="flex overflow-x-auto snap-x snap-mandatory no-scrollbar gap-4 px-[20%] z-10 items-start">
+                <div id="scrollBottoms" class="h-[45%] flex overflow-x-auto snap-x snap-mandatory no-scrollbar px-[25%] items-center">
                     </div>
             </div>
 
-            <div class="bg-white p-8 pb-10 rounded-t-[3rem] shadow-[0_-15px_40px_rgba(0,0,0,0.05)] z-30">
-                <div class="flex justify-between items-center mb-6">
-                    <div>
-                        <p id="totalPrice" class="text-4xl font-black text-slate-900 tracking-tighter">R$ 0,00</p>
-                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Look Completo</p>
+            <div class="bg-white p-6 pb-8 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] z-50">
+                <div class="flex justify-between items-center mb-4">
+                    <div class="leading-tight">
+                        <p id="totalPrice" class="text-3xl font-black text-slate-900 tracking-tight">R$ 0,00</p>
+                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Look Combinado</p>
                     </div>
-                    <div class="flex -space-x-3">
-                         <div id="p-top" class="w-12 h-12 rounded-full border-2 border-white bg-slate-100 overflow-hidden shadow-sm"></div>
-                         <div id="p-bottom" class="w-12 h-12 rounded-full border-2 border-white bg-slate-100 overflow-hidden shadow-sm"></div>
-                    </div>
+                    <div class="flex -space-x-3" id="previewThumbnails">
+                        </div>
                 </div>
 
-                <button id="btnFinalizarLook" class="w-full h-18 bg-black text-white rounded-2xl font-black flex items-center justify-center gap-3 active:scale-95 transition-all shadow-xl uppercase tracking-widest text-sm">
-                    <i data-lucide="shopping-bag" class="w-5 h-5"></i>
-                    Adicionar ao Carrinho
+                <button id="btnFinalizarLook" class="w-full h-14 bg-black text-white rounded-xl font-black flex items-center justify-center gap-3 active:scale-95 transition-all uppercase tracking-widest text-xs">
+                    <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                    Finalizar Look
                 </button>
             </div>
         </div>
@@ -728,22 +721,23 @@ window.openProvador = function() {
     container.classList.remove('hidden');
     if (window.lucide) lucide.createIcons();
 
-    // Lógica de Renderização Filtrada
+    window.closeProvador = function() {
+        document.body.classList.remove('modal-open');
+        container.classList.add('hidden');
+    };
+
     const renderSets = () => {
         const tops = state.allProducts.filter(p => p.posicaoProvador === 'superior' && (currentSizeTop === 'Todos' || p.sizes?.includes(currentSizeTop)));
         const bottoms = state.allProducts.filter(p => p.posicaoProvador === 'inferior' && (currentSizeBottom === 'Todos' || p.sizes?.includes(currentSizeBottom)));
 
-        document.getElementById('scrollTops').innerHTML = tops.map(p => `
-            <div class="product-item min-w-[240px] snap-center transition-all duration-500 grayscale-[0.8] scale-90 opacity-40" data-id="${p.id}" data-price="${p.value}" data-img="${p.images[0]}">
-                <img src="${p.images[0]}" class="w-full h-64 object-cover rounded-[2.5rem] shadow-lg border-2 border-transparent">
+        const generateCards = (list) => list.map(p => `
+            <div class="product-item min-w-[65vw] snap-center p-2" data-id="${p.id}" data-price="${p.value}" data-img="${p.images[0]}">
+                <img src="${p.images[0]}" class="w-full h-full aspect-[4/5] object-cover rounded-3xl shadow-md border-2 border-transparent">
             </div>
         `).join('');
 
-        document.getElementById('scrollBottoms').innerHTML = bottoms.map(p => `
-            <div class="product-item min-w-[240px] snap-center transition-all duration-500 grayscale-[0.8] scale-90 opacity-40" data-id="${p.id}" data-price="${p.value}" data-img="${p.images[0]}">
-                <img src="${p.images[0]}" class="w-full h-64 object-cover rounded-[2.5rem] shadow-lg border-2 border-transparent">
-            </div>
-        `).join('');
+        document.getElementById('scrollTops').innerHTML = generateCards(tops);
+        document.getElementById('scrollBottoms').innerHTML = generateCards(bottoms);
 
         setupSync('scrollTops', 'top');
         setupSync('scrollBottoms', 'bottom');
@@ -751,52 +745,66 @@ window.openProvador = function() {
 
     const setupSync = (id, type) => {
         const el = document.getElementById(id);
-        const update = () => {
+        const onScroll = () => {
             const center = el.scrollLeft + el.offsetWidth / 2;
-            let active = null;
-            let minD = Infinity;
+            let activeItem = null;
+            let minDistance = Infinity;
 
             el.querySelectorAll('.product-item').forEach(item => {
-                const itemC = item.offsetLeft + item.offsetWidth / 2;
-                const d = Math.abs(center - itemC);
-                if (d < minD) { minD = d; active = item; }
-                item.className = "product-item min-w-[240px] snap-center transition-all duration-500 grayscale-[0.8] scale-90 opacity-40";
+                const itemCenter = item.offsetLeft + item.offsetWidth / 2;
+                const dist = Math.abs(center - itemCenter);
+                if (dist < minDistance) {
+                    minDistance = dist;
+                    activeItem = item;
+                }
+                item.style.opacity = "0.3";
+                item.style.transform = "scale(0.85)";
+                item.style.filter = "grayscale(1)";
             });
 
-            if (active) {
-                active.className = "product-item min-w-[240px] snap-center transition-all duration-500 grayscale-0 scale-105 opacity-100 z-10";
-                if(type === 'top') document.getElementById('p-top').innerHTML = `<img src="${active.dataset.img}" class="w-full h-full object-cover">`;
-                else document.getElementById('p-bottom').innerHTML = `<img src="${active.dataset.img}" class="w-full h-full object-cover">`;
+            if (activeItem) {
+                activeItem.style.opacity = "1";
+                activeItem.style.transform = "scale(1)";
+                activeItem.style.filter = "grayscale(0)";
                 
-                // Recalcular Preço
-                const activeTop = document.querySelector('#scrollTops .product-item.grayscale-0');
-                const activeBot = document.querySelector('#scrollBottoms .product-item.grayscale-0');
-                const total = (Number(activeTop?.dataset.price || 0) + Number(activeBot?.dataset.price || 0));
-                document.getElementById('totalPrice').innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
+                // Atualiza Preço e Thumbs
+                updateCheckout();
             }
         };
-        el.onscroll = update;
-        setTimeout(update, 100);
+
+        el.onscroll = onScroll;
+        setTimeout(onScroll, 100);
     };
 
-    // Eventos de Filtro
+    const updateCheckout = () => {
+        const activeTop = [...document.querySelectorAll('#scrollTops .product-item')].find(i => i.style.opacity === "1");
+        const activeBot = [...document.querySelectorAll('#scrollBottoms .product-item')].find(i => i.style.opacity === "1");
+
+        const price = (Number(activeTop?.dataset.price || 0) + Number(activeBot?.dataset.price || 0));
+        document.getElementById('totalPrice').innerText = `R$ ${price.toFixed(2).replace('.', ',')}`;
+
+        document.getElementById('previewThumbnails').innerHTML = `
+            <div class="w-10 h-10 rounded-full border-2 border-white overflow-hidden shadow-sm bg-slate-100">
+                ${activeTop ? `<img src="${activeTop.dataset.img}" class="w-full h-full object-cover">` : ''}
+            </div>
+            <div class="w-10 h-10 rounded-full border-2 border-white overflow-hidden shadow-sm bg-slate-100">
+                ${activeBot ? `<img src="${activeBot.dataset.img}" class="w-full h-full object-cover">` : ''}
+            </div>
+        `;
+    };
+
     document.getElementById('filterTop').onchange = (e) => { currentSizeTop = e.target.value; renderSets(); };
     document.getElementById('filterBottom').onchange = (e) => { currentSizeBottom = e.target.value; renderSets(); };
-
-    // Botão Adicionar
+    
     document.getElementById('btnFinalizarLook').onclick = () => {
-        const tId = document.querySelector('#scrollTops .product-item.grayscale-0')?.dataset.id;
-        const bId = document.querySelector('#scrollBottoms .product-item.grayscale-0')?.dataset.id;
+        const tId = [...document.querySelectorAll('#scrollTops .product-item')].find(i => i.style.opacity === "1")?.dataset.id;
+        const bId = [...document.querySelectorAll('#scrollBottoms .product-item')].find(i => i.style.opacity === "1")?.dataset.id;
         
-        const prodT = state.allProducts.find(p => p.id == tId);
-        const prodB = state.allProducts.find(p => p.id == bId);
-
-        if(prodT) window.addToCart(prodT, 1, {});
-        if(prodB) window.addToCart(prodB, 1, {});
+        if(tId) window.addToCart(state.allProducts.find(p => p.id == tId), 1, {});
+        if(bId) window.addToCart(state.allProducts.find(p => p.id == bId), 1, {});
         
-        confetti({ particleCount: 100, spread: 70, origin: { y: 0.8 } });
         showToast("Look adicionado!");
-        container.classList.add('hidden');
+        closeProvador();
     };
 
     renderSets();
