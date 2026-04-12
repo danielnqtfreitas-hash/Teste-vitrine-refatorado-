@@ -647,6 +647,7 @@ function updatePremiumLoader(progress, logoUrl = null) {
         }, 500);
     }
 }
+
 window.openProvador = function() {
     let container = document.getElementById('provadorFullscreen');
     if (!container) {
@@ -700,37 +701,37 @@ window.openProvador = function() {
         </div>
     `;
 
-    // 1. Função de fechar unificada
+    // FUNÇÃO ÚNICA PARA FECHAR
     const fechar = () => {
         container.classList.add('hidden');
         document.body.style.overflow = '';
     };
 
-    // 2. Event Listener de Delegação (Mais robusto que o .onclick direto)
-    container.addEventListener('click', (e) => {
-        // Verifica se clicou no botão ou no ícone dentro dele
+    // DELEGAÇÃO DE EVENTO (O "Segredo" para funcionar sempre)
+    container.onclick = (e) => {
+        // Se o clique foi no botão de fechar ou em qualquer coisa dentro dele (como o ícone X)
         if (e.target.closest('#btnCloseProvador')) {
             fechar();
         }
-    });
+    };
 
-    // 3. Configuração dos outros inputs
+    // Restante das configurações
     document.getElementById('selTop').onchange = (e) => { sizeT = e.target.value; render(); };
     document.getElementById('selBot').onchange = (e) => { sizeB = e.target.value; render(); };
 
     document.getElementById('btnFinalizarLook').onclick = () => {
         const t = document.querySelector('#deckTop .active-piece');
         const b = document.querySelector('#deckBot .active-piece');
+        
         if(!t && !b) return alert("Arraste para escolher uma peça!");
 
         if(t) window.addToCart(state.allProducts.find(p => p.id == t.dataset.id), 1, {});
         if(b) window.addToCart(state.allProducts.find(p => p.id == b.dataset.id), 1, {});
         
         if(window.showToast) showToast("Look adicionado!");
-        fechar();
+        fechar(); 
     };
 
-    // 4. Inicialização Visual
     if (window.lucide) lucide.createIcons();
     container.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
@@ -740,7 +741,7 @@ window.openProvador = function() {
         const bots = state.allProducts.filter(p => p.posicaoProvador === 'inferior' && (sizeB === 'Todos' || p.sizes?.includes(sizeB)));
 
         const makeHtml = (list) => list.map(p => `
-            <div class="p-card" data-id="${p.id}" data-price="${p.value}" data-img="${p.images[0]}">
+            <div class="p-card snap-center" data-id="${p.id}" data-price="${p.value}" data-img="${p.images[0]}">
                 <img src="${p.images[0]}">
             </div>`).join('');
 
@@ -753,7 +754,6 @@ window.openProvador = function() {
 
     const setupScroll = (id) => {
         const el = document.getElementById(id);
-        if(!el) return;
         el.onscroll = () => {
             const center = el.scrollLeft + el.offsetWidth / 2;
             el.querySelectorAll('.p-card').forEach(card => {
@@ -766,7 +766,6 @@ window.openProvador = function() {
                 updateUI();
             }, 100);
         };
-        // Pequeno delay para o navegador calcular o layout antes do primeiro scroll disparar
         setTimeout(() => el.dispatchEvent(new Event('scroll')), 200);
     };
 
@@ -775,18 +774,12 @@ window.openProvador = function() {
         const b = document.querySelector('#deckBot .active-piece');
         const total = (Number(t?.dataset.price || 0) + Number(b?.dataset.price || 0));
         
-        const pTotal = document.getElementById('pTotal');
-        if(pTotal) pTotal.innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
-        
-        const miniPrev = document.getElementById('miniPrev');
-        if(miniPrev) {
-            miniPrev.innerHTML = `
-                ${t ? `<img src="${t.dataset.img}" class="w-10 h-10 rounded-full border-2 border-white object-cover shadow-md bg-white">` : ''}
-                ${b ? `<img src="${b.dataset.img}" class="w-10 h-10 rounded-full border-2 border-white object-cover shadow-md bg-white">` : ''}
-            `;
-        }
+        document.getElementById('pTotal').innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
+        document.getElementById('miniPrev').innerHTML = `
+            ${t ? `<img src="${t.dataset.img}" class="w-10 h-10 rounded-full border-2 border-white object-cover shadow-md bg-white">` : ''}
+            ${b ? `<img src="${b.dataset.img}" class="w-10 h-10 rounded-full border-2 border-white object-cover shadow-md bg-white">` : ''}
+        `;
     };
 
     render();
 };
-
