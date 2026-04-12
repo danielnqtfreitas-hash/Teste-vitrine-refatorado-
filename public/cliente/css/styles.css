@@ -806,62 +806,72 @@ header {
     100% { transform: translateY(0px); }
 }
 
-/* Efeito de Vidro e Profundidade */
-.provador-premium {
-    background: radial-gradient(circle at 50% -20%, #ffffff, #f1f5f9);
-}
-
-/* O Segredo: Peças Próximas e Sobrepostas */
-.outfit-container {
-    perspective: 1000px;
-}
-
-.product-slide {
-    transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1);
-    filter: blur(2px) scale(0.8);
-    opacity: 0.3;
-}
-
-.product-slide.active {
-    filter: blur(0px) scale(1.1);
-    opacity: 1;
-    z-index: 50;
-}
-
-/* Sombras Suaves para dar dimensão */
-.img-luxury {
-    box-shadow: 0 30px 60px -12px rgba(0,0,0,0.2), 0 18px 36px -18px rgba(0,0,0,0.25);
-    border: 6px solid white;
-}
+/* Reset e Travamento de Tela */
 #provadorFullscreen {
-    height: 100dvh; /* Usa a altura dinâmica real do mobile */
+    height: 100dvh;
     width: 100vw;
     overflow: hidden;
     position: fixed;
     top: 0;
     left: 0;
+    background-color: #F8F9FA;
 }
 
 .no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* Garante que a imagem se ajuste ao espaço sem empurrar o layout */
-.img-provador {
-    width: 100%;
-    height: 100%;
-    object-fit: contain; /* Ajusta a foto ao espaço disponível sem esticar */
-}
-
+/* Elementos da Interface */
 .ui-element {
-    transition: opacity 0.3s ease, transform 0.3s ease;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     opacity: 1;
+    z-index: 100;
 }
+
 .ui-hidden {
     opacity: 0;
     pointer-events: none;
-    transform: translateY(-10px);
+    transform: translateY(-15px);
 }
+
 .ui-hidden-bottom {
     opacity: 0;
     pointer-events: none;
-    transform: translateY(20px);
+    transform: translateY(25px);
 }
+
+/* Container das Peças - O Segredo da Aproximação */
+.peças-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    justify-content: center;
+    align-items: center;
+    /* Margem negativa para aproximar as peças verticalmente */
+    margin-top: -20px; 
+}
+
+.p-card {
+    min-width: 75vw;
+    height: 42vh; /* Altura controlada para não empurrar o layout */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.5s ease;
+}
+
+.p-card img {
+    max-height: 100%;
+    max-width: 100%;
+    object-fit: contain;
+    border-radius: 2rem;
+    background: white;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+    border: 4px solid white;
+}
+
+/* Destaque da Peça Ativa */
+.p-card.active-piece {
+    transform: scale(1.05);
+    z-index: 50;
+    opacity: 1 !important;
+} 
