@@ -807,7 +807,7 @@ header {
 }
 
 /* =========================================
-   PROVADOR - INTERFACE FLUTUANTE (OVERLAY)
+   PROVADOR - INTERFACE FLUTUANTE ATUALIZADA
    ========================================= */
 
 #provadorFullscreen {
@@ -825,19 +825,63 @@ header {
 
 /* Camada de Peças (Fundo) */
 .peças-container {
-    position: absolute; /* Ocupa a tela toda ao fundo */
+    position: absolute;
     inset: 0;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    z-index: 1; 
+    z-index: 1;
+    gap: 10px;
 }
 
+/* DECKS - Configuração de Carrossel Slide */
 #deckTop, #deckBot {
-    height: 45dvh; /* Aumentado para ocupar mais tela */
+    height: 42dvh; 
     display: flex;
     align-items: center;
     width: 100%;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory; /* Força o imã do slide */
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Esconde as barras de rolagem */
+#deckTop::-webkit-scrollbar, 
+#deckBot::-webkit-scrollbar {
+    display: none;
+}
+
+/* CARD DA PEÇA - Isso resolve o tamanho pequeno */
+.p-card {
+    flex: 0 0 85vw; /* Cada peça ocupa 85% da largura da tela */
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    scroll-snap-align: center; /* Trava a peça no centro da tela */
+    transition: all 0.4s ease;
+    position: relative;
+}
+
+.p-card img {
+    max-height: 85%;
+    max-width: 90%;
+    object-fit: contain;
+    transition: all 0.3s ease;
+    filter: drop-shadow(0 5px 15px rgba(0,0,0,0.08));
+}
+
+/* Estilo para peças que não estão no centro */
+.p-card:not(.active-piece) {
+    opacity: 0.3;
+    transform: scale(0.8);
+}
+
+/* Zoom na peça ativa */
+.active-piece img {
+    transform: scale(1.1);
+    filter: drop-shadow(0 10px 25px rgba(0,0,0,0.15));
 }
 
 /* Header Flutuante */
@@ -848,11 +892,10 @@ header {
     right: 0;
     z-index: 10;
     padding: 20px;
-    background: linear-gradient(to bottom, rgba(255,255,255,0.9) 0%, transparent 100%);
-    pointer-events: none; /* Deixa o scroll passar por ele nas áreas vazias */
+    background: linear-gradient(to bottom, rgba(255,255,255,0.95) 0%, transparent 100%);
+    pointer-events: none;
 }
-
-#provHeader * { pointer-events: auto; } /* Reativa cliques nos selects e botão x */
+#provHeader * { pointer-events: auto; }
 
 /* Footer Flutuante */
 #provFooter {
@@ -863,27 +906,30 @@ header {
     z-index: 10;
     padding: 20px;
     padding-bottom: calc(20px + env(safe-area-inset-bottom));
-    background: linear-gradient(to top, rgba(255,255,255,0.95) 40%, transparent 100%);
+    background: linear-gradient(to top, rgba(255,255,255,1) 40%, transparent 100%);
 }
 
-/* Botão de Adicionar - Agora com destaque flutuante */
 #btnFinalizarLook {
     box-shadow: 0 10px 25px rgba(0,0,0,0.2);
     cursor: pointer !important;
     pointer-events: auto !important;
-}
-
-.p-card img {
-    max-height: 90%;
-    max-width: 85%;
-    object-fit: contain;
-    transition: transform 0.3s ease;
-}
-
-.active-piece img {
-    transform: scale(1.1); /* Zoom na peça ativa */
+    transition: transform 0.2s ease;
 }
 
 #btnFinalizarLook:active {
     transform: scale(0.96);
 }
+
+/* Animações de interface (usadas no JS) */
+.ui-element {
+    transition: transform 0.4s ease, opacity 0.4s ease;
+}
+.ui-hidden {
+    transform: translateY(-100%);
+    opacity: 0;
+}
+.ui-hidden-bottom {
+    transform: translateY(100%);
+    opacity: 0;
+}
+
