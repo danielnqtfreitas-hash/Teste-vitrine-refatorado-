@@ -429,7 +429,9 @@ export function closeModalDetails() {
     els.modalDetails().classList.add('hidden');
     window.history.pushState({}, '', window.location.pathname);
 }
+
 // --- RENDERIZAÇÃO DE INTERFACE (FILTROS, TABS, CARROSSEL) ---
+
 export function renderHeroCarousel(banners) {
     const container = document.getElementById('heroGridContainer');
     const dotsContainer = document.getElementById('carouselDots');
@@ -438,72 +440,44 @@ export function renderHeroCarousel(banners) {
     container.innerHTML = '';
     dotsContainer.innerHTML = '';
     if (!banners?.length) return;
+    
+banners.forEach((b, index) => {
+    const div = document.createElement('div');
+    // AJUSTE: Remova o 'w-full' fixo e garanta que o flex-basis seja 100%
+    div.className = `hero-card min-w-full flex-shrink-0 h-full rounded-3xl p-6 md:p-10 flex items-center relative overflow-hidden snap-center cursor-pointer text-white transition-all duration-500`;
+    div.onclick = () => {
+            const bannerRef = b.target || b.category; 
+            if (bannerRef) {
+                if (bannerRef === 'offers') {
+                    state.filters.category = 'offers';
+                } else {
+                    const categoriaEncontrada = state.categories.find(c => c.toLowerCase().trim() === bannerRef.toLowerCase().trim());
+                    state.filters.category = categoriaEncontrada || bannerRef;
+                }
+                state.isFavoritesView = false;
+                renderCategoryTabs();
+                renderCatalog();
+                const catContainer = els.categoryContainer();
+                if(catContainer) catContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        };
 
-    let currentIndex = 0;
-    let autoPlayInterval;
-
-    const goToSlide = (idx) => {
-        const cards = container.querySelectorAll('.hero-card');
-        const dots = dotsContainer.querySelectorAll('.carousel-dot');
-        
-        cards.forEach((card, i) => {
-            card.classList.toggle('active', i === idx);
-        });
-        
-        dots.forEach((dot, i) => {
-            dot.className = `carousel-dot h-1.5 transition-all duration-300 rounded-full cursor-pointer ${i === idx ? 'w-6 bg-white' : 'w-1.5 bg-white/40'}`;
-        });
-        currentIndex = idx;
-    };
-
-    banners.forEach((b, index) => {
-        const div = document.createElement('div');
-        div.className = `hero-card rounded-3xl p-6 md:p-10 flex items-center justify-between gap-4 cursor-pointer text-white shadow-xl ${index === 0 ? 'active' : ''}`;
-        
         div.style.background = `linear-gradient(135deg, ${b.color1 || '#333'}, ${b.color2 || '#000'})`;
-        
         div.innerHTML = `
             <div class="relative z-10 flex-1 flex flex-col justify-center items-start gap-1 h-full min-w-0">
                 <span class="px-2 py-0.5 rounded-full bg-black/20 backdrop-blur-md border border-white/10 text-[7px] font-black uppercase tracking-widest mb-1">${b.tag || 'Destaque'}</span>
                 <h3 class="font-display font-bold text-2xl md:text-4xl leading-tight uppercase tracking-tighter w-full break-words">${b.title}</h3>
-                ${b.subtitle ? `<p class="opacity-90 text-xs md:text-sm font-medium leading-tight max-w-[95%] break-words line-clamp-2">${b.subtitle}</p>` : ''}
-                <div class="mt-4 px-6 py-2 bg-white/10 border border-white/30 rounded-full text-[9px] font-black uppercase tracking-widest hover:bg-white hover:text-black transition-colors">Ver Agora</div>
+                ${b.subtitle ? `<p class="opacity-90 text-xs md:text-sm font-medium leading-tight max-w-[90%] break-words line-clamp-2">${b.subtitle}</p>` : ''}
+                <div class="mt-4 px-6 py-2 bg-white/10 border border-white/30 rounded-full text-[9px] font-black uppercase tracking-widest">Ver Agora</div>
             </div>
-            ${b.imageUrl ? `
-                <div class="w-28 h-28 md:w-52 md:h-52 rounded-2xl overflow-hidden border-2 border-white/10 shrink-0 shadow-2xl">
-                    <img src="${b.imageUrl}" class="w-full h-full object-cover">
-                </div>` : ''}
+            ${b.imageUrl ? `<div class="animate-floating w-32 h-32 md:w-52 md:h-52 rounded-2xl overflow-hidden border-2 border-white/10 shrink-0 ml-4 shadow-[0_20px_50px_rgba(0,0,0,0.3)]"><img src="${b.imageUrl}" class="w-full h-full object-cover scale-110"></div>` : ''}
         `;
-
-        div.onclick = () => {
-            const bannerRef = b.target || b.category; 
-            if (bannerRef) {
-                state.filters.category = bannerRef === 'offers' ? 'offers' : bannerRef;
-                state.isFavoritesView = false;
-                if(typeof renderCategoryTabs === 'function') renderCategoryTabs();
-                if(typeof renderCatalog === 'function') renderCatalog();
-                window.scrollTo({ top: container.offsetTop - 100, behavior: 'smooth' });
-            }
-        };
-
         container.appendChild(div);
 
         const dot = document.createElement('div');
-        dot.className = `carousel-dot h-1.5 transition-all duration-300 rounded-full cursor-pointer ${index === 0 ? 'w-6 bg-white' : 'w-1.5 bg-white/40'}`;
-        dot.onclick = (e) => {
-            e.stopPropagation();
-            clearInterval(autoPlayInterval);
-            goToSlide(index);
-        };
+        dot.className = `h-1.5 transition-all duration-300 rounded-full ${index === 0 ? 'w-6 bg-white' : 'w-1.5 bg-white/40'}`;
         dotsContainer.appendChild(dot);
     });
-
-    if (banners.length > 1) {
-        autoPlayInterval = setInterval(() => {
-            let next = (currentIndex + 1) % banners.length;
-            goToSlide(next);
-        }, 5000);
-    }
 }
 
 export function renderCategoryTabs() {
