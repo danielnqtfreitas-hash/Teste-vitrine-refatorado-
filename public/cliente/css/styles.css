@@ -806,7 +806,10 @@ header {
     100% { transform: translateY(0px); }
 }
 
-/* Reset e Travamento de Tela */
+/* =========================================
+   PROVADOR STUDIO - PREMIUM MOBILE UI
+   ========================================= */
+
 #provadorFullscreen {
     height: 100dvh;
     width: 100vw;
@@ -815,63 +818,100 @@ header {
     top: 0;
     left: 0;
     background-color: #F8F9FA;
+    z-index: 200001; /* Acima de tudo */
+    display: flex;
+    flex-direction: column;
 }
 
+/* Scroll Limpo */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* Elementos da Interface */
+/* 1. Elementos da Interface (Filtros e Botões) */
 .ui-element {
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     opacity: 1;
     z-index: 100;
 }
 
+/* Efeito de sumir ao fazer scroll nas peças */
 .ui-hidden {
-    opacity: 0;
+    opacity: 0 !important;
     pointer-events: none;
-    transform: translateY(-15px);
+    transform: translateY(-20px);
 }
 
 .ui-hidden-bottom {
-    opacity: 0;
+    opacity: 0 !important;
     pointer-events: none;
-    transform: translateY(25px);
+    transform: translateY(30px);
 }
 
-/* Container das Peças - O Segredo da Aproximação */
+/* 2. Palco das Peças (O "Look") */
 .peças-container {
+    flex: 1; /* Ocupa todo o espaço entre header e footer */
     display: flex;
     flex-direction: column;
-    height: 100%;
     justify-content: center;
     align-items: center;
-    /* Margem negativa para aproximar as peças verticalmente */
-    margin-top: -20px; 
+    /* Ajuste de proximidade: aproxima o Top do Bottom */
+    margin-top: -10px; 
+}
+
+/* Estilização dos Carrosséis */
+#deckTop, #deckBot {
+    height: 38dvh; /* Altura equilibrada para peças ficarem próximas */
+    display: flex;
+    align-items: center;
+    gap: 0;
 }
 
 .p-card {
-    min-width: 75vw;
-    height: 42vh; /* Altura controlada para não empurrar o layout */
+    min-width: 70vw; /* Largura ideal para ver as pontas das próximas peças */
+    height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.5s ease;
+    transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    padding: 0 10px;
 }
 
+/* Imagem da Peça */
 .p-card img {
-    max-height: 100%;
+    max-height: 90%;
     max-width: 100%;
     object-fit: contain;
     border-radius: 2rem;
     background: white;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.06);
     border: 4px solid white;
+    transition: all 0.5s ease;
 }
 
-/* Destaque da Peça Ativa */
+/* 3. Comportamento Visual de Foco */
 .p-card.active-piece {
-    transform: scale(1.05);
+    transform: scale(1.1); /* Aumenta a peça do centro */
     z-index: 50;
     opacity: 1 !important;
-} 
+}
+
+.p-card:not(.active-piece) {
+    opacity: 0.3;
+    transform: scale(0.85);
+    filter: grayscale(0.5) blur(1px); /* Foco total no centro */
+}
+
+/* Aproximação Vertical (O segredo do look montado) */
+#deckTop { margin-bottom: -45px; z-index: 20; } /* Camisa sobrepõe levemente a calça */
+#deckBot { margin-top: -45px; z-index: 10; }
+
+/* 4. Footer Flutuante */
+#provFooter {
+    background: linear-gradient(to top, #ffffff 80%, transparent);
+    padding: 20px 24px;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+}
+
+#btnFinal {
+    box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+}
