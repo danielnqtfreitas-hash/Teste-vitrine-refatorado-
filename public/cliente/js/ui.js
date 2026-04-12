@@ -440,11 +440,12 @@ export function renderHeroCarousel(banners) {
     container.innerHTML = '';
     dotsContainer.innerHTML = '';
     if (!banners?.length) return;
-
-    banners.forEach((b, index) => {
-        const div = document.createElement('div');
-        div.className = `hero-card w-full flex-shrink-0 h-full rounded-3xl p-6 md:p-10 flex items-center relative overflow-hidden snap-center cursor-pointer text-white transition-all duration-500`;
-        div.onclick = () => {
+    
+banners.forEach((b, index) => {
+    const div = document.createElement('div');
+    // AJUSTE: Remova o 'w-full' fixo e garanta que o flex-basis seja 100%
+    div.className = `hero-card min-w-full flex-shrink-0 h-full rounded-3xl p-6 md:p-10 flex items-center relative overflow-hidden snap-center cursor-pointer text-white transition-all duration-500`;
+    div.onclick = () => {
             const bannerRef = b.target || b.category; 
             if (bannerRef) {
                 if (bannerRef === 'offers') {
