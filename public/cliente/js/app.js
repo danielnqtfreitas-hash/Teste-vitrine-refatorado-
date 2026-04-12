@@ -701,6 +701,28 @@ window.openProvador = function() {
         </div>
     `;
 
+    // 1. Defina a função de fechar
+const fecharProvador = () => {
+    container.classList.add('hidden');
+    document.body.style.overflow = ''; // Devolve o scroll para a página inicial
+};
+
+// 2. Configure o clique no botão de fechar (X)
+const btnClose = document.getElementById('btnCloseProvador') || container.querySelector('button');
+if (btnClose) {
+    btnClose.onclick = fecharProvador;
+}
+
+// 3. Opcional: Fechar ao clicar no botão de "Adicionar Look" (se desejar)
+const btnFinal = document.getElementById('btnFinal');
+if (btnFinal) {
+    const originalClick = btnFinal.onclick;
+    btnFinal.onclick = () => {
+        if (originalClick) originalClick();
+        fecharProvador();
+    };
+}
+    
     if (window.lucide) lucide.createIcons();
     container.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
