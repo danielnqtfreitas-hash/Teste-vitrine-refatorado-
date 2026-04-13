@@ -1,5 +1,5 @@
 /* =========================================================================
-   PROVADOR VIRTUAL - VERSÃO DEFINITIVA (js/provador.js)
+   PROVADOR VIRTUAL - VERSÃO FINAL (js/provador.js)
    ========================================================================= */
 
 window.openProvador = function() {
@@ -19,10 +19,17 @@ window.openProvador = function() {
     container.innerHTML = `
         <style>
             #provadorFullscreen {
-                position: fixed; inset: 0; background: #fff; z-index: 9999;
+                position: fixed; inset: 0; background: #fff; z-index: 999999 !important;
                 display: flex; flex-direction: column; font-family: 'Inter', sans-serif;
             }
-            .p-header { padding: 10px 15px; display: flex; gap: 8px; align-items: center; background: #fff; }
+            
+            /* GARANTE QUE A NOTIFICAÇÃO APAREÇA POR CIMA DE TUDO */
+            .swal2-container { z-index: 10000000 !important; }
+
+            .p-header { 
+                padding: 10px 15px; display: flex; gap: 8px; align-items: center; 
+                background: #fff; z-index: 10;
+            }
             .p-filters { display: flex; gap: 5px; flex: 1; }
             .p-filters select {
                 flex: 1; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
@@ -34,7 +41,6 @@ window.openProvador = function() {
             }
             .p-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 
-            /* Ajuste do Scroll e Snap */
             .p-deck {
                 flex: 1; position: relative; display: flex; overflow-x: auto;
                 scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;
@@ -52,17 +58,21 @@ window.openProvador = function() {
                 border-radius: 4px; overflow: hidden; background: #f1f5f9;
             }
             .p-img-box img { width: 100%; height: 100%; object-fit: cover; }
+            
             .p-individual-price {
                 position: absolute; bottom: 8px; right: 8px;
                 background: rgba(0,0,0,0.7); color: #fff; padding: 4px 8px;
                 border-radius: 6px; font-size: 10px; font-weight: 700; backdrop-filter: blur(4px);
             }
-            .p-side-left { position: absolute; left: 8px; top: 0; bottom: 0; width: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
-            .p-side-right { position: absolute; right: 8px; top: 0; bottom: 0; width: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+            
+            .p-side-left { position: absolute; left: 8px; top: 0; bottom: 0; width: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; z-index: 5; }
+            .p-side-right { position: absolute; right: 8px; top: 0; bottom: 0; width: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; z-index: 5; }
+            
             .p-thumb { width: 38px; height: 38px; border-radius: 8px; border: 2px solid #eee; object-fit: cover; }
             .p-thumb.active { border-color: #000; transform: scale(1.1); }
             .p-size { width: 32px; height: 32px; border-radius: 6px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; border: 1px solid #e2e8f0; }
-            .p-footer { padding: 15px; background: #fff; border-top: 1px solid #f1f5f9; }
+            
+            .p-footer { padding: 15px; background: #fff; border-top: 1px solid #f1f5f9; z-index: 10; }
             .p-btn-action {
                 width: 100%; height: 60px; background: #000; color: #fff; border-radius: 16px;
                 display: flex; align-items: center; justify-content: space-between;
@@ -157,7 +167,6 @@ window.openProvador = function() {
             });
             updateUI();
         };
-        // Forçar cálculo inicial
         setTimeout(() => el.dispatchEvent(new Event('scroll')), 200);
     };
 
@@ -168,7 +177,6 @@ window.openProvador = function() {
         document.getElementById('pTotal').innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
     };
 
-    // CORREÇÃO: Clique Único (Atômico)
     container.querySelector('#btnConfirmLook').onclick = function() {
         const t = document.querySelector('#deckTop .active-piece');
         const b = document.querySelector('#deckBot .active-piece');
