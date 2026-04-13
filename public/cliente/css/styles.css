@@ -57,37 +57,42 @@ body {
 .thumb-active { border-color: var(--color-primary); opacity: 1; }
 .thumb-inactive { border-color: transparent; opacity: 0.6; }
 
-/* Garante que o carrossel não corte verticalmente */
+
+/* Container que segura os cards */
 #heroGridContainer {
     display: flex;
     overflow-x: auto;
-    overflow-y: visible; /* Garante que sombras ou partes altas não cortem */
     scroll-snap-type: x mandatory;
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
     width: 100%;
-    padding-bottom: 10px; /* Respiro para não cortar a sombra do card */
+    /* Puxa o banner para cima para encostar no header */
+    margin-top: -12px !important; 
+    padding-top: 0 !important;
 }
 
 .hero-card {
-    scroll-snap-align: center; /* Centraliza melhor no mobile */
-    flex: 0 0 90%; /* Deixa uma pontinha do próximo card aparecendo (estilo App) */
-    margin-right: 10px;
+    scroll-snap-align: center;
+    flex: 0 0 92%; /* Ajustado para preencher mais a largura */
+    margin-right: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
+    /* Removemos margens internas que afastam a imagem do topo */
+    padding: 0 !important; 
 }
 
-/* Adicione esta regra para as imagens dentro do banner */
 .hero-card img {
     width: 100%;
-    /* Reduzimos o max-height para garantir o formato retangular */
-    max-height: 180px; 
-    /* 'cover' corta as bordas para preencher o retângulo, 
-       'contain' mostra a imagem inteira com possíveis faixas vazias */
+    /* Aumentamos para 210px para o banner ter mais presença vertical */
+    height: 210px !important; 
+    max-height: 210px; 
+    /* 'cover' é essencial aqui para não deixar faixas brancas */
     object-fit: cover; 
     display: block;
     border-radius: 12px;
+    /* Sombra leve para dar profundidade agora que está maior */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
 }
 
 
