@@ -279,27 +279,36 @@ export function openProductModal(id) {
         window.reportarMetrica(id, 'view');
     }
 
-    // Atualiza URL (Deep Link)
     const newURL = window.location.pathname + `?id=${p.id}`;
     window.history.pushState({ path: newURL }, '', newURL);
     document.title = `${p.name} | ${state.storeConfigGlobal.storeName || 'Vitrine'}`;
 
     state.currentDetailId = id; 
     state.currentDetailQty = 1; 
-    state.currentDetailSelection = { 
-        size: null, 
-        color: null, 
-        image: p.images?.[0] || 'https://placehold.co/600?text=Sem+Imagem' 
-    }; 
-
-    // Imagens
+    
+    // --- LÓGICA DE IMAGENS REFORÇADA ---
     const mainImages = (p.images?.length) ? p.images : ['https://placehold.co/600?text=Sem+Imagem'];
-    const variationImages = (p.variations || []).map(v => v.image).filter(img => img && !mainImages.includes(img));
+    
+    // Coleta imagens das variações (filtramos as que já estão nas principais para não repetir)
+    const variationImages = (p.variations || [])
+        .map(v => v.image)
+        .filter(img => img && !mainImages.includes(img));
+
+    // Array final com TUDO
     state.currentDetailImages = [...mainImages, ...variationImages];
     state.currentDetailImageIndex = 0;
     
-    // UI Básica
-    renderThumbnails();
+    state.currentDetailSelection = { 
+        size: null, 
+        color: null, 
+        image: state.currentDetailImages[0] 
+    }; 
+
+    console.log("Imagens detectadas para o modal:", state.currentDetailImages);
+
+    // --- RENDERIZAÇÃO ---
+    // Certifique-se que renderThumbnails use o state.currentDetailImages
+    renderThumbnails(); 
     updateDetailImageDisplay();
     
     document.getElementById('detailCat').textContent = p.category || "Geral"; 
@@ -308,19 +317,16 @@ export function openProductModal(id) {
     document.getElementById('detailDesc').textContent = p.description || ''; 
     document.getElementById('detailQtyDisplay').textContent = "1";
 
-    // Variações e Preços
     renderVariationUI(p);
     updateModalHeartBtn();
     renderRelatedProducts(p);
 
-    // Botão Adicionar (window.addToCart vem do app.js)
     const btn = els.detailAddBtn();
     btn.onclick = () => { window.addToCart(p, state.currentDetailQty, state.currentDetailSelection); }; 
 
     els.modalDetails().classList.remove('hidden'); 
     if(window.lucide) window.lucide.createIcons();
 }
-
 function renderVariationUI(p) {
     const matrix = p.variations || [];
     const hasS = p.sizes?.length > 0, hasC = p.colors?.length > 0;
@@ -340,11 +346,20 @@ function renderVariationUI(p) {
                 (!hasS || v.size.trim().toLowerCase() === (state.currentDetailSelection.size||"").trim().toLowerCase()) && 
                 (!hasC || v.color.trim().toLowerCase() === (state.currentDetailSelection.color||"").trim().toLowerCase())
             );
+            
             if(comb && comb.active) { 
                 const vStock = parseInt(comb.stock) || 0;
                 if(vStock <= 0) { outOfStockVariation = true; isComplete = false; }
                 basePrice = comb.price; 
                 skuDinamico = comb.sku || skuDinamico;
+
+                // --- NOVO: Se a combinação completa tiver imagem, troca a foto principal ---
+                if(comb.image) {
+                   const imgIndex = state.currentDetailImages.indexOf(comb.image);
+                   if(imgIndex !== -1 && state.currentDetailImageIndex !== imgIndex) {
+                       window.setDetailImage(imgIndex); 
+                   }
+                }
             } else if(hasS || hasC) { isComplete = false; }
         }
 
@@ -369,18 +384,17 @@ function renderVariationUI(p) {
             </div>
         </div>`;
 
-        document.getElementById('detailOldPrice').textContent = ''; 
         document.getElementById('detailSku').textContent = skuDinamico; 
         
         const btnAdd = els.detailAddBtn();
         if (outOfStockVariation) {
             btnAdd.textContent = "Esgotado";
             btnAdd.disabled = true;
-            btnAdd.className = "bg-slate-400 text-white font-bold px-6 h-11 rounded-xl opacity-50 text-sm";
+            btnAdd.className = "bg-slate-400 text-white font-bold px-6 h-11 rounded-xl opacity-50 text-sm w-full";
         } else {
             btnAdd.textContent = "Adicionar";
             btnAdd.disabled = !isComplete;
-            btnAdd.className = `bg-primary hover:bg-primaryDark text-white font-bold px-6 h-11 rounded-xl active-scale shadow-lg transition-all text-sm ${!isComplete ? 'opacity-40' : ''}`;
+            btnAdd.className = `bg-black text-white font-bold px-6 h-11 rounded-xl active-scale shadow-lg transition-all text-sm w-full ${!isComplete ? 'opacity-40' : ''}`;
         }
     };
 
@@ -397,23 +411,39 @@ function renderVariationUI(p) {
             const isSelected = state.currentDetailSelection[type] && state.currentDetailSelection[type].trim().toLowerCase() === normVal;
             
             let isPossible = true;
+            let variationWithImage = null; // --- NOVO: Para buscar a imagem da variação ---
+
             if(matrix.length) {
-                isPossible = matrix.some(v => 
+                // Procura se essa variação existe e tem estoque
+                const vMatch = matrix.find(v => 
                     v.active && 
                     (parseInt(v.stock) > 0) && 
                     v[type].trim().toLowerCase() === normVal && 
                     (!otherVal || v[otherType].trim().toLowerCase() === otherVal.trim().toLowerCase())
                 );
+                isPossible = !!vMatch;
+                if(vMatch) variationWithImage = vMatch.image; // Guarda a imagem se houver
             }
 
-            const CHIP_S = "border-primary bg-primary text-white font-bold ring-2 ring-primary/20 shadow-md";
+            const CHIP_S = "border-black bg-black text-white font-bold shadow-md";
             const CHIP_D = "border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100";
             
-            chip.className = `px-4 py-2 border rounded-lg text-xs chip-common ${isSelected ? CHIP_S : (isPossible ? CHIP_D : 'chip-disabled')}`;
+            chip.className = `px-4 py-2 border rounded-lg text-xs cursor-pointer transition-all ${isSelected ? CHIP_S : (isPossible ? CHIP_D : 'opacity-20 pointer-events-none')}`;
             chip.textContent = val;
+            
             chip.onclick = () => { 
                 if(!isPossible) return; 
                 state.currentDetailSelection[type] = isSelected ? null : val; 
+                
+                // --- NOVO: Se o chip clicado tiver uma imagem, pula o carrossel para ela ---
+                if(!isSelected && variationWithImage) {
+                    const imgIndex = state.currentDetailImages.indexOf(variationWithImage);
+                    if(imgIndex !== -1) {
+                        state.currentDetailImageIndex = imgIndex;
+                        window.setDetailImage(imgIndex);
+                    }
+                }
+
                 renderVariationUI(p); 
             };
             container.appendChild(chip);
@@ -613,21 +643,37 @@ export function closeFilterDrawer() {
     if (modal) setTimeout(() => modal.classList.add('hidden'), 300);
 }
 
-// --- VISUALIZADOR DE IMAGENS E ZOOM ---
-
+// --- VISUALIZADOR DE IMAGENS E ZOOM (ATUALIZADO) ---
 export function renderThumbnails() {
     const thumbContainer = document.getElementById('detailThumbnails');
     if (!thumbContainer) return;
+    
     thumbContainer.innerHTML = '';
+    
+    // Usamos o state.currentDetailImages que já montamos na openProductModal
     state.currentDetailImages.forEach((url, idx) => {
         const img = document.createElement('img');
         img.src = url;
-        img.className = "min-w-[44px] w-11 h-11 rounded-lg border-2 object-cover cursor-pointer transition-all snap-center thumb-inactive shrink-0";
-        img.onclick = () => setDetailImage(idx);
+        
+        // Adicionamos a lógica de destaque: se for a imagem atual, usa 'thumb-active'
+        const isActive = state.currentDetailImageIndex === idx;
+        
+        img.className = `min-w-[44px] w-11 h-11 rounded-lg border-2 object-cover cursor-pointer transition-all snap-center shrink-0 ${isActive ? 'thumb-active border-[var(--color-primary)]' : 'thumb-inactive border-transparent'}`;
+        
+        img.onclick = () => {
+            setDetailImage(idx);
+            // Atualiza as bordas das miniaturas sem re-renderizar tudo
+            document.querySelectorAll('#detailThumbnails img').forEach((el, i) => {
+                el.classList.toggle('thumb-active', i === idx);
+                el.classList.toggle('border-[var(--color-primary)]', i === idx);
+                el.classList.toggle('thumb-inactive', i !== idx);
+                el.classList.toggle('border-transparent', i !== idx);
+            });
+        };
+        
         thumbContainer.appendChild(img);
     });
 }
-
 export function setDetailImage(idx) { 
     state.currentDetailImageIndex = idx; 
     updateDetailImageDisplay(); 
