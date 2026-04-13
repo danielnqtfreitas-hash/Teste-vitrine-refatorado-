@@ -6,155 +6,133 @@ window.openProvador = function() {
         document.body.appendChild(container);
     }
 
-    // --- LOGICA DE CATEGORIAS DINÂMICAS ---
-    const catTops = [...new Set(state.allProducts
-        .filter(p => p.posicaoProvador === 'superior')
-        .map(p => p.category))].filter(c => c).sort();
-
-    const catBots = [...new Set(state.allProducts
-        .filter(p => p.posicaoProvador === 'inferior')
-        .map(p => p.category))].filter(c => c).sort();
+    // 1. Mapear Categorias Reais do seu Estado
+    const catTops = [...new Set(window.state.allProducts.filter(p => p.posicaoProvador === 'superior').map(p => p.category))].filter(Boolean);
+    const catBots = [...new Set(window.state.allProducts.filter(p => p.posicaoProvador === 'inferior').map(p => p.category))].filter(Boolean);
     
     let filterCatTop = 'Todas';
     let filterCatBot = 'Todas';
 
     container.innerHTML = `
         <style>
-            .p-card { position: relative; width: 80%; flex-shrink: 0; margin: 0 10%; transition: transform 0.3s; }
-            .active-piece { transform: scale(1.05); }
-            .p-info-badge {
-                position: absolute; top: 15px; right: 15px;
-                background: rgba(255,255,255,0.95); padding: 6px 12px;
-                border-radius: 12px; font-size: 11px; font-weight: 900;
-                box-shadow: 0 4px 10px rgba(0,0,0,0.1); z-index: 20;
-                display: flex; flex-direction: column; align-items: flex-end;
+            #provadorFullscreen {
+                position: fixed; inset: 0; background: #f8fafc; z-index: 9999;
+                display: flex; flex-direction: column; font-family: 'Inter', sans-serif;
             }
+            .peças-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; padding-top: 60px; }
+            
+            /* Card de Peça */
+            .p-card { 
+                min-width: 85vw; height: 35vh; margin: 0 10px; position: relative;
+                background: white; border-radius: 24px; overflow: hidden;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            }
+            .p-card img.main-img { width: 100%; height: 100%; object-fit: cover; }
+
+            /* Tamanhos na Vertical (Direita) */
+            .size-badge-vertical {
+                position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+                display: flex; flex-direction: column; gap: 4px; z-index: 10;
+            }
+            .size-item {
+                background: rgba(255,255,255,0.9); border: 1px solid rgba(0,0,0,0.05);
+                width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+                border-radius: 8px; font-size: 10px; font-weight: 800; color: #1e293b;
+            }
+
+            /* Variações de Cores (Esquerda) */
             .color-variants {
-                position: absolute; left: 15px; top: 50%; transform: translateY(-50%);
-                display: flex; flex-direction: column; gap: 10px; z-index: 30;
-                transition: opacity 0.3s;
+                position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+                display: flex; flex-direction: column; gap: 8px; z-index: 10;
             }
             .color-dot {
-                width: 42px; height: 42px; border-radius: 10px;
-                border: 2px solid white; object-fit: cover;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.2); transition: 0.2s;
+                width: 38px; height: 38px; border-radius: 10px; border: 2px solid white;
+                object-fit: cover; box-shadow: 0 4px 10px rgba(0,0,0,0.2); transition: 0.2s;
             }
-            .color-dot.active-border { border-color: #000 !important; transform: scale(1.1); }
-            .active-piece .color-variants { opacity: 1; pointer-events: auto; }
-            .p-card:not(.active-piece) .color-variants { opacity: 0; pointer-events: none; }
-            .main-img { width: 100%; height: 350px; object-fit: cover; border-radius: 24px; }
-            #provHeader { padding: 15px; }
+            .color-dot.active { border-color: #000; transform: scale(1.1); }
+
+            /* Header e Filtros */
+            #provHeader { position: absolute; top: 0; left: 0; right: 0; p-5; z-index: 100; padding: 15px; }
+            
+            /* Footer e Botão */
+            #provFooter { padding: 20px; background: white; border-top: 1px solid #f1f5f9; }
+            .btn-checkout-provador {
+                width: 100%; height: 65px; background: #000; color: #fff; border-radius: 20px;
+                display: flex; align-items: center; justify-content: space-between;
+                padding: 0 25px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;
+            }
         </style>
 
-        <div class="peças-container">
-            <div id="deckTop" class="flex overflow-x-auto snap-x snap-mandatory no-scrollbar w-full"></div>
-            <div id="deckBot" class="flex overflow-x-auto snap-x snap-mandatory no-scrollbar w-full"></div>
-        </div>
-
         <div id="provHeader">
-            <div class="flex justify-end items-center mb-3">
-                <button id="btnCloseProvador" class="w-10 h-10 bg-black/5 text-black rounded-full flex items-center justify-center active:scale-90 transition-all">
-                    <i data-lucide="x" class="w-5 h-5"></i>
+            <div class="flex justify-end mb-3">
+                <button id="btnCloseProvador" class="w-10 h-10 bg-white/80 backdrop-blur shadow-sm rounded-full flex items-center justify-center">
+                    <i data-lucide="x" class="text-black w-5 h-5"></i>
                 </button>
             </div>
             <div class="grid grid-cols-2 gap-2">
-                <select id="selCatTop" class="bg-white border border-slate-200 rounded-xl py-3 px-3 text-[10px] font-black uppercase tracking-wider shadow-sm outline-none">
+                <select id="selCatTop" class="bg-white border-none rounded-2xl py-3 px-4 text-[10px] font-black uppercase shadow-sm">
                     <option value="Todas">Tops: Todas</option>
                     ${catTops.map(c => `<option value="${c}">${c}</option>`).join('')}
                 </select>
-                <select id="selCatBot" class="bg-white border border-slate-200 rounded-xl py-3 px-3 text-[10px] font-black uppercase tracking-wider shadow-sm outline-none">
+                <select id="selCatBot" class="bg-white border-none rounded-2xl py-3 px-4 text-[10px] font-black uppercase shadow-sm">
                     <option value="Todas">Bottoms: Todas</option>
                     ${catBots.map(c => `<option value="${c}">${c}</option>`).join('')}
                 </select>
             </div>
         </div>
 
+        <div class="peças-container">
+            <div id="deckTop" class="flex overflow-x-auto snap-x snap-mandatory no-scrollbar w-full py-2"></div>
+            <div id="deckBot" class="flex overflow-x-auto snap-x snap-mandatory no-scrollbar w-full py-2"></div>
+        </div>
+
         <div id="provFooter">
-            <div class="flex justify-between items-end mb-4">
-                <div>
-                    <p id="pTotal" class="text-3xl font-black text-slate-900 leading-none">R$ 0,00</p>
-                    <span class="text-[10px] font-bold text-red-600 uppercase tracking-widest">Look Selecionado</span>
+            <button id="btnFinalizarLook" class="btn-checkout-provador active:scale-95 transition-transform">
+                <div class="flex flex-col items-start">
+                    <span class="text-[10px] opacity-60">Adicionar Look</span>
+                    <span id="pTotal" class="text-lg leading-none">R$ 0,00</span>
                 </div>
-                <div id="miniPrev" class="flex -space-x-2"></div>
-            </div>
-            <button id="btnFinalizarLook" class="w-full h-16 bg-black text-white rounded-2xl font-black text-xs uppercase tracking-[0.1em] flex items-center justify-center gap-3 active:scale-95 transition-all">
-                <i data-lucide="shopping-bag" class="w-5 h-5"></i>
-                Adicionar ao Carrinho
+                <i data-lucide="shopping-bag" class="w-6 h-6"></i>
             </button>
         </div>
     `;
 
-    // --- HANDLERS ---
+    // --- FUNÇÕES DE INTERAÇÃO ---
     window.changeProvadorThumb = (el, newImg) => {
         const card = el.closest('.p-card');
-        const mainImg = card.querySelector('.main-img');
-        mainImg.src = newImg;
+        card.querySelector('.main-img').src = newImg;
         card.dataset.img = newImg;
-        card.querySelectorAll('.color-dot').forEach(dot => dot.classList.remove('active-border'));
-        el.classList.add('active-border');
+        card.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
+        el.classList.add('active');
         updateUI();
     };
 
-    const fechar = () => {
-        container.classList.add('hidden');
-        container.style.display = 'none';
-        document.body.style.overflow = '';
-    };
-
-    container.onclick = (e) => {
-        if (e.target.closest('#btnCloseProvador')) fechar();
-        if (e.target.closest('#btnFinalizarLook')) {
-            const t = document.querySelector('#deckTop .active-piece');
-            const b = document.querySelector('#deckBot .active-piece');
-            if(t) {
-                const p = state.allProducts.find(x => x.id == t.dataset.id);
-                window.addToCart(p, 1, { selectedSize: p.sizes?.[0] || 'UN', image: t.dataset.img });
-            }
-            if(b) {
-                const p = state.allProducts.find(x => x.id == b.dataset.id);
-                window.addToCart(p, 1, { selectedSize: p.sizes?.[0] || 'UN', image: b.dataset.img });
-            }
-            if(window.showToast) showToast("Look no carrinho!");
-            fechar();
-        }
-    };
-
-    container.querySelector('#selCatTop').onchange = (e) => { filterCatTop = e.target.value; render(); };
-    container.querySelector('#selCatBot').onchange = (e) => { filterCatBot = e.target.value; render(); };
-
     const render = () => {
-        const tops = state.allProducts.filter(p => p.posicaoProvador === 'superior' && (filterCatTop === 'Todas' || p.category === filterCatTop));
-        const bots = state.allProducts.filter(p => p.posicaoProvador === 'inferior' && (filterCatBot === 'Todas' || p.category === filterCatBot));
+        const tops = window.state.allProducts.filter(p => p.posicaoProvador === 'superior' && (filterCatTop === 'Todas' || p.category === filterCatTop));
+        const bots = window.state.allProducts.filter(p => p.posicaoProvador === 'inferior' && (filterCatBot === 'Todas' || p.category === filterCatBot));
 
         const makeHtml = (list) => list.map(p => {
-            let gallery = [p.images?.[0]];
-            if (p.variations) p.variations.forEach(v => { if (v.image && !gallery.includes(v.image)) gallery.push(v.image); });
-            gallery = gallery.filter(img => img);
+            let gallery = [p.images[0]];
+            if (p.variations) p.variations.forEach(v => { if(v.image) gallery.push(v.image) });
+            gallery = [...new Set(gallery)];
 
-            const dotsHtml = gallery.length > 1 ? `
+            const sizesHtml = (p.sizes || []).map(s => `<div class="size-item">${s}</div>`).join('');
+            const colorsHtml = gallery.length > 1 ? `
                 <div class="color-variants">
-                    ${gallery.slice(0, 5).map((img, idx) => `
-                        <img src="${img}" class="color-dot ${idx === 0 ? 'active-border' : ''}" onclick="window.changeProvadorThumb(this, '${img}')">
-                    `).join('')}
-                </div>
-            ` : '';
+                    ${gallery.slice(0, 4).map(img => `<img src="${img}" class="color-dot ${img === p.images[0] ? 'active' : ''}" onclick="window.changeProvadorThumb(this, '${img}')">`).join('')}
+                </div>` : '';
 
             return `
-                <div class="p-card snap-center" data-id="${p.id}" data-price="${p.value}" data-img="${p.images?.[0]}">
-                    <div class="p-info-badge">
-                        <span class="text-slate-900">R$ ${p.value.toFixed(2)}</span>
-                        <span class="text-[9px] text-slate-400 mt-1">${p.sizes ? p.sizes.join(' | ') : 'UN'}</span>
-                    </div>
-                    ${dotsHtml}
-                    <img src="${p.images?.[0]}" class="main-img shadow-xl">
+                <div class="p-card snap-center" data-id="${p.id}" data-price="${p.value}" data-img="${p.images[0]}">
+                    ${colorsHtml}
+                    <div class="size-badge-vertical">${sizesHtml}</div>
+                    <img src="${p.images[0]}" class="main-img">
                 </div>`;
         }).join('');
 
-        document.getElementById('deckTop').innerHTML = makeHtml(tops) || '<div class="w-full text-center py-20 opacity-30 text-[10px] font-bold uppercase">Nenhum Top</div>';
-        document.getElementById('deckBot').innerHTML = makeHtml(bots) || '<div class="w-full text-center py-20 opacity-30 text-[10px] font-bold uppercase">Nenhum Bottom</div>';
-        
-        setupScroll('deckTop');
-        setupScroll('deckBot');
+        document.getElementById('deckTop').innerHTML = makeHtml(tops);
+        document.getElementById('deckBot').innerHTML = makeHtml(bots);
+        setupScroll('deckTop'); setupScroll('deckBot');
     };
 
     const setupScroll = (id) => {
@@ -162,11 +140,9 @@ window.openProvador = function() {
         el.onscroll = () => {
             const center = el.scrollLeft + el.offsetWidth / 2;
             el.querySelectorAll('.p-card').forEach(card => {
-                const c = card.offsetLeft + card.offsetWidth / 2;
-                card.classList.toggle('active-piece', Math.abs(center - c) < 60);
+                card.classList.toggle('active-piece', Math.abs(center - (card.offsetLeft + card.offsetWidth / 2)) < 100);
             });
-            clearTimeout(el.timer);
-            el.timer = setTimeout(() => updateUI(), 100);
+            clearTimeout(el.timer); el.timer = setTimeout(() => updateUI(), 100);
         };
         setTimeout(() => el.dispatchEvent(new Event('scroll')), 300);
     };
@@ -176,14 +152,28 @@ window.openProvador = function() {
         const b = document.querySelector('#deckBot .active-piece');
         const total = (Number(t?.dataset.price || 0) + Number(b?.dataset.price || 0));
         document.getElementById('pTotal').innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
-        document.getElementById('miniPrev').innerHTML = `
-            ${t ? `<img src="${t.dataset.img}" class="w-12 h-12 rounded-full border-2 border-white object-cover shadow-lg">` : ''}
-            ${b ? `<img src="${b.dataset.img}" class="w-12 h-12 rounded-full border-2 border-white object-cover shadow-lg">` : ''}
-        `;
     };
 
+    // Eventos de Fechamento e Checkout
+    container.querySelector('#btnCloseProvador').onclick = () => {
+        container.style.display = 'none';
+        document.body.style.overflow = '';
+    };
+
+    container.querySelector('#btnFinalizarLook').onclick = () => {
+        const t = document.querySelector('#deckTop .active-piece');
+        const b = document.querySelector('#deckBot .active-piece');
+        if(!t && !b) return;
+        if(t) window.addToCart(window.state.allProducts.find(x => x.id == t.dataset.id), 1, { image: t.dataset.img });
+        if(b) window.addToCart(window.state.allProducts.find(x => x.id == b.dataset.id), 1, { image: b.dataset.img });
+        showToast("Look Adicionado!");
+        container.querySelector('#btnCloseProvador').click();
+    };
+
+    container.querySelector('#selCatTop').onchange = (e) => { filterCatTop = e.target.value; render(); };
+    container.querySelector('#selCatBot').onchange = (e) => { filterCatBot = e.target.value; render(); };
+
     if (window.lucide) lucide.createIcons();
-    container.classList.remove('hidden');
     container.style.display = 'flex';
     document.body.style.overflow = 'hidden';
     render();
