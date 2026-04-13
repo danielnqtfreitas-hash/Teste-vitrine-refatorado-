@@ -1,3 +1,7 @@
+/* =========================================================================
+   MÓDULO: PROVADOR VIRTUAL FULLSCREEN (REIMAGINADO)
+   ========================================================================= */
+
 window.openProvador = function() {
     let container = document.getElementById('provadorFullscreen');
     if (!container) {
@@ -6,7 +10,7 @@ window.openProvador = function() {
         document.body.appendChild(container);
     }
 
-    // 1. Mapear Categorias Reais do seu Estado
+    // 1. Mapear Categorias Reais
     const catTops = [...new Set(window.state.allProducts.filter(p => p.posicaoProvador === 'superior').map(p => p.category))].filter(Boolean);
     const catBots = [...new Set(window.state.allProducts.filter(p => p.posicaoProvador === 'inferior').map(p => p.category))].filter(Boolean);
     
@@ -16,74 +20,107 @@ window.openProvador = function() {
     container.innerHTML = `
         <style>
             #provadorFullscreen {
-                position: fixed; inset: 0; background: #f8fafc; z-index: 9999;
+                position: fixed; inset: 0; background: #000; z-index: 9999;
                 display: flex; flex-direction: column; font-family: 'Inter', sans-serif;
             }
-            .peças-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; padding-top: 60px; }
             
-            /* Card de Peça */
+            /* Container das Imagens: Ocupa tudo, sem margem no topo */
+            .peças-container { 
+                flex: 1; display: flex; flex-direction: column; overflow: hidden; 
+                background: #fff;
+            }
+
+            .deck-wrapper { flex: 1; position: relative; overflow: hidden; display: flex; }
+            
+            .deck-scroll {
+                flex: 1; display: flex; overflow-x: auto; 
+                snap-type: x mandatory; scrollbar-width: none;
+            }
+            .deck-scroll::-webkit-scrollbar { display: none; }
+
+            /* Cards de Peça: 50% da altura da tela cada para ficarem colados */
             .p-card { 
-                min-width: 85vw; height: 35vh; margin: 0 10px; position: relative;
-                background: white; border-radius: 24px; overflow: hidden;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+                min-width: 100vw; height: 100%; position: relative;
+                background: #f1f5f9;
             }
             .p-card img.main-img { width: 100%; height: 100%; object-fit: cover; }
 
-            /* Tamanhos na Vertical (Direita) */
-            .size-badge-vertical {
-                position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
-                display: flex; flex-direction: column; gap: 4px; z-index: 10;
+            /* Camada de Controles flutuantes (Não empurram o layout) */
+            .overlay-controls {
+                position: absolute; inset: 0; pointer-events: none; z-index: 50;
+                padding: 15px; display: flex; flex-direction: column; justify-content: space-between;
             }
-            .size-item {
-                background: rgba(255,255,255,0.9); border: 1px solid rgba(0,0,0,0.05);
-                width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
-                border-radius: 8px; font-size: 10px; font-weight: 800; color: #1e293b;
+            .overlay-controls > * { pointer-events: auto; }
+
+            /* Filtros e Fechar flutuando sobre a imagem */
+            .top-bar { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+            .prov-filters { display: flex; gap: 6px; flex: 1; }
+            .prov-filters select {
+                background: rgba(255,255,255,0.85); backdrop-filter: blur(10px);
+                border: none; border-radius: 12px; padding: 10px;
+                font-size: 10px; font-weight: 900; text-transform: uppercase;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            }
+
+            #btnCloseProvador {
+                width: 42px; height: 42px; background: rgba(255,255,255,0.85);
+                backdrop-filter: blur(10px); border-radius: 50%;
+                display: flex; align-items: center; justify-content: center; shadow: 0 4px 10px rgba(0,0,0,0.1);
             }
 
             /* Variações de Cores (Esquerda) */
             .color-variants {
-                position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
-                display: flex; flex-direction: column; gap: 8px; z-index: 10;
+                position: absolute; left: 15px; top: 50%; transform: translateY(-50%);
+                display: flex; flex-direction: column; gap: 10px; z-index: 60;
             }
             .color-dot {
-                width: 38px; height: 38px; border-radius: 10px; border: 2px solid white;
-                object-fit: cover; box-shadow: 0 4px 10px rgba(0,0,0,0.2); transition: 0.2s;
+                width: 42px; height: 42px; border-radius: 12px; border: 2px solid white;
+                object-fit: cover; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: 0.2s;
             }
             .color-dot.active { border-color: #000; transform: scale(1.1); }
 
-            /* Header e Filtros */
-            #provHeader { position: absolute; top: 0; left: 0; right: 0; p-5; z-index: 100; padding: 15px; }
-            
-            /* Footer e Botão */
-            #provFooter { padding: 20px; background: white; border-top: 1px solid #f1f5f9; }
+            /* Tamanhos na Vertical (Direita) */
+            .size-badge-vertical {
+                position: absolute; right: 15px; top: 50%; transform: translateY(-50%);
+                display: flex; flex-direction: column; gap: 5px; z-index: 60;
+            }
+            .size-item {
+                background: rgba(255,255,255,0.9); width: 30px; height: 30px;
+                display: flex; align-items: center; justify-content: center;
+                border-radius: 8px; font-size: 10px; font-weight: 900; color: #000;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            }
+
+            /* Footer Fixo */
+            #provFooter { padding: 15px; background: white; z-index: 100; }
             .btn-checkout-provador {
                 width: 100%; height: 65px; background: #000; color: #fff; border-radius: 20px;
                 display: flex; align-items: center; justify-content: space-between;
-                padding: 0 25px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;
+                padding: 0 25px; font-weight: 800; text-transform: uppercase;
             }
         </style>
 
-        <div id="provHeader">
-            <div class="flex justify-end mb-3">
-                <button id="btnCloseProvador" class="w-10 h-10 bg-white/80 backdrop-blur shadow-sm rounded-full flex items-center justify-center">
+        <div class="overlay-controls">
+            <div class="top-bar">
+                <div class="prov-filters">
+                    <select id="selCatTop">
+                        <option value="Todas">Tops: Todas</option>
+                        ${catTops.map(c => `<option value="${c}">${c}</option>`).join('')}
+                    </select>
+                    <select id="selCatBot">
+                        <option value="Todas">Bottoms: Todas</option>
+                        ${catBots.map(c => `<option value="${c}">${c}</option>`).join('')}
+                    </select>
+                </div>
+                <button id="btnCloseProvador">
                     <i data-lucide="x" class="text-black w-5 h-5"></i>
                 </button>
-            </div>
-            <div class="grid grid-cols-2 gap-2">
-                <select id="selCatTop" class="bg-white border-none rounded-2xl py-3 px-4 text-[10px] font-black uppercase shadow-sm">
-                    <option value="Todas">Tops: Todas</option>
-                    ${catTops.map(c => `<option value="${c}">${c}</option>`).join('')}
-                </select>
-                <select id="selCatBot" class="bg-white border-none rounded-2xl py-3 px-4 text-[10px] font-black uppercase shadow-sm">
-                    <option value="Todas">Bottoms: Todas</option>
-                    ${catBots.map(c => `<option value="${c}">${c}</option>`).join('')}
-                </select>
             </div>
         </div>
 
         <div class="peças-container">
-            <div id="deckTop" class="flex overflow-x-auto snap-x snap-mandatory no-scrollbar w-full py-2"></div>
-            <div id="deckBot" class="flex overflow-x-auto snap-x snap-mandatory no-scrollbar w-full py-2"></div>
+            <div id="deckTop" class="deck-scroll"></div>
+            <div id="deckBot" class="deck-scroll"></div>
         </div>
 
         <div id="provFooter">
@@ -98,6 +135,7 @@ window.openProvador = function() {
     `;
 
     // --- FUNÇÕES DE INTERAÇÃO ---
+
     window.changeProvadorThumb = (el, newImg) => {
         const card = el.closest('.p-card');
         card.querySelector('.main-img').src = newImg;
@@ -140,7 +178,8 @@ window.openProvador = function() {
         el.onscroll = () => {
             const center = el.scrollLeft + el.offsetWidth / 2;
             el.querySelectorAll('.p-card').forEach(card => {
-                card.classList.toggle('active-piece', Math.abs(center - (card.offsetLeft + card.offsetWidth / 2)) < 100);
+                const cardCenter = card.offsetLeft + card.offsetWidth / 2;
+                card.classList.toggle('active-piece', Math.abs(center - cardCenter) < 100);
             });
             clearTimeout(el.timer); el.timer = setTimeout(() => updateUI(), 100);
         };
@@ -154,7 +193,32 @@ window.openProvador = function() {
         document.getElementById('pTotal').innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
     };
 
-    // Eventos de Fechamento e Checkout
+    // --- LOGICA DE NOTIFICAÇÃO PROFISSIONAL ---
+    const showSuccessNotification = () => {
+        Swal.fire({
+            title: 'Look no Carrinho!',
+            text: 'O que deseja fazer agora?',
+            icon: 'success',
+            showCancelButton: true,
+            confirmButtonColor: '#000',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Ir para o Carrinho',
+            cancelButtonText: 'Continuar Comprando',
+            heightAuto: false, // Importante para mobile
+            scrollbarPadding: false
+        }).then((result) => {
+            if (result.isConfirmed) {
+                container.style.display = 'none';
+                document.body.style.overflow = '';
+                window.openCartModal();
+            } else {
+                container.style.display = 'none';
+                document.body.style.overflow = '';
+            }
+        });
+    };
+
+    // Eventos
     container.querySelector('#btnCloseProvador').onclick = () => {
         container.style.display = 'none';
         document.body.style.overflow = '';
@@ -164,10 +228,11 @@ window.openProvador = function() {
         const t = document.querySelector('#deckTop .active-piece');
         const b = document.querySelector('#deckBot .active-piece');
         if(!t && !b) return;
+
         if(t) window.addToCart(window.state.allProducts.find(x => x.id == t.dataset.id), 1, { image: t.dataset.img });
         if(b) window.addToCart(window.state.allProducts.find(x => x.id == b.dataset.id), 1, { image: b.dataset.img });
-        showToast("Look Adicionado!");
-        container.querySelector('#btnCloseProvador').click();
+        
+        showSuccessNotification();
     };
 
     container.querySelector('#selCatTop').onchange = (e) => { filterCatTop = e.target.value; render(); };
