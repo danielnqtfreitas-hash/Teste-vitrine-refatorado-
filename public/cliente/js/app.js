@@ -342,44 +342,46 @@ window.toggleSearchBar = function() {
 
 // --- ATUALIZAÇÃO DOS BADGES (CONTADORES) ---
 window.updateNavigationBadges = function() {
-    const cartCount = state.cart.reduce((sum, item) => sum + item.qty, 0);
-    const favCount = state.favorites.length;
+    // 1. Cálculo da quantidade total (Soma de todos os itens no carrinho)
+    const cartCount = state.cart.reduce((sum, item) => sum + (item.qty || 1), 0);
+    const favCount = state.favorites ? state.favorites.length : 0;
 
+    // 2. Captura dos elementos exatos
     const cBadge = document.getElementById('cartBadgeBottom');
     const fBadge = document.getElementById('favBadgeBottom');
 
-    // Função interna para aplicar o estilo "premium" direto no JS
-    const applyBadgeStyle = (el, count) => {
+    const applyStyle = (el, count) => {
         if (!el) return;
 
-        // Pega a cor principal definida no seu CSS
-        const rootStyle = getComputedStyle(document.documentElement);
-        const primaryColor = rootStyle.getPropertyValue('--color-primary').trim() || '#EA1D2C';
+        // Pega a cor do tema
+        const primaryColor = getComputedStyle(document.documentElement)
+            .getPropertyValue('--color-primary').trim() || '#EA1D2C';
 
-        // Estilização direta
+        // Atualiza o texto e o estilo
         el.innerText = count;
-        el.style.position = 'absolute';
-        el.style.top = '-5px';
-        el.style.right = '-8px';
-        el.style.backgroundColor = primaryColor;
-        el.style.color = 'white';
-        el.style.fontSize = '10px';
-        el.style.fontWeight = 'bold';
-        el.style.minWidth = '18px';
-        el.style.height = '18px';
-        el.style.borderRadius = '50%';
-        el.style.border = '2px solid white';
-        el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
-        el.style.zIndex = '100';
         
-        // Centralização do número
-        el.style.display = count > 0 ? 'flex' : 'none';
-        el.style.alignItems = 'center';
-        el.style.justifyContent = 'center';
+        // Estilização inline para ignorar erros de CSS
+        Object.assign(el.style, {
+            position: 'absolute',
+            top: '-5px',
+            right: '-8px',
+            backgroundColor: primaryColor,
+            color: 'white',
+            fontSize: '10px',
+            fontWeight: 'bold',
+            minWidth: '18px',
+            height: '18px',
+            borderRadius: '50%',
+            border: '2px solid white',
+            display: count > 0 ? 'flex' : 'none', // SÓ MOSTRA SE FOR MAIOR QUE 0
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: '100'
+        });
     };
 
-    applyBadgeStyle(cBadge, cartCount);
-    applyBadgeStyle(fBadge, favCount);
+    applyStyle(cBadge, cartCount);
+    applyStyle(fBadge, favCount);
 };
 
 
