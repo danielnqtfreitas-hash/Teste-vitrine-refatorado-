@@ -6,15 +6,22 @@ window.openProvador = function() {
         document.body.appendChild(container);
     }
 
-    const provadorProducts = state.allProducts.filter(p => p.posicaoProvador === 'superior' || p.posicaoProvador === 'inferior');
-    const sizesOnlyProvador = [...new Set(provadorProducts.flatMap(p => p.sizes || []))].sort();
+    // --- LOGICA DE CATEGORIAS DINÂMICAS ---
+    const catTops = [...new Set(state.allProducts
+        .filter(p => p.posicaoProvador === 'superior')
+        .map(p => p.category))].filter(c => c).sort();
+
+    const catBots = [...new Set(state.allProducts
+        .filter(p => p.posicaoProvador === 'inferior')
+        .map(p => p.category))].filter(c => c).sort();
     
-    let sizeT = 'Todos';
-    let sizeB = 'Todos';
+    let filterCatTop = 'Todas';
+    let filterCatBot = 'Todas';
 
     container.innerHTML = `
         <style>
-            .p-card { position: relative; width: 80%; flex-shrink: 0; margin: 0 10%; }
+            .p-card { position: relative; width: 80%; flex-shrink: 0; margin: 0 10%; transition: transform 0.3s; }
+            .active-piece { transform: scale(1.05); }
             .p-info-badge {
                 position: absolute; top: 15px; right: 15px;
                 background: rgba(255,255,255,0.95); padding: 6px 12px;
@@ -36,6 +43,7 @@ window.openProvador = function() {
             .active-piece .color-variants { opacity: 1; pointer-events: auto; }
             .p-card:not(.active-piece) .color-variants { opacity: 0; pointer-events: none; }
             .main-img { width: 100%; height: 350px; object-fit: cover; border-radius: 24px; }
+            #provHeader { padding: 15px; }
         </style>
 
         <div class="peças-container">
@@ -44,20 +52,19 @@ window.openProvador = function() {
         </div>
 
         <div id="provHeader">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-black italic tracking-tighter uppercase">Mix & Match</h2>
-                <button id="btnCloseProvador" class="w-10 h-10 bg-black text-white rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-all">
+            <div class="flex justify-end items-center mb-3">
+                <button id="btnCloseProvador" class="w-10 h-10 bg-black/5 text-black rounded-full flex items-center justify-center active:scale-90 transition-all">
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
             <div class="grid grid-cols-2 gap-2">
-                <select id="selTop" class="bg-white border border-slate-200 rounded-xl py-2 px-3 text-[11px] font-bold shadow-sm">
-                    <option value="Todos">TOP: TODOS</option>
-                    ${sizesOnlyProvador.map(s => `<option value="${s}">${s}</option>`).join('')}
+                <select id="selCatTop" class="bg-white border border-slate-200 rounded-xl py-3 px-3 text-[10px] font-black uppercase tracking-wider shadow-sm outline-none">
+                    <option value="Todas">Tops: Todas</option>
+                    ${catTops.map(c => `<option value="${c}">${c}</option>`).join('')}
                 </select>
-                <select id="selBot" class="bg-white border border-slate-200 rounded-xl py-2 px-3 text-[11px] font-bold shadow-sm">
-                    <option value="Todos">BOTTOM: TODOS</option>
-                    ${sizesOnlyProvador.map(s => `<option value="${s}">${s}</option>`).join('')}
+                <select id="selCatBot" class="bg-white border border-slate-200 rounded-xl py-3 px-3 text-[10px] font-black uppercase tracking-wider shadow-sm outline-none">
+                    <option value="Todas">Bottoms: Todas</option>
+                    ${catBots.map(c => `<option value="${c}">${c}</option>`).join('')}
                 </select>
             </div>
         </div>
@@ -77,93 +84,74 @@ window.openProvador = function() {
         </div>
     `;
 
-    // --- FUNÇÃO PARA TROCAR FOTO DA VARIAÇÃO ---
+    // --- HANDLERS ---
     window.changeProvadorThumb = (el, newImg) => {
         const card = el.closest('.p-card');
         const mainImg = card.querySelector('.main-img');
-        
         mainImg.src = newImg;
         card.dataset.img = newImg;
-
-        // Gerenciar borda ativa
         card.querySelectorAll('.color-dot').forEach(dot => dot.classList.remove('active-border'));
         el.classList.add('active-border');
-        
         updateUI();
     };
 
-    const fecharTotal = () => {
+    const fechar = () => {
         container.classList.add('hidden');
         container.style.display = 'none';
         document.body.style.overflow = '';
     };
 
-    container.onclick = function(e) {
-        if (e.target.closest('#btnCloseProvador')) fecharTotal();
-
+    container.onclick = (e) => {
+        if (e.target.closest('#btnCloseProvador')) fechar();
         if (e.target.closest('#btnFinalizarLook')) {
             const t = document.querySelector('#deckTop .active-piece');
             const b = document.querySelector('#deckBot .active-piece');
-            if(!t && !b) return alert("Selecione uma peça!");
-
             if(t) {
                 const p = state.allProducts.find(x => x.id == t.dataset.id);
-                window.addToCart(p, 1, { selectedSize: sizeT !== 'Todos' ? sizeT : (p.sizes?.[0] || 'UN'), image: t.dataset.img });
+                window.addToCart(p, 1, { selectedSize: p.sizes?.[0] || 'UN', image: t.dataset.img });
             }
             if(b) {
                 const p = state.allProducts.find(x => x.id == b.dataset.id);
-                window.addToCart(p, 1, { selectedSize: sizeB !== 'Todos' ? sizeB : (p.sizes?.[0] || 'UN'), image: b.dataset.img });
+                window.addToCart(p, 1, { selectedSize: p.sizes?.[0] || 'UN', image: b.dataset.img });
             }
-            if(window.showToast) showToast("Look adicionado!");
-            fecharTotal();
+            if(window.showToast) showToast("Look no carrinho!");
+            fechar();
         }
     };
 
-    container.querySelector('#selTop').onchange = (e) => { sizeT = e.target.value; render(); };
-    container.querySelector('#selBot').onchange = (e) => { sizeB = e.target.value; render(); };
-
-    if (window.lucide) lucide.createIcons();
-    container.classList.remove('hidden');
-    container.style.display = 'flex';
-    document.body.style.overflow = 'hidden';
+    container.querySelector('#selCatTop').onchange = (e) => { filterCatTop = e.target.value; render(); };
+    container.querySelector('#selCatBot').onchange = (e) => { filterCatBot = e.target.value; render(); };
 
     const render = () => {
-        const tops = state.allProducts.filter(p => p.posicaoProvador === 'superior' && (sizeT === 'Todos' || p.sizes?.includes(sizeT)));
-        const bots = state.allProducts.filter(p => p.posicaoProvador === 'inferior' && (sizeB === 'Todos' || p.sizes?.includes(sizeB)));
+        const tops = state.allProducts.filter(p => p.posicaoProvador === 'superior' && (filterCatTop === 'Todas' || p.category === filterCatTop));
+        const bots = state.allProducts.filter(p => p.posicaoProvador === 'inferior' && (filterCatBot === 'Todas' || p.category === filterCatBot));
 
         const makeHtml = (list) => list.map(p => {
-            // Coletar todas as fotos possíveis (Principais + Variações)
-            let gallery = [...(p.images || [])];
-            if (p.variations) {
-                p.variations.forEach(v => {
-                    if (v.image && !gallery.includes(v.image)) gallery.push(v.image);
-                });
-            }
-            gallery = [...new Set(gallery)].filter(img => img);
+            let gallery = [p.images?.[0]];
+            if (p.variations) p.variations.forEach(v => { if (v.image && !gallery.includes(v.image)) gallery.push(v.image); });
+            gallery = gallery.filter(img => img);
 
             const dotsHtml = gallery.length > 1 ? `
                 <div class="color-variants">
                     ${gallery.slice(0, 5).map((img, idx) => `
-                        <img src="${img}" 
-                             class="color-dot ${idx === 0 ? 'active-border' : ''}" 
-                             onclick="window.changeProvadorThumb(this, '${img}')">
+                        <img src="${img}" class="color-dot ${idx === 0 ? 'active-border' : ''}" onclick="window.changeProvadorThumb(this, '${img}')">
                     `).join('')}
                 </div>
             ` : '';
 
             return `
-                <div class="p-card snap-center" data-id="${p.id}" data-price="${p.value}" data-img="${p.images[0]}">
+                <div class="p-card snap-center" data-id="${p.id}" data-price="${p.value}" data-img="${p.images?.[0]}">
                     <div class="p-info-badge">
                         <span class="text-slate-900">R$ ${p.value.toFixed(2)}</span>
                         <span class="text-[9px] text-slate-400 mt-1">${p.sizes ? p.sizes.join(' | ') : 'UN'}</span>
                     </div>
                     ${dotsHtml}
-                    <img src="${p.images[0]}" class="main-img shadow-xl">
+                    <img src="${p.images?.[0]}" class="main-img shadow-xl">
                 </div>`;
         }).join('');
 
-        document.getElementById('deckTop').innerHTML = makeHtml(tops) || '<div class="w-full text-center py-20 opacity-30">Nenhum Top</div>';
-        document.getElementById('deckBot').innerHTML = makeHtml(bots) || '<div class="w-full text-center py-20 opacity-30">Nenhum Bottom</div>';
+        document.getElementById('deckTop').innerHTML = makeHtml(tops) || '<div class="w-full text-center py-20 opacity-30 text-[10px] font-bold uppercase">Nenhum Top</div>';
+        document.getElementById('deckBot').innerHTML = makeHtml(bots) || '<div class="w-full text-center py-20 opacity-30 text-[10px] font-bold uppercase">Nenhum Bottom</div>';
         
         setupScroll('deckTop');
         setupScroll('deckBot');
@@ -175,7 +163,7 @@ window.openProvador = function() {
             const center = el.scrollLeft + el.offsetWidth / 2;
             el.querySelectorAll('.p-card').forEach(card => {
                 const c = card.offsetLeft + card.offsetWidth / 2;
-                card.classList.toggle('active-piece', Math.abs(center - c) < 100);
+                card.classList.toggle('active-piece', Math.abs(center - c) < 60);
             });
             clearTimeout(el.timer);
             el.timer = setTimeout(() => updateUI(), 100);
@@ -189,10 +177,14 @@ window.openProvador = function() {
         const total = (Number(t?.dataset.price || 0) + Number(b?.dataset.price || 0));
         document.getElementById('pTotal').innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
         document.getElementById('miniPrev').innerHTML = `
-            ${t ? `<img src="${t.dataset.img}" class="w-12 h-12 rounded-full border-2 border-white object-cover bg-white shadow-lg">` : ''}
-            ${b ? `<img src="${b.dataset.img}" class="w-12 h-12 rounded-full border-2 border-white object-cover bg-white shadow-lg">` : ''}
+            ${t ? `<img src="${t.dataset.img}" class="w-12 h-12 rounded-full border-2 border-white object-cover shadow-lg">` : ''}
+            ${b ? `<img src="${b.dataset.img}" class="w-12 h-12 rounded-full border-2 border-white object-cover shadow-lg">` : ''}
         `;
     };
 
+    if (window.lucide) lucide.createIcons();
+    container.classList.remove('hidden');
+    container.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
     render();
 };
