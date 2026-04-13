@@ -664,27 +664,28 @@ window.openProvador = function() {
 
     container.innerHTML = `
         <style>
-            .p-card { position: relative; }
-            /* Badge de Preço e Tamanho no Card */
+            .p-card { position: relative; width: 80%; flex-shrink: 0; margin: 0 10%; }
             .p-info-badge {
-                position: absolute; top: 10px; right: 10px;
-                background: rgba(255,255,255,0.9); padding: 4px 8px;
-                border-radius: 8px; font-size: 10px; font-weight: 800;
-                box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 5;
+                position: absolute; top: 15px; right: 15px;
+                background: rgba(255,255,255,0.95); padding: 6px 12px;
+                border-radius: 12px; font-size: 11px; font-weight: 900;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.1); z-index: 20;
+                display: flex; flex-direction: column; align-items: flex-end;
             }
-            /* Seletor de Cores Lateral */
             .color-variants {
-                position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
-                display: flex; flex-direction: column; gap: 8px; z-index: 10;
+                position: absolute; left: 15px; top: 50%; transform: translateY(-50%);
+                display: flex; flex-direction: column; gap: 10px; z-index: 30;
+                transition: opacity 0.3s;
             }
             .color-dot {
-                width: 35px; height: 35px; border-radius: 8px;
+                width: 42px; height: 42px; border-radius: 10px;
                 border: 2px solid white; object-fit: cover;
-                box-shadow: 0 4px 8px rgba(0,0,0,0.15); transition: 0.2s;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2); transition: 0.2s;
             }
-            .color-dot:active { transform: scale(0.9); }
-            .active-piece .color-variants { opacity: 1; }
+            .color-dot.active-border { border-color: #000 !important; transform: scale(1.1); }
+            .active-piece .color-variants { opacity: 1; pointer-events: auto; }
             .p-card:not(.active-piece) .color-variants { opacity: 0; pointer-events: none; }
+            .main-img { width: 100%; height: 350px; object-fit: cover; border-radius: 24px; }
         </style>
 
         <div class="peças-container">
@@ -695,7 +696,7 @@ window.openProvador = function() {
         <div id="provHeader">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-black italic tracking-tighter uppercase">Mix & Match</h2>
-                <button id="btnCloseProvador" class="w-10 h-10 bg-black text-white rounded-full flex items-center justify-center shadow-lg">
+                <button id="btnCloseProvador" class="w-10 h-10 bg-black text-white rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-all">
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
@@ -719,7 +720,7 @@ window.openProvador = function() {
                 </div>
                 <div id="miniPrev" class="flex -space-x-2"></div>
             </div>
-            <button id="btnFinalizarLook" class="w-full h-16 bg-black text-white rounded-2xl font-black text-xs uppercase tracking-[0.1em] flex items-center justify-center gap-3 active:scale-95 transition-transform">
+            <button id="btnFinalizarLook" class="w-full h-16 bg-black text-white rounded-2xl font-black text-xs uppercase tracking-[0.1em] flex items-center justify-center gap-3 active:scale-95 transition-all">
                 <i data-lucide="shopping-bag" class="w-5 h-5"></i>
                 Adicionar ao Carrinho
             </button>
@@ -727,11 +728,17 @@ window.openProvador = function() {
     `;
 
     // --- FUNÇÃO PARA TROCAR FOTO DA VARIAÇÃO ---
-    window.changeProvadorThumb = (btn, newImg) => {
-        const card = btn.closest('.p-card');
+    window.changeProvadorThumb = (el, newImg) => {
+        const card = el.closest('.p-card');
         const mainImg = card.querySelector('.main-img');
+        
         mainImg.src = newImg;
-        card.dataset.img = newImg; // Atualiza para o carrinho pegar a foto certa
+        card.dataset.img = newImg;
+
+        // Gerenciar borda ativa
+        card.querySelectorAll('.color-dot').forEach(dot => dot.classList.remove('active-border'));
+        el.classList.add('active-border');
+        
         updateUI();
     };
 
@@ -775,11 +782,21 @@ window.openProvador = function() {
         const bots = state.allProducts.filter(p => p.posicaoProvador === 'inferior' && (sizeB === 'Todos' || p.sizes?.includes(sizeB)));
 
         const makeHtml = (list) => list.map(p => {
-            // Gerar miniaturas se o produto tiver mais de uma imagem
-            const variantsHtml = p.images.length > 1 ? `
+            // Coletar todas as fotos possíveis (Principais + Variações)
+            let gallery = [...(p.images || [])];
+            if (p.variations) {
+                p.variations.forEach(v => {
+                    if (v.image && !gallery.includes(v.image)) gallery.push(v.image);
+                });
+            }
+            gallery = [...new Set(gallery)].filter(img => img);
+
+            const dotsHtml = gallery.length > 1 ? `
                 <div class="color-variants">
-                    ${p.images.slice(0, 4).map(img => `
-                        <img src="${img}" class="color-dot" onclick="window.changeProvadorThumb(this, '${img}')">
+                    ${gallery.slice(0, 5).map((img, idx) => `
+                        <img src="${img}" 
+                             class="color-dot ${idx === 0 ? 'active-border' : ''}" 
+                             onclick="window.changeProvadorThumb(this, '${img}')">
                     `).join('')}
                 </div>
             ` : '';
@@ -787,15 +804,16 @@ window.openProvador = function() {
             return `
                 <div class="p-card snap-center" data-id="${p.id}" data-price="${p.value}" data-img="${p.images[0]}">
                     <div class="p-info-badge">
-                        R$ ${p.value.toFixed(2)} | ${p.sizes ? p.sizes.join('/') : 'UN'}
+                        <span class="text-slate-900">R$ ${p.value.toFixed(2)}</span>
+                        <span class="text-[9px] text-slate-400 mt-1">${p.sizes ? p.sizes.join(' | ') : 'UN'}</span>
                     </div>
-                    ${variantsHtml}
-                    <img src="${p.images[0]}" class="main-img">
+                    ${dotsHtml}
+                    <img src="${p.images[0]}" class="main-img shadow-xl">
                 </div>`;
         }).join('');
 
-        document.getElementById('deckTop').innerHTML = makeHtml(tops) || '<div class="w-full text-center py-10 opacity-40">Vazio</div>';
-        document.getElementById('deckBot').innerHTML = makeHtml(bots) || '<div class="w-full text-center py-10 opacity-40">Vazio</div>';
+        document.getElementById('deckTop').innerHTML = makeHtml(tops) || '<div class="w-full text-center py-20 opacity-30">Nenhum Top</div>';
+        document.getElementById('deckBot').innerHTML = makeHtml(bots) || '<div class="w-full text-center py-20 opacity-30">Nenhum Bottom</div>';
         
         setupScroll('deckTop');
         setupScroll('deckBot');
@@ -807,12 +825,12 @@ window.openProvador = function() {
             const center = el.scrollLeft + el.offsetWidth / 2;
             el.querySelectorAll('.p-card').forEach(card => {
                 const c = card.offsetLeft + card.offsetWidth / 2;
-                card.classList.toggle('active-piece', Math.abs(center - c) < 60);
+                card.classList.toggle('active-piece', Math.abs(center - c) < 100);
             });
             clearTimeout(el.timer);
             el.timer = setTimeout(() => updateUI(), 100);
         };
-        setTimeout(() => el.dispatchEvent(new Event('scroll')), 200);
+        setTimeout(() => el.dispatchEvent(new Event('scroll')), 300);
     };
 
     const updateUI = () => {
@@ -821,8 +839,8 @@ window.openProvador = function() {
         const total = (Number(t?.dataset.price || 0) + Number(b?.dataset.price || 0));
         document.getElementById('pTotal').innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
         document.getElementById('miniPrev').innerHTML = `
-            ${t ? `<img src="${t.dataset.img}" class="w-10 h-10 rounded-full border-2 border-white object-cover bg-white shadow-sm">` : ''}
-            ${b ? `<img src="${b.dataset.img}" class="w-10 h-10 rounded-full border-2 border-white object-cover bg-white shadow-sm">` : ''}
+            ${t ? `<img src="${t.dataset.img}" class="w-12 h-12 rounded-full border-2 border-white object-cover bg-white shadow-lg">` : ''}
+            ${b ? `<img src="${b.dataset.img}" class="w-12 h-12 rounded-full border-2 border-white object-cover bg-white shadow-lg">` : ''}
         `;
     };
 
