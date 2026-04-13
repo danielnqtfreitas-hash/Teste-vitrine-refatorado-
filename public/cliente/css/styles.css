@@ -57,33 +57,22 @@ body {
 .thumb-active { border-color: var(--color-primary); opacity: 1; }
 .thumb-inactive { border-color: transparent; opacity: 0.6; }
 
-/* Carrossel Hero */
-/* Container que segura os cards */
+/* Garante que o carrossel não corte verticalmente */
 #heroGridContainer {
     display: flex;
     overflow-x: auto;
+    overflow-y: visible; /* Garante que sombras ou partes altas não cortem */
     scroll-snap-type: x mandatory;
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
-    width: 100%; /* Ocupa apenas o que o pai permitir */
-    max-width: 100vw; /* Impede de empurrar a tela para o lado */
-}
-
-/* Esconde a barra de rolagem para ficar com aspecto fixo */
-#heroGridContainer::-webkit-scrollbar {
-    display: none;
-}
-
-#heroGridContainer {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-}
-
-/* Garante que o card se adapte perfeitamente */
-.hero-card {
-    scroll-snap-align: start;
-    flex: 0 0 100%; /* Garante que cada card ocupe exatamente 100% da largura */
     width: 100%;
+    padding-bottom: 10px; /* Respiro para não cortar a sombra do card */
+}
+
+.hero-card {
+    scroll-snap-align: center; /* Centraliza melhor no mobile */
+    flex: 0 0 90%; /* Deixa uma pontinha do próximo card aparecendo (estilo App) */
+    margin-right: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -499,16 +488,17 @@ header {
     background-color: var(--color-primary) !important;
 }
 
-/* Barra de Categorias - AGORA COM FUNDO SÓLIDO PARA NÃO VAZAR */
+/* Barra de Categorias - FIXA E SEM VAZAMENTO */
 #categoryContainer {
-    background-color: #ffffff !important; /* Cor sólida impede o vazado */
+    background-color: #F3F4F6 !important; /* Mesma cor do fundo do body para camuflar */
     padding-top: 10px;
     padding-bottom: 10px;
-    position: sticky; /* Faz a barra grudar no topo se necessário */
-    top: 0;
-    z-index: 10; /* Garante que fique acima dos produtos na rolagem */
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); /* Sombra leve para separar do conteúdo */
+    position: sticky; 
+    top: 60px; /* Ajuste esse valor para a altura exata do seu Header */
+    z-index: 50; /* Garante que fique acima dos produtos, mas abaixo de modais */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
+
 /* Chips de Categoria - Destaque discreto */
 .category-chip {
     background: white;
