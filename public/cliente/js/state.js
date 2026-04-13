@@ -76,3 +76,5 @@ export function resetFilters() {
     state.isFavoritesView = false;
 }
 
+// No final do seu state.js
+window.state = state;
