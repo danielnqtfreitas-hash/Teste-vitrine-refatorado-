@@ -348,20 +348,40 @@ window.updateNavigationBadges = function() {
     const cBadge = document.getElementById('cartBadgeBottom');
     const fBadge = document.getElementById('favBadgeBottom');
 
-    if (cBadge) {
-        cBadge.innerText = cartCount;
-        // Só mostra a bolinha se tiver itens
-        if (cartCount > 0) cBadge.classList.add('badge-visible');
-        else cBadge.classList.remove('badge-visible');
-    }
+    // Função interna para aplicar o estilo "premium" direto no JS
+    const applyBadgeStyle = (el, count) => {
+        if (!el) return;
 
-    if (fBadge) {
-        fBadge.innerText = favCount;
-        // Só mostra a bolinha se tiver favoritos
-        if (favCount > 0) fBadge.classList.add('badge-visible');
-        else fBadge.classList.remove('badge-visible');
-    }
+        // Pega a cor principal definida no seu CSS
+        const rootStyle = getComputedStyle(document.documentElement);
+        const primaryColor = rootStyle.getPropertyValue('--color-primary').trim() || '#EA1D2C';
+
+        // Estilização direta
+        el.innerText = count;
+        el.style.position = 'absolute';
+        el.style.top = '-5px';
+        el.style.right = '-8px';
+        el.style.backgroundColor = primaryColor;
+        el.style.color = 'white';
+        el.style.fontSize = '10px';
+        el.style.fontWeight = 'bold';
+        el.style.minWidth = '18px';
+        el.style.height = '18px';
+        el.style.borderRadius = '50%';
+        el.style.border = '2px solid white';
+        el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+        el.style.zIndex = '100';
+        
+        // Centralização do número
+        el.style.display = count > 0 ? 'flex' : 'none';
+        el.style.alignItems = 'center';
+        el.style.justifyContent = 'center';
+    };
+
+    applyBadgeStyle(cBadge, cartCount);
+    applyBadgeStyle(fBadge, favCount);
 };
+
 
 window.resetAllFilters = resetAllFilters;
 window.openFilterDrawer = openFilterDrawer;
