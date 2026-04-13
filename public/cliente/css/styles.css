@@ -58,60 +58,31 @@ body {
 .thumb-inactive { border-color: transparent; opacity: 0.6; }
 
 /* Carrossel Hero */
+/* Container que segura os cards */
 #heroGridContainer {
     display: flex;
     overflow-x: auto;
     scroll-snap-type: x mandatory;
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
-    width: 100%;
-    /* Garante que o container não tenha margens que vazem a tela */
-    margin: 0; 
-    padding: 0;
+    width: 100%; /* Ocupa apenas o que o pai permitir */
+    max-width: 100vw; /* Impede de empurrar a tela para o lado */
 }
 
-/* Esconde a barra de rolagem */
+/* Esconde a barra de rolagem para ficar com aspecto fixo */
 #heroGridContainer::-webkit-scrollbar {
     display: none;
 }
+
 #heroGridContainer {
     -ms-overflow-style: none;
     scrollbar-width: none;
 }
 
-/* Garante que o card ocupe EXATAMENTE a largura da tela */
+/* Garante que o card se adapte perfeitamente */
 .hero-card {
     scroll-snap-align: start;
-    /* flex: grow | shrink | basis */
-    flex: 0 0 100%; 
     width: 100%;
-    /* Remove qualquer margem lateral que possa empurrar o próximo card */
-    margin: 0;
-}
-
-/* Ajuste das imagens dentro do card */
-.hero-card img {
-    width: 100%;
-    height: auto;
-    display: block;
-    /* Evita que a imagem estique ou distorça */
-    object-fit: cover; 
-}
-
-/* Barra de Categorias "Blindada" */
-#categoryList-container, 
-.sticky.top-0 {
-    background-color: #F3F4F6 !important; /* Cor exata do fundo do seu site */
-    z-index: 100 !important; /* Garante que fique acima dos cards de produtos */
-    box-shadow: 0 10px 15px -10px rgba(0,0,0,0.05); /* Sombra suave para disfarçar o corte */
-    margin-bottom: 10px;
-}
-
-/* Garante que o conteúdo abaixo não "pule" quando a barra fixar */
-#categoryList {
-    padding-top: 5px;
-    padding-bottom: 5px;
-    background-color: inherit;
 }
 
 /* =========================================
