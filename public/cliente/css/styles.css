@@ -281,53 +281,80 @@ header.glass-header #headerFavBtn:hover {
     to { transform: rotate(360deg); }
 }
 
-/* =========================================
-   BOTTOM NAVIGATION BAR - ESTILO APP NATIVO
-   ========================================= */
+/* BOTTOM NAVIGATION - ESTILO DOCK MODERNA */
 .mobile-nav-bar {
     position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 70px;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    z-index: 999;
-    padding-bottom: env(safe-area-inset-bottom); /* Suporte para iPhone moderno */
+    bottom: 20px; /* Afasta da borda inferior */
+    left: 20px;
+    right: 20px;
+    height: 64px;
+    background: rgba(255, 255, 255, 0.85); /* Efeito translúcido */
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 24px; /* Bordas bem arredondadas */
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    z-index: 9999;
+    padding: 0 10px;
 }
+
 
 .nav-item {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    color: #94a3b8;
-    gap: 4px;
-    flex: 1;
-    transition: all 0.3s ease;
+    color: #64748b; /* Cinza mais suave */
+    gap: 2px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.nav-item i { width: 22px; height: 22px; }
-.nav-item span { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+/* Deixa o ícone mais leve */
+.nav-item i { 
+    width: 20px; 
+    height: 20px; 
+    stroke-width: 1.5px; /* Ícones mais finos parecem mais caros */
+}
 
-.nav-item.active { color: var(--color-primary); }
+.nav-item span { 
+    font-size: 9px; 
+    font-weight: 500; 
+    text-transform: none; /* Letras minúsculas são mais amigáveis */
+    letter-spacing: 0;
+}
 
-/* Botão Central de Destaque (Carrinho) */
+/* Indicador de item ativo suave */
+.nav-item.active { 
+    color: var(--color-primary); 
+    transform: translateY(-2px);
+}
+
+/* Botão Central Evoluído */
 .nav-item-main {
     position: relative;
-    top: -15px; /* Eleva o botão do carrinho */
+    top: -25px; /* Sobe um pouco mais para destacar */
 }
 
 .main-cart-circle {
-    width: 56px;
-    height: 56px;
+    width: 60px;
+    height: 60px;
     background: var(--color-primary);
-    border-radius: 50%;
+    border-radius: 20px; /* Formato Squircle */
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 5px solid #F3F4F6; /* Cor do fundo do body para dar efeito de recorte */
+    box-shadow: 0 8px 20px rgba(234, 29, 44, 0.3); /* Sombra na cor da marca */
+    border: 5px solid #F3F4F6;
+    transition: transform 0.3s ease;
 }
+
+.main-cart-circle:active {
+    transform: scale(0.9) rotate(-5deg); /* Feedback visual ao tocar */
+}
+
 
 /* Badges de Contagem */
 .badge-count {
