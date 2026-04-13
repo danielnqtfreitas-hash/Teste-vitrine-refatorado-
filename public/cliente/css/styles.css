@@ -81,12 +81,15 @@ body {
 /* Adicione esta regra para as imagens dentro do banner */
 .hero-card img {
     width: 100%;
-    height: auto; /* Deixa a altura livre para não cortar */
-    max-height: 220px; /* Limite opcional para não ficar gigante no celular */
-    object-fit: contain; /* Mostra a imagem inteira sem cortes */
+    /* Reduzimos o max-height para garantir o formato retangular */
+    max-height: 180px; 
+    /* 'cover' corta as bordas para preencher o retângulo, 
+       'contain' mostra a imagem inteira com possíveis faixas vazias */
+    object-fit: cover; 
     display: block;
-    border-radius: 12px; /* Mantém o acabamento arredondado que vi na foto */
+    border-radius: 12px;
 }
+
 
 /* =========================================
    MODAIS & OVERLAYS
