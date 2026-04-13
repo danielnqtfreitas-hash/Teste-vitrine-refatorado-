@@ -494,35 +494,37 @@ body {
     z-index: 100001 !important; /* Um número maior que o 99999 da barra */
 }
 
-/* Garante que o Header (Logo e Nome) tenha um fundo sólido e fique no topo */
-#mainHeader {
-    position: sticky;
+/* Garante que o Header colorido tenha sombra e contraste */
+header {
+    background-color: var(--color-primary) !important;
+}
+
+/* Barra de Categorias - AGORA COM FUNDO SÓLIDO PARA NÃO VAZAR */
+#categoryContainer {
+    background-color: #ffffff !important; /* Cor sólida impede o vazado */
+    padding-top: 10px;
+    padding-bottom: 10px;
+    position: sticky; /* Faz a barra grudar no topo se necessário */
     top: 0;
-    z-index: 100;
-    background-color: white; /* Ou a cor exata do seu fundo */
-    padding-top: env(safe-area-inset-top); /* Para celulares com notch */
+    z-index: 10; /* Garante que fique acima dos produtos na rolagem */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); /* Sombra leve para separar do conteúdo */
+}
+/* Chips de Categoria - Destaque discreto */
+.category-chip {
+    background: white;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+    padding: 8px 16px;
+    border-radius: 50px;
+    font-size: 13px;
+    font-weight: 600;
 }
 
-/* Ajuste das categorias para "encostar" no header sem deixar buraco */
-.categories-container {
-    position: sticky;
-    top: 60px; /* AJUSTE AQUI: Deve ser a altura exata do seu Header */
-    z-index: 90;
-    background-color: white;
-    margin-top: -1px; /* Remove frestas milimétricas */
-    padding: 10px 0;
-    border-bottom: 1px solid #f1f5f9;
-}
-
-/* Remove o efeito de transparência que faz o conteúdo vazar */
-.categories-container::before {
-    content: "";
-    position: absolute;
-    top: -20px;
-    left: 0;
-    right: 0;
-    height: 20px;
-    background: white; /* Cobre o espaço vazio acima das abas */
+.category-chip.active {
+    background: var(--color-primary);
+    color: white;
+    border-color: var(--color-primary);
 }
 
 /* Barra de Status (Loja Fechada) - Quando o header é vermelho, o banner precisa ser diferente */
