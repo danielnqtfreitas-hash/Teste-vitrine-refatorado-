@@ -460,33 +460,43 @@
         </div>
     </div>
 
-<nav id="mainNavBottom" class="lg:hidden">
-    <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})" class="nav-btn-item active">
-        <i data-lucide="home"></i>
-        <span>Início</span>
+<nav id="mainNavBottom" class="fixed bottom-4 left-4 right-4 h-16 bg-white/80 backdrop-blur-lg border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.05)] rounded-2xl flex justify-around items-center z-[1000] px-2 transition-all duration-300">
+    
+    <button onclick="window.scrollTo({top:0, behavior:'smooth'})" class="nav-btn-item group">
+        <div class="nav-icon-wrapper">
+            <i data-lucide="layout-grid" class="w-5 h-5 stroke-[1.5]"></i>
+        </div>
+        <span class="nav-text">Início</span>
     </button>
 
-    <button class="nav-btn-item" onclick="window.openDiscoveryFeed()">
-    <i data-lucide="play-circle"></i>
-    <span>Descobrir</span>
+    <button onclick="openDiscoveryFeed()" class="nav-btn-item group">
+        <div class="nav-icon-wrapper">
+            <i data-lucide="sparkles" class="w-5 h-5 stroke-[1.5]"></i>
+        </div>
+        <span class="nav-text">Explorar</span>
     </button>
 
-    <button onclick="window.toggleFavoritesView()" class="nav-btn-item relative">
-        <i data-lucide="heart"></i>
-        <span id="favBadgeBottom" class="badge-nav hidden">0</span>
-        <span>Favoritos</span>
+    <button onclick="window.openCartModal()" class="nav-btn-item-main relative">
+        <div class="cart-glow"></div>
+        <div class="main-cart-circle shadow-lg shadow-red-200">
+            <i data-lucide="shopping-bag" class="text-white w-6 h-6 stroke-[2]"></i>
+            <span id="cartBadgeBottom" class="absolute -top-1 -right-1 bg-black text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full border-2 border-white">0</span>
+        </div>
     </button>
 
-    <button onclick="window.openCartModal()" class="nav-btn-item relative">
-        <i data-lucide="shopping-cart"></i>
-        <span id="cartBadgeBottom" class="badge-nav hidden">0</span>
-        <span>Carrinho</span>
+    <button onclick="window.toggleFavoritesView()" class="nav-btn-item group">
+        <div class="nav-icon-wrapper">
+            <i data-lucide="heart" class="w-5 h-5 stroke-[1.5]"></i>
+        </div>
+        <span class="nav-text">Amei</span>
     </button>
 
-    <button id="btnOpenDelivery" onclick="window.openDeliveryModal()" class="nav-btn-item">
-    <i data-lucide="truck"></i>
-    <span>Entrega</span>
-</button>
+    <button id="btnOpenDelivery" onclick="window.openDeliveryModal()" class="nav-btn-item group">
+        <div class="nav-icon-wrapper">
+            <i data-lucide="user" class="w-5 h-5 stroke-[1.5]"></i>
+        </div>
+        <span class="nav-text">Perfil</span>
+    </button>
 </nav>
 
 <div id="discoveryFeed" class="hidden fixed inset-0 bg-black z-[99999] flex flex-col">
