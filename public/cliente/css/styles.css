@@ -82,7 +82,21 @@ body {
 /* Garante que o card se adapte perfeitamente */
 .hero-card {
     scroll-snap-align: start;
+    flex: 0 0 100%; /* Garante que cada card ocupe exatamente 100% da largura */
     width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Adicione esta regra para as imagens dentro do banner */
+.hero-card img {
+    width: 100%;
+    height: auto; /* Deixa a altura livre para não cortar */
+    max-height: 220px; /* Limite opcional para não ficar gigante no celular */
+    object-fit: contain; /* Mostra a imagem inteira sem cortes */
+    display: block;
+    border-radius: 12px; /* Mantém o acabamento arredondado que vi na foto */
 }
 
 /* =========================================
@@ -485,13 +499,16 @@ header {
     background-color: var(--color-primary) !important;
 }
 
-/* Barra de Categorias (Nav dos Itens) - Mantemos fundo neutro para não cansar a vista */
+/* Barra de Categorias - AGORA COM FUNDO SÓLIDO PARA NÃO VAZAR */
 #categoryContainer {
-    background: transparent;
+    background-color: #ffffff !important; /* Cor sólida impede o vazado */
     padding-top: 10px;
     padding-bottom: 10px;
+    position: sticky; /* Faz a barra grudar no topo se necessário */
+    top: 0;
+    z-index: 10; /* Garante que fique acima dos produtos na rolagem */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); /* Sombra leve para separar do conteúdo */
 }
-
 /* Chips de Categoria - Destaque discreto */
 .category-chip {
     background: white;
