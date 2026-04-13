@@ -647,6 +647,7 @@ function updatePremiumLoader(progress, logoUrl = null) {
         }, 500);
     }
 }
+
 window.openProvador = function() {
     let container = document.getElementById('provadorFullscreen');
     if (!container) {
@@ -655,18 +656,37 @@ window.openProvador = function() {
         document.body.appendChild(container);
     }
 
-    // --- 1. FILTROS RESTRITOS APENAS AO QUE ESTÁ NO PROVADOR ---
     const provadorProducts = state.allProducts.filter(p => p.posicaoProvador === 'superior' || p.posicaoProvador === 'inferior');
     const sizesOnlyProvador = [...new Set(provadorProducts.flatMap(p => p.sizes || []))].sort();
     
     let sizeT = 'Todos';
     let sizeB = 'Todos';
 
-    // Injetamos o HTML (Note que adicionei estilos inline de segurança para garantir o fechamento)
     container.innerHTML = `
         <style>
-            #provadorFullscreen.fechar-modal { display: none !important; }
+            .p-card { position: relative; }
+            /* Badge de Preço e Tamanho no Card */
+            .p-info-badge {
+                position: absolute; top: 10px; right: 10px;
+                background: rgba(255,255,255,0.9); padding: 4px 8px;
+                border-radius: 8px; font-size: 10px; font-weight: 800;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 5;
+            }
+            /* Seletor de Cores Lateral */
+            .color-variants {
+                position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+                display: flex; flex-direction: column; gap: 8px; z-index: 10;
+            }
+            .color-dot {
+                width: 35px; height: 35px; border-radius: 8px;
+                border: 2px solid white; object-fit: cover;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.15); transition: 0.2s;
+            }
+            .color-dot:active { transform: scale(0.9); }
+            .active-piece .color-variants { opacity: 1; }
+            .p-card:not(.active-piece) .color-variants { opacity: 0; pointer-events: none; }
         </style>
+
         <div class="peças-container">
             <div id="deckTop" class="flex overflow-x-auto snap-x snap-mandatory no-scrollbar w-full"></div>
             <div id="deckBot" class="flex overflow-x-auto snap-x snap-mandatory no-scrollbar w-full"></div>
@@ -675,16 +695,16 @@ window.openProvador = function() {
         <div id="provHeader">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-black italic tracking-tighter uppercase">Mix & Match</h2>
-                <button id="btnCloseProvador" class="w-10 h-10 bg-black text-white rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform" style="pointer-events: auto !important;">
+                <button id="btnCloseProvador" class="w-10 h-10 bg-black text-white rounded-full flex items-center justify-center shadow-lg">
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
             <div class="grid grid-cols-2 gap-2">
-                <select id="selTop" class="bg-white border border-slate-200 rounded-xl py-2 px-3 text-[11px] font-bold shadow-sm" style="pointer-events: auto !important;">
+                <select id="selTop" class="bg-white border border-slate-200 rounded-xl py-2 px-3 text-[11px] font-bold shadow-sm">
                     <option value="Todos">TOP: TODOS</option>
                     ${sizesOnlyProvador.map(s => `<option value="${s}">${s}</option>`).join('')}
                 </select>
-                <select id="selBot" class="bg-white border border-slate-200 rounded-xl py-2 px-3 text-[11px] font-bold shadow-sm" style="pointer-events: auto !important;">
+                <select id="selBot" class="bg-white border border-slate-200 rounded-xl py-2 px-3 text-[11px] font-bold shadow-sm">
                     <option value="Todos">BOTTOM: TODOS</option>
                     ${sizesOnlyProvador.map(s => `<option value="${s}">${s}</option>`).join('')}
                 </select>
@@ -699,65 +719,80 @@ window.openProvador = function() {
                 </div>
                 <div id="miniPrev" class="flex -space-x-2"></div>
             </div>
-            <button id="btnFinalizarLook" class="w-full h-16 bg-black text-white rounded-2xl font-black text-xs uppercase tracking-[0.1em] flex items-center justify-center gap-3 active:scale-95 transition-transform" style="pointer-events: auto !important;">
+            <button id="btnFinalizarLook" class="w-full h-16 bg-black text-white rounded-2xl font-black text-xs uppercase tracking-[0.1em] flex items-center justify-center gap-3 active:scale-95 transition-transform">
                 <i data-lucide="shopping-bag" class="w-5 h-5"></i>
                 Adicionar ao Carrinho
             </button>
         </div>
     `;
 
-    // --- FUNÇÃO DE FECHAMENTO FORÇADO ---
-    const fecharTotal = () => {
-        console.log("Fechando provador...");
-        container.classList.add('hidden'); // Classe padrão
-        container.style.display = 'none';   // Força via style inline
-        document.body.style.overflow = ''; // Devolve o scroll ao site
+    // --- FUNÇÃO PARA TROCAR FOTO DA VARIAÇÃO ---
+    window.changeProvadorThumb = (btn, newImg) => {
+        const card = btn.closest('.p-card');
+        const mainImg = card.querySelector('.main-img');
+        mainImg.src = newImg;
+        card.dataset.img = newImg; // Atualiza para o carrinho pegar a foto certa
+        updateUI();
     };
 
-    // --- GESTÃO DE EVENTOS ---
+    const fecharTotal = () => {
+        container.classList.add('hidden');
+        container.style.display = 'none';
+        document.body.style.overflow = '';
+    };
+
     container.onclick = function(e) {
-        if (e.target.closest('#btnCloseProvador')) {
-            fecharTotal();
-        }
+        if (e.target.closest('#btnCloseProvador')) fecharTotal();
 
         if (e.target.closest('#btnFinalizarLook')) {
             const t = document.querySelector('#deckTop .active-piece');
             const b = document.querySelector('#deckBot .active-piece');
-            
             if(!t && !b) return alert("Selecione uma peça!");
 
             if(t) {
                 const p = state.allProducts.find(x => x.id == t.dataset.id);
-                window.addToCart(p, 1, { selectedSize: sizeT !== 'Todos' ? sizeT : (p.sizes?.[0] || 'UN') });
+                window.addToCart(p, 1, { selectedSize: sizeT !== 'Todos' ? sizeT : (p.sizes?.[0] || 'UN'), image: t.dataset.img });
             }
             if(b) {
                 const p = state.allProducts.find(x => x.id == b.dataset.id);
-                window.addToCart(p, 1, { selectedSize: sizeB !== 'Todos' ? sizeB : (p.sizes?.[0] || 'UN') });
+                window.addToCart(p, 1, { selectedSize: sizeB !== 'Todos' ? sizeB : (p.sizes?.[0] || 'UN'), image: b.dataset.img });
             }
-            
             if(window.showToast) showToast("Look adicionado!");
-            fecharTotal(); // Fecha após adicionar
+            fecharTotal();
         }
     };
 
-    // Filtros
     container.querySelector('#selTop').onchange = (e) => { sizeT = e.target.value; render(); };
     container.querySelector('#selBot').onchange = (e) => { sizeB = e.target.value; render(); };
 
     if (window.lucide) lucide.createIcons();
     container.classList.remove('hidden');
-    container.style.display = 'flex'; // Garante que abra como flex
+    container.style.display = 'flex';
     document.body.style.overflow = 'hidden';
 
-    // --- RENDERIZAÇÃO ---
     const render = () => {
         const tops = state.allProducts.filter(p => p.posicaoProvador === 'superior' && (sizeT === 'Todos' || p.sizes?.includes(sizeT)));
         const bots = state.allProducts.filter(p => p.posicaoProvador === 'inferior' && (sizeB === 'Todos' || p.sizes?.includes(sizeB)));
 
-        const makeHtml = (list) => list.map(p => `
-            <div class="p-card snap-center" data-id="${p.id}" data-price="${p.value}" data-img="${p.images[0]}">
-                <img src="${p.images[0]}">
-            </div>`).join('');
+        const makeHtml = (list) => list.map(p => {
+            // Gerar miniaturas se o produto tiver mais de uma imagem
+            const variantsHtml = p.images.length > 1 ? `
+                <div class="color-variants">
+                    ${p.images.slice(0, 4).map(img => `
+                        <img src="${img}" class="color-dot" onclick="window.changeProvadorThumb(this, '${img}')">
+                    `).join('')}
+                </div>
+            ` : '';
+
+            return `
+                <div class="p-card snap-center" data-id="${p.id}" data-price="${p.value}" data-img="${p.images[0]}">
+                    <div class="p-info-badge">
+                        R$ ${p.value.toFixed(2)} | ${p.sizes ? p.sizes.join('/') : 'UN'}
+                    </div>
+                    ${variantsHtml}
+                    <img src="${p.images[0]}" class="main-img">
+                </div>`;
+        }).join('');
 
         document.getElementById('deckTop').innerHTML = makeHtml(tops) || '<div class="w-full text-center py-10 opacity-40">Vazio</div>';
         document.getElementById('deckBot').innerHTML = makeHtml(bots) || '<div class="w-full text-center py-10 opacity-40">Vazio</div>';
@@ -793,4 +828,3 @@ window.openProvador = function() {
 
     render();
 };
-
