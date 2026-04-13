@@ -1,5 +1,5 @@
 /* =========================================================================
-   PROVADOR VIRTUAL ULTIMATE - FOCO IMERSIVO 1:1 (Mobile First)
+   PROVADOR VIRTUAL - VERSÃO FINAL IMERSIVA (js/provador.js)
    ========================================================================= */
 
 window.openProvador = function() {
@@ -10,7 +10,6 @@ window.openProvador = function() {
         document.body.appendChild(container);
     }
 
-    // Coleta categorias reais do estado global
     const catTops = [...new Set(window.state.allProducts.filter(p => p.posicaoProvador === 'superior').map(p => p.category))].filter(Boolean);
     const catBots = [...new Set(window.state.allProducts.filter(p => p.posicaoProvador === 'inferior').map(p => p.category))].filter(Boolean);
     
@@ -24,118 +23,114 @@ window.openProvador = function() {
                 display: flex; flex-direction: column; font-family: 'Inter', sans-serif;
             }
             
-            /* Header Flutuante para não ocupar espaço das fotos */
-            .prov-header {
-                position: absolute; top: 0; left: 0; right: 0; z-index: 100;
-                padding: 12px; display: flex; gap: 8px; align-items: center;
-                background: linear-gradient(to bottom, rgba(255,255,255,0.9), transparent);
+            /* Header com filtros e fechar */
+            .p-header {
+                padding: 10px 15px; display: flex; gap: 8px; align-items: center; background: #fff;
             }
-            .prov-filters { display: flex; gap: 6px; flex: 1; }
-            .prov-filters select {
-                flex: 1; background: #fff; border: 1px solid #eee; border-radius: 10px;
+            .p-filters { display: flex; gap: 5px; flex: 1; }
+            .p-filters select {
+                flex: 1; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
                 padding: 8px; font-size: 10px; font-weight: 800; text-transform: uppercase;
-                outline: none; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
             }
-            .btn-close-p {
+            .p-btn-close {
                 width: 38px; height: 38px; background: #000; color: #fff;
-                border-radius: 10px; display: flex; align-items: center; justify-content: center;
+                border-radius: 8px; display: flex; align-items: center; justify-content: center;
             }
 
-            /* Container de Peças 1:1 */
-            .peças-container {
-                flex: 1; display: flex; flex-direction: column; 
-                justify-content: center; align-items: center; background: #fff;
-            }
+            /* Container Principal */
+            .p-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 
-            .deck-wrapper {
-                width: 100%; flex: 1; position: relative;
-                display: flex; overflow: hidden;
-            }
-
-            .deck-scroll {
-                flex: 1; display: flex; overflow-x: auto; 
+            .p-deck {
+                flex: 1; position: relative; display: flex; overflow-x: auto;
                 snap-type: x mandatory; scrollbar-width: none;
             }
-            .deck-scroll::-webkit-scrollbar { display: none; }
+            .p-deck::-webkit-scrollbar { display: none; }
 
-            /* Card 1:1 com calhas laterais para controles */
-            .p-card { 
+            /* Card de Peça 1:1 */
+            .p-card {
                 min-width: 100vw; height: 100%; position: relative;
                 display: flex; align-items: center; justify-content: center;
-                padding: 0 60px; /* Calhas brancas para variações e tamanhos */
+                padding: 0 55px; /* Calhas laterais */
             }
-            .img-box {
+
+            .p-img-box {
                 width: 100%; aspect-ratio: 1/1; position: relative;
-                box-shadow: 0 10px 30px rgba(0,0,0,0.08); border-radius: 4px; overflow: hidden;
+                border-radius: 4px; overflow: hidden; background: #f1f5f9;
             }
-            .img-box img { width: 100%; height: 100%; object-fit: cover; }
+            .p-img-box img { width: 100%; height: 100%; object-fit: cover; }
 
-            /* Calhas Laterais Fixas por Peça */
-            .side-left {
-                position: absolute; left: 5px; top: 0; bottom: 0; width: 50px;
-                display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
-            }
-            .side-right {
-                position: absolute; right: 5px; top: 0; bottom: 0; width: 50px;
-                display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+            /* Valor Individual na Peça */
+            .p-individual-price {
+                position: absolute; bottom: 8px; right: 8px;
+                background: rgba(0,0,0,0.7); color: #fff; padding: 4px 8px;
+                border-radius: 6px; font-size: 10px; font-weight: 700; backdrop-filter: blur(4px);
             }
 
-            .thumb-variant {
-                width: 42px; height: 42px; border-radius: 8px; border: 2px solid #f1f5f9;
+            /* Controles Laterais */
+            .p-side-left {
+                position: absolute; left: 8px; top: 0; bottom: 0; width: 40px;
+                display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+            }
+            .p-side-right {
+                position: absolute; right: 8px; top: 0; bottom: 0; width: 40px;
+                display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+            }
+
+            .p-thumb {
+                width: 38px; height: 38px; border-radius: 8px; border: 2px solid #eee;
                 object-fit: cover; transition: 0.2s;
             }
-            .thumb-variant.active { border-color: #000; transform: scale(1.1); }
+            .p-thumb.active { border-color: #000; transform: scale(1.1); }
 
-            .size-tag {
-                width: 34px; height: 34px; border-radius: 8px; background: #f8fafc;
-                border: 1px solid #eee; display: flex; align-items: center; justify-content: center;
-                font-size: 11px; font-weight: 800; color: #334155;
+            .p-size {
+                width: 32px; height: 32px; border-radius: 6px; background: #f1f5f9;
+                display: flex; align-items: center; justify-content: center;
+                font-size: 10px; font-weight: 800; color: #1e293b; border: 1px solid #e2e8f0;
             }
 
-            /* Rodapé com Preço e Ação */
-            .prov-footer { padding: 16px; background: #fff; border-top: 1px solid #f1f5f9; }
-            .btn-add-look {
+            /* Footer com Preço Total e Botão */
+            .p-footer { padding: 15px; background: #fff; border-top: 1px solid #f1f5f9; }
+            .p-btn-action {
                 width: 100%; height: 60px; background: #000; color: #fff; border-radius: 16px;
                 display: flex; align-items: center; justify-content: space-between;
                 padding: 0 20px; font-weight: 800; text-transform: uppercase;
-                transition: transform 0.1s active;
             }
         </style>
 
-        <div class="prov-header">
-            <div class="prov-filters">
+        <div class="p-header">
+            <div class="p-filters">
                 <select id="selCatTop">
-                    <option value="Todas">Tops: Todas</option>
+                    <option value="Todas">Top: Todas</option>
                     ${catTops.map(c => `<option value="${c}">${c}</option>`).join('')}
                 </select>
                 <select id="selCatBot">
-                    <option value="Todas">Bottoms: Todas</option>
+                    <option value="Todas">Bottom: Todas</option>
                     ${catBots.map(c => `<option value="${c}">${c}</option>`).join('')}
                 </select>
             </div>
-            <button class="btn-close-p" onclick="window.closeProvador()"><i data-lucide="x"></i></button>
+            <button class="p-btn-close" onclick="window.closeProvador()"><i data-lucide="x"></i></button>
         </div>
 
-        <div class="peças-container">
-            <div id="deckTop" class="deck-scroll"></div>
-            <div id="deckBot" class="deck-scroll"></div>
+        <div class="p-main">
+            <div id="deckTop" class="p-deck"></div>
+            <div id="deckBot" class="p-deck"></div>
         </div>
 
-        <div class="prov-footer">
-            <button id="btnConfirmLook" class="btn-add-look">
+        <div class="p-footer">
+            <button id="btnConfirmLook" class="p-btn-action">
                 <div class="flex flex-col items-start">
-                    <span class="text-[9px] opacity-50 font-medium">Adicionar Look Completo</span>
-                    <span id="pTotal" class="text-lg leading-none">R$ 0,00</span>
+                    <span class="text-[9px] opacity-50">Adicionar Look Completo</span>
+                    <span id="pTotal" class="text-lg">R$ 0,00</span>
                 </div>
                 <div class="flex items-center gap-2">
                     <span class="text-xs">ADICIONAR</span>
-                    <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+                    <i data-lucide="shopping-bag" class="w-5 h-5"></i>
                 </div>
             </button>
         </div>
     `;
 
-    // --- LÓGICA DE INTERAÇÃO ---
+    // --- LÓGICA ---
 
     window.closeProvador = () => {
         container.style.display = 'none';
@@ -146,7 +141,7 @@ window.openProvador = function() {
         const card = el.closest('.p-card');
         card.querySelector('.main-img').src = newImg;
         card.dataset.img = newImg;
-        card.querySelectorAll('.thumb-variant').forEach(t => t.classList.remove('active'));
+        card.querySelectorAll('.p-thumb').forEach(t => t.classList.remove('active'));
         el.classList.add('active');
         updateUI();
     };
@@ -161,17 +156,18 @@ window.openProvador = function() {
 
             return `
                 <div class="p-card snap-center" data-id="${p.id}" data-price="${p.value}" data-img="${p.images[0]}">
-                    <div class="side-left">
+                    <div class="p-side-left">
                         ${gallery.slice(0, 5).map(img => `
-                            <img src="${img}" class="thumb-variant ${img === p.images[0] ? 'active' : ''}" 
+                            <img src="${img}" class="p-thumb ${img === p.images[0] ? 'active' : ''}" 
                                  onclick="window.changePThumb(this, '${img}')">
                         `).join('')}
                     </div>
-                    <div class="side-right">
-                        ${(p.sizes || []).map(s => `<div class="size-tag">${s}</div>`).join('')}
+                    <div class="p-side-right">
+                        ${(p.sizes || []).map(s => `<div class="p-size">${s}</div>`).join('')}
                     </div>
-                    <div class="img-box">
+                    <div class="p-img-box">
                         <img src="${p.images[0]}" class="main-img">
+                        <div class="p-individual-price">R$ ${Number(p.value).toFixed(2).replace('.', ',')}</div>
                     </div>
                 </div>`;
         }).join('');
@@ -193,7 +189,6 @@ window.openProvador = function() {
             });
             updateUI();
         };
-        // Trigger inicial
         setTimeout(() => el.dispatchEvent(new Event('scroll')), 200);
     };
 
@@ -204,31 +199,31 @@ window.openProvador = function() {
         document.getElementById('pTotal').innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
     };
 
-    // Ação única e direta
-    container.querySelector('#btnConfirmLook').onclick = () => {
+    // Ação Atômica (Clique Único)
+    container.querySelector('#btnConfirmLook').onclick = function() {
         const t = document.querySelector('#deckTop .active-piece');
         const b = document.querySelector('#deckBot .active-piece');
         
         if (!t && !b) return;
 
-        // Adição mecânica ao carrinho
         if(t) window.addToCart(window.state.allProducts.find(x => x.id == t.dataset.id), 1, { image: t.dataset.img });
         if(b) window.addToCart(window.state.allProducts.find(x => x.id == b.dataset.id), 1, { image: b.dataset.img });
 
-        // Notificação imediata
         Swal.fire({
-            title: 'Look Adicionado!',
-            text: 'Deseja finalizar o pedido agora?',
+            title: 'Look no Carrinho!',
+            text: 'Deseja finalizar o pedido ou continuar no provador?',
             icon: 'success',
             showCancelButton: true,
             confirmButtonColor: '#000',
             cancelButtonColor: '#94a3b8',
             confirmButtonText: 'Ver Carrinho',
-            cancelButtonText: 'Continuar',
+            cancelButtonText: 'Ficar no Provador',
             heightAuto: false
         }).then((result) => {
-            window.closeProvador();
-            if (result.isConfirmed) window.openCartModal();
+            if (result.isConfirmed) {
+                window.closeProvador();
+                window.openCartModal();
+            }
         });
     };
 
