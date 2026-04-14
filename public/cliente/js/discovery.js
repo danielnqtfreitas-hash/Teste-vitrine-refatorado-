@@ -1,5 +1,5 @@
 /* =========================================================================
-   DISCOVERY FEED COMPLETO (REELS STYLE) - VERSÃO RANDOMIZADA INTEGRAL
+   DISCOVERY FEED COMPLETO (REELS STYLE) - VERSÃO INTEGRAL COM RANDOMIZAÇÃO
    ========================================================================= */
 
 window.openDiscoveryFeed = function() {
@@ -10,6 +10,7 @@ window.openDiscoveryFeed = function() {
     
     if (!feed || !container) return;
 
+    // Interface: Esconde o resto do app
     if (app) app.classList.add('hidden');
     if (navBottom) navBottom.classList.add('hidden');
     document.body.style.overflow = 'hidden';
@@ -22,10 +23,10 @@ window.openDiscoveryFeed = function() {
         return;
     }
 
-    // --- ADIÇÃO: RANDOMIZAÇÃO (SHUFFLE) ---
+    // --- ADIÇÃO CIRÚRGICA: RANDOMIZAÇÃO ---
     const shuffledProducts = [...state.allProducts].sort(() => Math.random() - 0.5);
 
-    // Renderização dos Itens mantendo as classes originais para o Observer
+    // Renderização dos Itens (DESIGN ORIGINAL PRESERVADO)
     container.innerHTML = shuffledProducts.map((p) => {
         const imgUrl = (p.images && p.images.length > 0) ? p.images[0] : '';
         const precoBruto = p.value || p.priceCard || 0;
@@ -33,7 +34,7 @@ window.openDiscoveryFeed = function() {
         const isFavorite = state.favorites && state.favorites.includes(p.id);
         const views = p.views || 0;
 
-        // --- ADIÇÃO: ATRIBUTOS (CORES E TAMANHOS) ---
+        // --- ADIÇÃO CIRÚRGICA: ATRIBUTOS ---
         const tamanhos = p.sizes ? p.sizes.filter(Boolean).join(', ') : '';
         const cores = p.colors ? p.colors.filter(Boolean).join(', ') : '';
         const atributos = [tamanhos, cores].filter(Boolean).join(' • ');
@@ -64,15 +65,15 @@ window.openDiscoveryFeed = function() {
             </div>
 
             <div class="absolute right-4 bottom-32 z-30 flex flex-col gap-6 items-center">
-                <button onclick="window.toggleFavoriteFromFeed('${p.id}', this)" class="flex flex-col items-center gap-1">
-                    <div class="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10">
+                <button onclick="window.toggleFavoriteFromFeed('${p.id}', this)" class="flex flex-col items-center gap-1 group">
+                    <div class="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10 active:scale-90 transition-all">
                         <i data-lucide="heart" class="w-6 h-6 ${isFavorite ? 'fill-rose-500 text-rose-500' : 'text-white'}"></i>
                     </div>
                     <span class="text-white text-[10px] font-bold">Amei</span>
                 </button>
 
                 <button onclick="window.openProductModalFromFeed('${p.id}')" class="flex flex-col items-center gap-1">
-                    <div class="w-12 h-12 rounded-full bg-rose-600 flex items-center justify-center">
+                    <div class="w-12 h-12 rounded-full bg-rose-600 flex items-center justify-center shadow-lg shadow-rose-600/20 active:scale-90 transition-all">
                         <i data-lucide="shopping-bag" class="w-6 h-6 text-white"></i>
                     </div>
                     <span class="text-white text-[10px] font-bold">Comprar</span>
@@ -91,7 +92,7 @@ window.openDiscoveryFeed = function() {
 
     if (typeof lucide !== 'undefined') lucide.createIcons();
     
-    // Mantém a inicialização do observador original
+    // Pequeno atraso para garantir renderização antes de observar
     setTimeout(initReelObserver, 100);
 };
 
@@ -127,7 +128,7 @@ function initReelObserver() {
     document.querySelectorAll('.reel-item').forEach(item => observer.observe(item));
 }
 
-// --- MANTÉM TODAS AS FUNÇÕES DE APOIO ORIGINAIS ---
+// --- MANTÉM AS FUNÇÕES DE APOIO ORIGINAIS ---
 window.shareProductFromFeed = async function(id) {
     const p = state.allProducts.find(x => x.id === id);
     if(!p) return;
