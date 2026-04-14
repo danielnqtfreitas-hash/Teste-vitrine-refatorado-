@@ -204,54 +204,70 @@ export function renderInstallments() {
     select.innerHTML = html;
 }
 export function updateCartUI() {
-    const totalItens = state.cart.reduce((a, b) => a + b.q, 0); 
+    const list = document.getElementById('cartList');
+    const emptyMsg = document.getElementById('cartEmptyMsg');
+    const footer = document.getElementById('footerStep1');
     const badge = document.getElementById('cartBadge'); 
+    const currentMethod = document.getElementById('checkPayment')?.value || "";
+
+    // 1. SEMPRE atualiza o contador (Badge), pois ele não depende da API de produtos
+    const totalItens = state.cart.reduce((a, b) => a + b.q, 0); 
     if(badge) {
         badge.textContent = totalItens; 
         badge.classList.toggle('scale-0', totalItens === 0);
     }
 
-    const list = document.getElementById('cartList');
-    const emptyMsg = document.getElementById('cartEmptyMsg');
-    const footer = document.getElementById('footerStep1');
-    const currentMethod = document.getElementById('checkPayment')?.value || "";
-
+    // 2. Se o carrinho estiver vazio no LocalStorage, limpa a tela imediatamente
     if(!state.cart.length) { 
         if(list) list.innerHTML = ''; 
         if(emptyMsg) emptyMsg.classList.remove('hidden'); 
         if(footer) footer.classList.add('hidden');
-    } else {
-        if(emptyMsg) emptyMsg.classList.add('hidden'); 
-        if(footer) footer.classList.remove('hidden');
+        updateCartTotals(); // Zera os totais
+        return;
+    }
 
-        list.innerHTML = state.cart.map(i => {
-            const pOriginal = state.allProducts.find(x => x.id === i.id);
-            const precoDinamico = getActivePrice(pOriginal, currentMethod);
-            
-            return `
-            <div class="flex gap-3 bg-white p-3 rounded-xl border border-slate-200">
-                <img src="${i.img}" class="w-16 h-16 rounded-lg object-cover bg-slate-50">
-                <div class="flex-1 min-w-0">
-                    <div class="flex justify-between font-bold text-xs text-slate-800">
-                        <span class="truncate pr-2">${i.name}</span>
-                        <span class="shrink-0" id="cart-item-price-${i.uid}">
-                            R$ ${(precoDinamico * i.q).toFixed(2).replace('.', ',')}
-                        </span>
-                    </div>
-                    <div class="text-[10px] text-slate-400 mt-1 uppercase italic">
-                        ${[i.v.size, i.v.color].filter(Boolean).join(' / ') || 'PADRÃO'}
-                    </div>
-                    <div class="flex items-center gap-4 mt-2">
-                        <div class="flex items-center bg-slate-100 rounded h-7 border border-slate-200">
-                            <button onclick="window.modQty('${i.uid}', -1)" class="w-7 h-full flex items-center justify-center text-slate-500 font-bold">-</button>
-                            <span class="w-8 text-center text-xs font-black text-slate-700">${i.q}</span>
-                            <button onclick="window.modQty('${i.uid}', 1)" class="w-7 h-full flex items-center justify-center text-slate-500 font-bold">+</button>
-                        </div>
+    // 3. SEGREDO: Se o carrinho TEM itens, mas a API de produtos (initFlow) ainda não terminou,
+    // nós NÃO limpamos a lista. Retornamos aqui e esperamos o initFlow chamar esta função de novo.
+    if (!state.allProducts || state.allProducts.length === 0) {
+        console.log("Aguardando carregamento do catálogo para desenhar itens...");
+        return; 
+    }
+
+    // 4. Se chegou aqui, temos Itens no Carrinho E Produtos no Catálogo. Pode desenhar!
+    if(emptyMsg) emptyMsg.classList.add('hidden'); 
+    if(footer) footer.classList.remove('hidden');
+
+    list.innerHTML = state.cart.map(i => {
+        const pOriginal = state.allProducts.find(x => x.id === i.id);
+        
+        // Fallback: Se por algum motivo o produto sumiu do catálogo, usa o preço salvo no item
+        const precoDinamico = pOriginal ? getActivePrice(pOriginal, currentMethod) : i.price;
+        const nomeFinal = pOriginal ? pOriginal.name : i.name;
+        
+        return `
+        <div class="flex gap-3 bg-white p-3 rounded-xl border border-slate-200">
+            <img src="${i.img}" class="w-16 h-16 rounded-lg object-cover bg-slate-50">
+            <div class="flex-1 min-w-0">
+                <div class="flex justify-between font-bold text-xs text-slate-800">
+                    <span class="truncate pr-2">${nomeFinal}</span>
+                    <span class="shrink-0" id="cart-item-price-${i.uid}">
+                        R$ ${(precoDinamico * i.q).toFixed(2).replace('.', ',')}
+                    </span>
+                </div>
+                <div class="text-[10px] text-slate-400 mt-1 uppercase italic">
+                    ${[i.v.size, i.v.color].filter(Boolean).join(' / ') || 'PADRÃO'}
+                </div>
+                <div class="flex items-center gap-4 mt-2">
+                    <div class="flex items-center bg-slate-100 rounded h-7 border border-slate-200">
+                        <button onclick="window.modQty('${i.uid}', -1)" class="w-7 h-full flex items-center justify-center text-slate-500 font-bold">-</button>
+                        <span class="w-8 text-center text-xs font-black text-slate-700">${i.q}</span>
+                        <button onclick="window.modQty('${i.uid}', 1)" class="w-7 h-full flex items-center justify-center text-slate-500 font-bold">+</button>
                     </div>
                 </div>
-            </div>`;
-        }).join('');
-    }
+            </div>
+        </div>`;
+    }).join('');
+
     updateCartTotals(); 
 }
 
