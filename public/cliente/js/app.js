@@ -67,6 +67,32 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (window.updateNavigationBadges) {
         window.updateNavigationBadges();
     }
+
+    // Localiza o botão de início (ajusta o ID se necessário conforme o teu HTML)
+const btnInicio = document.getElementById('navInicio') || document.querySelector('a[href="#inicio"]');
+
+if (btnInicio) {
+    btnInicio.addEventListener('click', (e) => {
+        e.preventDefault();
+        
+        // 1. Fecha qualquer modal ou drawer que esteja aberto
+        closeFilterDrawer();
+        closeModalDetails();
+
+        // 2. Reseta todos os filtros e estados de favoritos
+        resetAllFilters(); 
+
+        // 3. Garante que as secções de Carrinho ou Perfil fiquem escondidas
+        document.getElementById('catalogSection')?.classList.remove('hidden');
+        document.getElementById('cartSection')?.classList.add('hidden');
+        document.getElementById('profileSection')?.classList.add('hidden');
+        
+        // 4. Feedback visual: volta ao topo suavemente
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        console.log("🏠 Vitrine reiniciada com sucesso!");
+    });
+}
     
     await signInAnonymously(auth);
     onAuthStateChanged(auth, (user) => { 
