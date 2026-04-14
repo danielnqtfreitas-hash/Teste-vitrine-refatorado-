@@ -1,5 +1,5 @@
 /* =========================================================================
-   DISCOVERY FEED COMPLETO (REELS STYLE) - VERSÃO CORRIGIDA
+   DISCOVERY FEED COMPLETO (REELS STYLE) - VERSÃO RANDOMIZADA INTEGRAL
    ========================================================================= */
 
 window.openDiscoveryFeed = function() {
@@ -22,9 +22,10 @@ window.openDiscoveryFeed = function() {
         return;
     }
 
-    // --- RANDOMIZAÇÃO (SHUFFLE) ---
+    // --- ADIÇÃO: RANDOMIZAÇÃO (SHUFFLE) ---
     const shuffledProducts = [...state.allProducts].sort(() => Math.random() - 0.5);
 
+    // Renderização dos Itens mantendo as classes originais para o Observer
     container.innerHTML = shuffledProducts.map((p) => {
         const imgUrl = (p.images && p.images.length > 0) ? p.images[0] : '';
         const precoBruto = p.value || p.priceCard || 0;
@@ -32,14 +33,15 @@ window.openDiscoveryFeed = function() {
         const isFavorite = state.favorites && state.favorites.includes(p.id);
         const views = p.views || 0;
 
-        // --- ATRIBUTOS EM FONTE PEQUENA ---
+        // --- ADIÇÃO: ATRIBUTOS (CORES E TAMANHOS) ---
         const tamanhos = p.sizes ? p.sizes.filter(Boolean).join(', ') : '';
         const cores = p.colors ? p.colors.filter(Boolean).join(', ') : '';
         const atributos = [tamanhos, cores].filter(Boolean).join(' • ');
 
         return `
-        <div class="h-full w-full snap-start relative flex-shrink-0 bg-black overflow-hidden group">
-            <img src="${imgUrl}" class="absolute inset-0 w-full h-full object-cover opacity-30 blur-2xl">
+        <div class="reel-item h-full w-full snap-start relative flex-shrink-0 bg-black overflow-hidden group" data-id="${p.id}">
+            <img src="${imgUrl}" class="zoom-img absolute inset-0 w-full h-full object-cover opacity-30 blur-2xl">
+            
             <img src="${imgUrl}" class="absolute inset-0 w-full h-full object-contain z-10">
 
             <div class="absolute inset-x-0 bottom-0 p-6 pb-24 z-20 bg-gradient-to-t from-black/90 via-black/40 to-transparent">
@@ -52,9 +54,13 @@ window.openDiscoveryFeed = function() {
                 <div class="flex items-center gap-3 mt-2">
                     <span class="text-rose-400 text-lg font-black">${formattedPrice}</span>
                     <span class="bg-white/10 text-white/60 text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1">
-                        <i data-lucide="eye" class="w-3 h-3"></i> ${views}
+                        <i data-lucide="eye" class="w-3 h-3"></i> <span id="view-count-${p.id}">${views}</span>
                     </span>
                 </div>
+                
+                <p class="text-white/60 text-sm mt-3 line-clamp-2 max-w-[80%] font-light">
+                    ${p.description || ''}
+                </p>
             </div>
 
             <div class="absolute right-4 bottom-32 z-30 flex flex-col gap-6 items-center">
@@ -62,12 +68,21 @@ window.openDiscoveryFeed = function() {
                     <div class="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10">
                         <i data-lucide="heart" class="w-6 h-6 ${isFavorite ? 'fill-rose-500 text-rose-500' : 'text-white'}"></i>
                     </div>
+                    <span class="text-white text-[10px] font-bold">Amei</span>
                 </button>
 
                 <button onclick="window.openProductModalFromFeed('${p.id}')" class="flex flex-col items-center gap-1">
                     <div class="w-12 h-12 rounded-full bg-rose-600 flex items-center justify-center">
                         <i data-lucide="shopping-bag" class="w-6 h-6 text-white"></i>
                     </div>
+                    <span class="text-white text-[10px] font-bold">Comprar</span>
+                </button>
+
+                <button onclick="window.shareProductFromFeed('${p.id}')" class="flex flex-col items-center gap-1">
+                    <div class="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10">
+                        <i data-lucide="share-2" class="w-6 h-6 text-white"></i>
+                    </div>
+                    <span class="text-white text-[10px] font-bold">Enviar</span>
                 </button>
             </div>
         </div>
@@ -75,20 +90,19 @@ window.openDiscoveryFeed = function() {
     }).join('');
 
     if (typeof lucide !== 'undefined') lucide.createIcons();
-};
     
-    // Pequeno atraso para garantir que o DOM renderizou antes de observar
+    // Mantém a inicialização do observador original
     setTimeout(initReelObserver, 100);
 };
 
-
+// --- MANTÉM O OBSERVADOR ORIGINAL COMPLETO ---
 function initReelObserver() {
     const container = document.getElementById('reelsContainer');
     if (!container) return;
 
     const observerOptions = {
-        root: container, // O container que tem o scroll
-        threshold: 0.6   // 60% do item precisa estar visível para contar
+        root: container,
+        threshold: 0.6
     };
 
     const observer = new IntersectionObserver((entries) => {
@@ -97,15 +111,12 @@ function initReelObserver() {
                 const productId = entry.target.dataset.id;
                 const img = entry.target.querySelector('.zoom-img');
 
-                // 1. Dispara o efeito visual de zoom
                 if (img) {
                     img.style.animation = 'none';
                     void img.offsetWidth; 
                     img.style.animation = 'zoomEffect 10s ease-out forwards';
                 }
                 
-                // 2. REGISTRA A VIEW (Local e Backend)
-                // Usamos o window para garantir que acesse a função global
                 if (typeof window.trackView === 'function') {
                     window.trackView(productId);
                 }
@@ -113,17 +124,18 @@ function initReelObserver() {
         });
     }, observerOptions);
 
-    // Seleciona todos os itens que acabaram de ser renderizados
     document.querySelectorAll('.reel-item').forEach(item => observer.observe(item));
 }
 
-// Funções de apoio permanecem as mesmas (shareProduct, closeDiscoveryFeed, etc)
-// --- COMPARTILHAMENTO ---
-window.shareProduct = async function(id, name, img) {
+// --- MANTÉM TODAS AS FUNÇÕES DE APOIO ORIGINAIS ---
+window.shareProductFromFeed = async function(id) {
+    const p = state.allProducts.find(x => x.id === id);
+    if(!p) return;
+    
     const shareData = {
-        title: name,
-        text: `Olha esse produto na Vitrine: ${name}`,
-        url: `${window.location.origin}${window.location.pathname}?prod=${id}`
+        title: p.name,
+        text: `Olha esse produto na Vitrine: ${p.name}`,
+        url: `${window.location.origin}${window.location.pathname}?id=${state.STORE_ID}&prod=${id}`
     };
 
     try {
@@ -136,27 +148,22 @@ window.shareProduct = async function(id, name, img) {
     } catch (err) { console.log("Erro ao compartilhar", err); }
 };
 
-// --- MÉTRICAS (FIREBASE) ---
 window.trackView = function(productId) {
-    // Evita contar 2x na mesma sessão
     const key = `viewed_${productId}`;
     if (sessionStorage.getItem(key)) return; 
     sessionStorage.setItem(key, "true");
     
-    // Atualiza o contador na tela (visual)
     const viewSpan = document.getElementById(`view-count-${productId}`);
     if (viewSpan) {
         let currentViews = parseInt(viewSpan.innerText) || 0;
         viewSpan.innerText = currentViews + 1;
     }
 
-    // CHAMA A MÉTRICA PARA SALVAR NO BANCO:
     if (typeof window.reportarMetrica === 'function') {
         window.reportarMetrica(productId, 'view');
     }
 };
 
-// --- NAVEGAÇÃO ---
 window.closeDiscoveryFeed = function() {
     const feed = document.getElementById('discoveryFeed');
     const app = document.getElementById('app');
