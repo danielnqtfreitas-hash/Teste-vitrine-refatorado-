@@ -11,7 +11,6 @@ window.openDiscoveryFeed = function() {
     
     if (!feed || !container) return;
 
-    // Interface: Esconde o resto do app
     if (app) app.classList.add('hidden');
     if (navBottom) navBottom.classList.add('hidden');
     document.body.style.overflow = 'hidden';
@@ -24,10 +23,8 @@ window.openDiscoveryFeed = function() {
         return;
     }
 
-    // --- ADIÇÃO: RANDOMIZAÇÃO (SHUFFLE) ---
     const shuffledProducts = [...state.allProducts].sort(() => Math.random() - 0.5);
 
-    // Renderização dos Itens
     container.innerHTML = shuffledProducts.map((p) => {
         const imgUrl = (p.images && p.images.length > 0) ? p.images[0] : '';
         const precoBruto = p.value || p.priceCard || 0;
@@ -35,7 +32,6 @@ window.openDiscoveryFeed = function() {
         const isFavorite = state.favorites && state.favorites.includes(p.id);
         const views = p.views || 0;
 
-        // --- ADIÇÃO: ATRIBUTOS ---
         const tamanhos = p.sizes ? p.sizes.filter(Boolean).join(', ') : '';
         const cores = p.colors ? p.colors.filter(Boolean).join(', ') : '';
         const atributos = [tamanhos, cores].filter(Boolean).join(' • ');
@@ -65,6 +61,7 @@ window.openDiscoveryFeed = function() {
             </div>
 
             <div class="absolute right-4 bottom-32 z-30 flex flex-col gap-6 items-center">
+                
                 <button onclick="window.toggleFavoriteFromFeed('${p.id}', this)" class="flex flex-col items-center gap-1 group">
                     <div class="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10 active:scale-90 transition-all">
                         <i data-lucide="heart" class="w-6 h-6 ${isFavorite ? 'fill-rose-500 text-rose-500' : 'text-white'}"></i>
@@ -72,7 +69,7 @@ window.openDiscoveryFeed = function() {
                     <span class="text-white text-[10px] font-bold">Amei</span>
                 </button>
 
-                <button onclick="window.openProductModalFromFeed('${p.id}')" class="flex flex-col items-center gap-1">
+                <button onclick="window.addToCartFromFeed('${p.id}')" class="flex flex-col items-center gap-1">
                     <div class="w-12 h-12 rounded-full bg-rose-600 flex items-center justify-center shadow-lg shadow-rose-600/20 active:scale-90 transition-all">
                         <i data-lucide="shopping-bag" class="w-6 h-6 text-white"></i>
                     </div>
@@ -83,7 +80,7 @@ window.openDiscoveryFeed = function() {
                     <div class="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10 active:scale-90 transition-all">
                         <i data-lucide="info" class="w-6 h-6 text-white"></i>
                     </div>
-                    <span class="text-white text-[10px] font-bold">Ver Mais</span>
+                    <span class="text-white text-[10px] font-bold">Ver Detalhes</span>
                 </button>
 
                 <button onclick="window.shareProductFromFeed('${p.id}')" class="flex flex-col items-center gap-1">
@@ -98,35 +95,59 @@ window.openDiscoveryFeed = function() {
     }).join('');
 
     if (typeof lucide !== 'undefined') lucide.createIcons();
-    
-    // Pequeno atraso para garantir que o DOM renderizou antes de observar
     setTimeout(initReelObserver, 100);
 };
 
+// --- LOGICA DO CARRINHO SEM SAIR DO PROVADOR ---
+window.addToCartFromFeed = function(productId) {
+    const p = state.allProducts.find(x => x.id === productId);
+    if (!p) return;
+
+    // Chama a função global de adicionar ao carrinho (importada no app.js)
+    if (typeof window.addToCart === 'function') {
+        window.addToCart(p.id);
+        // Exibe a notificação rápida (Toast) definida no seu config.js/ui.js
+        if (typeof window.showToast === 'function') {
+            window.showToast("Adicionado ao carrinho!");
+        }
+    }
+};
+
+// --- LOGICA DO FAVORITO (GOSTEI) ---
+window.toggleFavoriteFromFeed = function(productId, btn) {
+    if (typeof window.toggleFavorite === 'function') {
+        window.toggleFavorite(productId);
+        
+        // Atualiza o ícone visualmente na hora
+        const icon = btn.querySelector('i');
+        if (icon) {
+            const isFav = state.favorites.includes(productId);
+            if (isFav) {
+                icon.classList.add('fill-rose-500', 'text-rose-500');
+            } else {
+                icon.classList.remove('fill-rose-500', 'text-rose-500');
+                icon.classList.add('text-white');
+            }
+        }
+    }
+};
 
 function initReelObserver() {
     const container = document.getElementById('reelsContainer');
     if (!container) return;
 
-    const observerOptions = {
-        root: container, // O container que tem o scroll
-        threshold: 0.6   // 60% do item precisa estar visível para contar
-    };
+    const observerOptions = { root: container, threshold: 0.6 };
 
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
                 const productId = entry.target.dataset.id;
                 const img = entry.target.querySelector('.zoom-img');
-
-                // 1. Dispara o efeito visual de zoom (Zoom Reverse)
                 if (img) {
                     img.style.transform = 'scale(1.2)'; 
                     void img.offsetWidth; 
                     img.style.transform = 'scale(1)'; 
                 }
-                
-                // 2. REGISTRA A VIEW (Local e Backend)
                 if (typeof window.trackView === 'function') {
                     window.trackView(productId);
                 }
@@ -134,67 +155,47 @@ function initReelObserver() {
         });
     }, observerOptions);
 
-    // Seleciona todos os itens que acabaram de ser renderizados
     document.querySelectorAll('.reel-item').forEach(item => observer.observe(item));
 }
 
-// --- COMPARTILHAMENTO ---
 window.shareProductFromFeed = async function(id) {
     const p = state.allProducts.find(x => x.id === id);
     if(!p) return;
-
     const shareData = {
         title: p.name,
         text: `Olha esse produto na Vitrine: ${p.name}`,
         url: `${window.location.origin}${window.location.pathname}?id=${state.STORE_ID}&prod=${id}`
     };
-
     try {
-        if (navigator.share) {
-            await navigator.share(shareData);
-        } else {
-            navigator.clipboard.writeText(shareData.url);
-            alert("Link copiado!");
-        }
-    } catch (err) { console.log("Erro ao compartilhar", err); }
+        if (navigator.share) await navigator.share(shareData);
+        else { navigator.clipboard.writeText(shareData.url); alert("Link copiado!"); }
+    } catch (err) { console.log(err); }
 };
 
-// --- MÉTRICAS (FIREBASE) ---
 window.trackView = function(productId) {
-    // Evita contar 2x na mesma sessão
     const key = `viewed_${productId}`;
     if (sessionStorage.getItem(key)) return; 
     sessionStorage.setItem(key, "true");
-    
-    // Atualiza o contador na tela (visual)
     const viewSpan = document.getElementById(`view-count-${productId}`);
     if (viewSpan) {
         let currentViews = parseInt(viewSpan.innerText) || 0;
         viewSpan.innerText = currentViews + 1;
     }
-
-    // CHAMA A MÉTRICA PARA SALVAR NO BANCO:
-    if (typeof window.reportarMetrica === 'function') {
-        window.reportarMetrica(productId, 'view');
-    }
+    if (typeof window.reportarMetrica === 'function') window.reportarMetrica(productId, 'view');
 };
 
-// --- NAVEGAÇÃO ---
 window.closeDiscoveryFeed = function() {
     const feed = document.getElementById('discoveryFeed');
     const app = document.getElementById('app');
     const navBottom = document.getElementById('mainNavBottom');
-    
-    if (feed) {
-        feed.classList.add('hidden');
-        feed.style.display = 'none';
-    }
+    if (feed) { feed.classList.add('hidden'); feed.style.display = 'none'; }
     if (app) app.classList.remove('hidden');
     if (navBottom) navBottom.classList.remove('hidden');
     document.body.style.overflow = ''; 
 };
 
 window.openProductModalFromFeed = function(productId) {
+    // Esta função continua fechando o feed para abrir o detalhe, conforme design original
     window.closeDiscoveryFeed();
     setTimeout(() => {
         if (typeof window.openProductModal === 'function') {
