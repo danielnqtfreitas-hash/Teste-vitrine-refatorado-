@@ -103,17 +103,15 @@ window.openDiscoveryFeed = function() {
 
 // --- LOGICA ADICIONAR AO CARRINHO (AJUSTADA) ---
 window.addToCartFromFeed = function(productId) {
-    // Tenta encontrar a função em qualquer lugar global (app.js ou global)
-    const adicionarAoCarrinho = window.addToCart;
-    const toast = window.showToast;
-
-    if (typeof adicionarAoCarrinho === 'function') {
-        adicionarAoCarrinho(productId);
-        if (typeof toast === 'function') {
-            toast("Adicionado ao carrinho!");
+    if (typeof window.addToCart === 'function') {
+        window.addToCart(productId);
+        
+        // Notificação rápida
+        if (typeof window.showToast === 'function') {
+            window.showToast("Adicionado a sacola! 🛍️");
         }
     } else {
-        console.warn("addToCart não global. Tente registrar: window.addToCart = addToCart no app.js");
+        console.error("Erro: A função addToCart não foi exposta no window do app.js");
     }
 };
 
