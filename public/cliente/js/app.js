@@ -100,6 +100,9 @@ try {
     const statsMap = viewsData.stats || {};
 
     state.allProducts = data.produtos.map(p => {
+        if (typeof updateCartUI === 'function') {
+            updateCartUI(); 
+        }
         const productStats = statsMap[p.id]; 
         // Garantimos que views seja sempre um número, mesmo que o produto não esteja no analytics
         const vCount = (productStats && typeof productStats.views === 'number') ? productStats.views : 0;
