@@ -3,7 +3,6 @@
    ========================================================================= */
 
 window.openDiscoveryFeed = function() {
-    console.log("Produtos carregados:", state.allProducts);
     const feed = document.getElementById('discoveryFeed');
     const app = document.getElementById('app'); 
     const navBottom = document.getElementById('mainNavBottom');
@@ -11,7 +10,6 @@ window.openDiscoveryFeed = function() {
     
     if (!feed || !container) return;
 
-    // Interface: Esconde o resto do app
     if (app) app.classList.add('hidden');
     if (navBottom) navBottom.classList.add('hidden');
     document.body.style.overflow = 'hidden';
@@ -24,69 +22,60 @@ window.openDiscoveryFeed = function() {
         return;
     }
 
-    // Renderização dos Itens
-    container.innerHTML = state.allProducts.map((p) => {
+    // --- RANDOMIZAÇÃO (SHUFFLE) ---
+    const shuffledProducts = [...state.allProducts].sort(() => Math.random() - 0.5);
+
+    container.innerHTML = shuffledProducts.map((p) => {
         const imgUrl = (p.images && p.images.length > 0) ? p.images[0] : '';
         const precoBruto = p.value || p.priceCard || 0;
         const formattedPrice = `R$ ${Number(precoBruto).toFixed(2).replace('.', ',')}`;
         const isFavorite = state.favorites && state.favorites.includes(p.id);
         const views = p.views || 0;
 
+        // --- ATRIBUTOS EM FONTE PEQUENA ---
+        const tamanhos = p.sizes ? p.sizes.filter(Boolean).join(', ') : '';
+        const cores = p.colors ? p.colors.filter(Boolean).join(', ') : '';
+        const atributos = [tamanhos, cores].filter(Boolean).join(' • ');
+
         return `
-            <div class="reel-item" data-id="${p.id}" style="height: 100dvh; scroll-snap-align: start; position: relative; background: #000; overflow: hidden;">
-                <div style="position: absolute; inset: 0; z-index: 1; background: #111;">
-                    <img src="${imgUrl}" class="zoom-img">
-                </div>
+        <div class="h-full w-full snap-start relative flex-shrink-0 bg-black overflow-hidden group">
+            <img src="${imgUrl}" class="absolute inset-0 w-full h-full object-cover opacity-30 blur-2xl">
+            <img src="${imgUrl}" class="absolute inset-0 w-full h-full object-contain z-10">
 
-                <div style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 60%); z-index: 2; pointer-events: none;"></div>
+            <div class="absolute inset-x-0 bottom-0 p-6 pb-24 z-20 bg-gradient-to-t from-black/90 via-black/40 to-transparent">
+                <h2 class="text-white text-xl font-bold drop-shadow-lg">${p.name}</h2>
                 
-                <div style="position: absolute; right: 16px; bottom: 180px; z-index: 10; display: flex; flex-direction: column; gap: 20px; align-items: center;">
-                    
-                    <div class="flex flex-col items-center">
-                        <i data-lucide="eye" class="text-white w-6 h-6 opacity-80"></i>
-                        <span id="view-count-${p.id}" class="text-white text-[10px] font-bold mt-1">${views}</span>
-                    </div>
+                <p class="text-white/70 text-[10px] uppercase tracking-wider mt-0.5 font-medium">
+                    ${atributos || 'Disponível'}
+                </p>
 
-                    <div class="flex flex-col items-center">
-                        <button onclick="window.toggleFavorite('${p.id}')" 
-                                class="w-[50px] h-[50px] rounded-full flex items-center justify-center border border-white/20 active:scale-90 transition-transform"
-                                style="background: rgba(255,255,255,0.2); backdrop-filter: blur(10px);">
-                            <i data-lucide="heart" class="w-7 h-7 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-white'}"></i>
-                        </button>
-                        <span class="text-white text-[10px] font-bold mt-1">Gostar</span>
-                    </div>
-
-                    <div class="flex flex-col items-center">
-                        <button onclick="window.shareProduct('${p.id}', '${p.name}', '${imgUrl}')" 
-                                class="w-[50px] h-[50px] rounded-full flex items-center justify-center border border-white/20 active:scale-90 transition-transform"
-                                style="background: rgba(255,255,255,0.2); backdrop-filter: blur(10px);">
-                            <i data-lucide="share" class="w-7 h-7 text-white"></i>
-                        </button>
-                        <span class="text-white text-[10px] font-bold mt-1">Enviar</span>
-                    </div>
-                </div>
-
-                <div style="position: absolute; left: 16px; bottom: 125px; z-index: 10; max-width: 80%;">
-                    <h2 class="text-xl font-bold text-white mb-1">${p.name}</h2>
-                    ${views > 30 ? '<span class="bg-red-600 text-[10px] text-white px-2 py-0.5 rounded-full font-black animate-pulse">🔥 EM ALTA</span>' : ''}
-                </div>
-
-                <div onclick="window.openProductModalFromFeed('${p.id}')" 
-                     style="position: absolute; bottom: 30px; left: 16px; right: 16px; background: white; border-radius: 20px; padding: 12px; display: flex; align-items: center; gap: 12px; z-index: 10; box-shadow: 0 15px 35px rgba(0,0,0,0.4);">
-                    <img src="${imgUrl}" style="width: 50px; height: 50px; border-radius: 12px; object-fit: cover;">
-                    <div style="flex: 1; min-width: 0;">
-                        <span class="block text-slate-900 font-bold text-sm truncate">${p.name}</span>
-                        <span class="block text-red-600 font-black text-lg">${formattedPrice}</span>
-                    </div>
-                    <div class="bg-red-600 p-3 rounded-2xl text-white">
-                        <i data-lucide="shopping-cart" class="w-6 h-6"></i>
-                    </div>
+                <div class="flex items-center gap-3 mt-2">
+                    <span class="text-rose-400 text-lg font-black">${formattedPrice}</span>
+                    <span class="bg-white/10 text-white/60 text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <i data-lucide="eye" class="w-3 h-3"></i> ${views}
+                    </span>
                 </div>
             </div>
+
+            <div class="absolute right-4 bottom-32 z-30 flex flex-col gap-6 items-center">
+                <button onclick="window.toggleFavoriteFromFeed('${p.id}', this)" class="flex flex-col items-center gap-1">
+                    <div class="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10">
+                        <i data-lucide="heart" class="w-6 h-6 ${isFavorite ? 'fill-rose-500 text-rose-500' : 'text-white'}"></i>
+                    </div>
+                </button>
+
+                <button onclick="window.openProductModalFromFeed('${p.id}')" class="flex flex-col items-center gap-1">
+                    <div class="w-12 h-12 rounded-full bg-rose-600 flex items-center justify-center">
+                        <i data-lucide="shopping-bag" class="w-6 h-6 text-white"></i>
+                    </div>
+                </button>
+            </div>
+        </div>
         `;
     }).join('');
 
-    if (window.lucide) lucide.createIcons();
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+};
     
     // Pequeno atraso para garantir que o DOM renderizou antes de observar
     setTimeout(initReelObserver, 100);
