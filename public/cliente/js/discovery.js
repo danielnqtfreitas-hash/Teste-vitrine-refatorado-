@@ -1,5 +1,5 @@
 /* =========================================================================
-   DISCOVERY FEED COMPLETO (REELS STYLE) - VERSÃO INTEGRAL RESTAURADA
+   DISCOVERY FEED COMPLETO (REELS STYLE) - VERSÃO FINAL INTEGRAL
    ========================================================================= */
 
 window.openDiscoveryFeed = function() {
@@ -11,6 +11,7 @@ window.openDiscoveryFeed = function() {
     
     if (!feed || !container) return;
 
+    // Interface
     if (app) app.classList.add('hidden');
     if (navBottom) navBottom.classList.add('hidden');
     document.body.style.overflow = 'hidden';
@@ -23,8 +24,10 @@ window.openDiscoveryFeed = function() {
         return;
     }
 
+    // --- EMBARALHAR PRODUTOS ---
     const shuffledProducts = [...state.allProducts].sort(() => Math.random() - 0.5);
 
+    // Renderização dos Itens
     container.innerHTML = shuffledProducts.map((p) => {
         const imgUrl = (p.images && p.images.length > 0) ? p.images[0] : '';
         const precoBruto = p.value || p.priceCard || 0;
@@ -62,7 +65,7 @@ window.openDiscoveryFeed = function() {
 
             <div class="absolute right-4 bottom-32 z-30 flex flex-col gap-6 items-center">
                 
-                <button onclick="window.toggleFavoriteFromFeed('${p.id}', this)" class="flex flex-col items-center gap-1 group">
+                <button onclick="window.toggleFavoriteFromFeed('${p.id}', this)" class="flex flex-col items-center gap-1">
                     <div class="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10 active:scale-90 transition-all">
                         <i data-lucide="heart" class="w-6 h-6 ${isFavorite ? 'fill-rose-500 text-rose-500' : 'text-white'}"></i>
                     </div>
@@ -98,39 +101,42 @@ window.openDiscoveryFeed = function() {
     setTimeout(initReelObserver, 100);
 };
 
-// --- LOGICA ADICIONAR AO CARRINHO (CORRIGIDA) ---
+// --- LOGICA ADICIONAR AO CARRINHO (AJUSTADA) ---
 window.addToCartFromFeed = function(productId) {
-    // Busca a função addToCart que está no escopo global (definida no app.js)
+    // Tenta encontrar a função em qualquer lugar global (app.js ou global)
     const adicionarAoCarrinho = window.addToCart;
-    const notificar = window.showToast;
+    const toast = window.showToast;
 
     if (typeof adicionarAoCarrinho === 'function') {
         adicionarAoCarrinho(productId);
-        if (typeof notificar === 'function') {
-            notificar("Adicionado ao carrinho! 🛍️");
+        if (typeof toast === 'function') {
+            toast("Adicionado ao carrinho!");
         }
     } else {
-        console.error("Função addToCart não encontrada no escopo global.");
+        console.warn("addToCart não global. Tente registrar: window.addToCart = addToCart no app.js");
     }
 };
 
 // --- LOGICA FAVORITO (CORRIGIDA) ---
 window.toggleFavoriteFromFeed = function(productId, btn) {
-    const alternarFavorito = window.toggleFavorite || window.toggleFavoritesView;
+    const favoritar = window.toggleFavorite || window.toggleFavoritesView;
     
-    if (typeof alternarFavorito === 'function') {
-        // Se o seu app usa toggleFavorite(id)
-        window.toggleFavorite(productId);
+    if (typeof favoritar === 'function') {
+        favoritar(productId);
         
         const icon = btn.querySelector('i');
         if (icon) {
-            const isFav = state.favorites.includes(productId);
-            if (isFav) {
-                icon.classList.add('fill-rose-500', 'text-rose-500');
-            } else {
-                icon.classList.remove('fill-rose-500', 'text-rose-500');
-                icon.classList.add('text-white');
-            }
+            // Pequeno delay para o state atualizar
+            setTimeout(() => {
+                const isFav = state.favorites.includes(productId);
+                if (isFav) {
+                    icon.classList.add('fill-rose-500', 'text-rose-500');
+                    icon.classList.remove('text-white');
+                } else {
+                    icon.classList.remove('fill-rose-500', 'text-rose-500');
+                    icon.classList.add('text-white');
+                }
+            }, 50);
         }
     }
 };
@@ -144,7 +150,7 @@ function initReelObserver() {
                 const productId = entry.target.dataset.id;
                 const img = entry.target.querySelector('.zoom-img');
                 if (img) {
-                    img.style.transform = 'scale(1.2)'; 
+                    img.style.transform = 'scale(1.1)'; 
                     void img.offsetWidth; 
                     img.style.transform = 'scale(1)'; 
                 }
