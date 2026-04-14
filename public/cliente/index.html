@@ -462,9 +462,11 @@
 
 <nav id="mainNavBottom" class="fixed bottom-0 left-0 right-0 h-[70px] bg-white/90 backdrop-blur-md flex justify-around items-center border-t border-slate-100 z-[1000] px-2">
     
-    <button onclick="window.scrollTo({top:0, behavior:'smooth'})" class="nav-btn-item">
+    <button id="navInicio" class="nav-btn-item">
+    <div class="relative">
         <i data-lucide="home" class="w-5 h-5 stroke-[1.5]"></i>
-        <span class="text-[10px] font-semibold mt-1">Início</span>
+    </div>
+    <span class="text-[10px] font-semibold mt-1">Início</span>
     </button>
 
     <button onclick="openDiscoveryFeed()" class="nav-btn-item">
