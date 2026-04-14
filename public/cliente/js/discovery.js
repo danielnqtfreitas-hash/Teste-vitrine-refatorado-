@@ -1,8 +1,9 @@
 /* =========================================================================
-   DISCOVERY FEED COMPLETO (REELS STYLE) - VERSÃO FULLSCREEN COM ZOOM REVERSE
+   DISCOVERY FEED COMPLETO (REELS STYLE) - VERSÃO INTEGRAL RESTAURADA
    ========================================================================= */
 
 window.openDiscoveryFeed = function() {
+    console.log("Produtos carregados:", state.allProducts);
     const feed = document.getElementById('discoveryFeed');
     const app = document.getElementById('app'); 
     const navBottom = document.getElementById('mainNavBottom');
@@ -23,10 +24,10 @@ window.openDiscoveryFeed = function() {
         return;
     }
 
-    // --- RANDOMIZAÇÃO (SHUFFLE) ---
+    // --- ADIÇÃO: RANDOMIZAÇÃO (SHUFFLE) ---
     const shuffledProducts = [...state.allProducts].sort(() => Math.random() - 0.5);
 
-    // Renderização dos Itens (DESIGN CORRIGIDO PARA TELA CHEIA)
+    // Renderização dos Itens
     container.innerHTML = shuffledProducts.map((p) => {
         const imgUrl = (p.images && p.images.length > 0) ? p.images[0] : '';
         const precoBruto = p.value || p.priceCard || 0;
@@ -34,7 +35,7 @@ window.openDiscoveryFeed = function() {
         const isFavorite = state.favorites && state.favorites.includes(p.id);
         const views = p.views || 0;
 
-        // --- ATRIBUTOS ---
+        // --- ADIÇÃO: ATRIBUTOS ---
         const tamanhos = p.sizes ? p.sizes.filter(Boolean).join(', ') : '';
         const cores = p.colors ? p.colors.filter(Boolean).join(', ') : '';
         const atributos = [tamanhos, cores].filter(Boolean).join(' • ');
@@ -78,6 +79,13 @@ window.openDiscoveryFeed = function() {
                     <span class="text-white text-[10px] font-bold">Comprar</span>
                 </button>
 
+                <button onclick="window.openProductModalFromFeed('${p.id}')" class="flex flex-col items-center gap-1">
+                    <div class="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10 active:scale-90 transition-all">
+                        <i data-lucide="info" class="w-6 h-6 text-white"></i>
+                    </div>
+                    <span class="text-white text-[10px] font-bold">Ver Mais</span>
+                </button>
+
                 <button onclick="window.shareProductFromFeed('${p.id}')" class="flex flex-col items-center gap-1">
                     <div class="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10">
                         <i data-lucide="share-2" class="w-6 h-6 text-white"></i>
@@ -91,39 +99,34 @@ window.openDiscoveryFeed = function() {
 
     if (typeof lucide !== 'undefined') lucide.createIcons();
     
-    // Pequeno atraso para garantir renderização antes de observar
+    // Pequeno atraso para garantir que o DOM renderizou antes de observar
     setTimeout(initReelObserver, 100);
 };
 
-// --- MANTÉM O OBSERVADOR ORIGINAL COMPLETO ---
+
 function initReelObserver() {
     const container = document.getElementById('reelsContainer');
     if (!container) return;
 
     const observerOptions = {
-        root: container,
-        threshold: 0.6
+        root: container, // O container que tem o scroll
+        threshold: 0.6   // 60% do item precisa estar visível para contar
     };
 
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
                 const productId = entry.target.dataset.id;
-                
-                // MIRAMOS CIRURGICAMENTE NA IMAGEM PRINCIPAL
                 const img = entry.target.querySelector('.zoom-img');
 
+                // 1. Dispara o efeito visual de zoom (Zoom Reverse)
                 if (img) {
-                    // Reinicia a animação para rodar toda vez que o item entra na tela
-                    img.style.transform = 'scale(1.2)'; // Começa com zoom
-                    
-                    // Pequeno hack para forçar o navegador a processar a mudança antes de animar
+                    img.style.transform = 'scale(1.2)'; 
                     void img.offsetWidth; 
-                    
-                    // Aplica a transição para o estado original (zoom reverse)
                     img.style.transform = 'scale(1)'; 
                 }
                 
+                // 2. REGISTRA A VIEW (Local e Backend)
                 if (typeof window.trackView === 'function') {
                     window.trackView(productId);
                 }
@@ -131,14 +134,15 @@ function initReelObserver() {
         });
     }, observerOptions);
 
+    // Seleciona todos os itens que acabaram de ser renderizados
     document.querySelectorAll('.reel-item').forEach(item => observer.observe(item));
 }
 
-// --- MANTÉM AS FUNÇÕES DE APOIO ORIGINAIS ---
+// --- COMPARTILHAMENTO ---
 window.shareProductFromFeed = async function(id) {
     const p = state.allProducts.find(x => x.id === id);
     if(!p) return;
-    
+
     const shareData = {
         title: p.name,
         text: `Olha esse produto na Vitrine: ${p.name}`,
@@ -155,22 +159,27 @@ window.shareProductFromFeed = async function(id) {
     } catch (err) { console.log("Erro ao compartilhar", err); }
 };
 
+// --- MÉTRICAS (FIREBASE) ---
 window.trackView = function(productId) {
+    // Evita contar 2x na mesma sessão
     const key = `viewed_${productId}`;
     if (sessionStorage.getItem(key)) return; 
     sessionStorage.setItem(key, "true");
     
+    // Atualiza o contador na tela (visual)
     const viewSpan = document.getElementById(`view-count-${productId}`);
     if (viewSpan) {
         let currentViews = parseInt(viewSpan.innerText) || 0;
         viewSpan.innerText = currentViews + 1;
     }
 
+    // CHAMA A MÉTRICA PARA SALVAR NO BANCO:
     if (typeof window.reportarMetrica === 'function') {
         window.reportarMetrica(productId, 'view');
     }
 };
 
+// --- NAVEGAÇÃO ---
 window.closeDiscoveryFeed = function() {
     const feed = document.getElementById('discoveryFeed');
     const app = document.getElementById('app');
