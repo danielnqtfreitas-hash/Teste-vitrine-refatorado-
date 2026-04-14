@@ -531,4 +531,11 @@ function updatePremiumLoader(progress, logoUrl = null) {
     }
 }
 
+// EXPOSIÇÃO DE FUNÇÕES PARA O DISCOVERY/REELS (Escopo Global)
+window.addToCart = addToCart;
+window.showToast = showToast;
+window.toggleFavorite = toggleFavorite;
+window.openProductModal = openProductModal;
+
+
 
