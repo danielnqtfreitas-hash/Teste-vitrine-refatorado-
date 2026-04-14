@@ -41,16 +41,32 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.history.replaceState({ path: newUrl }, '', newUrl);
     }
 
+   // --- BLOCO DE SINCRONIZAÇÃO DE SESSÃO CORRIGIDO ---
     const activeSession = localStorage.getItem('active_store_session');
+    
     if (activeSession && activeSession !== storeId) {
-        localStorage.removeItem('cart');
-        state.cart = [];
+        // Se mudou de loja, limpamos o carrinho que está na MEMÓRIA 
+        // para não vazar itens da loja anterior enquanto a nova carrega
+        state.cart = []; 
+        state.favorites = [];
+        
+        // Opcional: Se você quiser deletar permanentemente o carrinho da loja anterior 
+        // do celular do cliente quando ele muda de loja, descomente a linha abaixo:
+        // localStorage.removeItem(`cart_${activeSession}`);
     }
+    
+    // Atualiza a sessão ativa para a nova loja
     localStorage.setItem('active_store_session', storeId);
 
+    // Agora sim, carregamos os dados específicos da loja atual
     setStoreId(storeId);
-    loadFavorites();
-    loadCart();
+    loadCart();      // Isso vai buscar no localStorage a chave cart_IDDALOJA
+    loadFavorites(); // Isso vai buscar no localStorage a chave favs_IDDALOJA
+
+    // Atualiza os badges da barra inferior imediatamente após carregar
+    if (window.updateNavigationBadges) {
+        window.updateNavigationBadges();
+    }
     
     await signInAnonymously(auth);
     onAuthStateChanged(auth, (user) => { 
