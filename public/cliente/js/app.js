@@ -358,25 +358,21 @@ window.toggleSearchBar = function() {
 
 // --- ATUALIZAÇÃO DOS BADGES (CONTADORES) ---
 window.updateNavigationBadges = function() {
-    // 1. Cálculo da quantidade total (Soma de todos os itens no carrinho)
-    const cartCount = state.cart.reduce((sum, item) => sum + (item.qty || 1), 0);
+    // CORREÇÃO: Usando 'item.q' em vez de 'item.qty' para bater com seu cart.js
+    const cartCount = state.cart.reduce((sum, item) => sum + (item.q || 0), 0);
     const favCount = state.favorites ? state.favorites.length : 0;
 
-    // 2. Captura dos elementos exatos
     const cBadge = document.getElementById('cartBadgeBottom');
     const fBadge = document.getElementById('favBadgeBottom');
 
     const applyStyle = (el, count) => {
         if (!el) return;
 
-        // Pega a cor do tema
         const primaryColor = getComputedStyle(document.documentElement)
             .getPropertyValue('--color-primary').trim() || '#EA1D2C';
 
-        // Atualiza o texto e o estilo
         el.innerText = count;
         
-        // Estilização inline para ignorar erros de CSS
         Object.assign(el.style, {
             position: 'absolute',
             top: '-5px',
@@ -389,7 +385,7 @@ window.updateNavigationBadges = function() {
             height: '18px',
             borderRadius: '50%',
             border: '2px solid white',
-            display: count > 0 ? 'flex' : 'none', // SÓ MOSTRA SE FOR MAIOR QUE 0
+            display: count > 0 ? 'flex' : 'none',
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: '100'
@@ -398,7 +394,7 @@ window.updateNavigationBadges = function() {
 
     applyStyle(cBadge, cartCount);
     applyStyle(fBadge, favCount);
-};
+}
 
 
 window.resetAllFilters = resetAllFilters;
