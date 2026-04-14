@@ -532,29 +532,78 @@ export function renderCategoryTabs() {
 }
 
 export function populateFilterOptions() {
-    const sizeCounts = {}, colorCounts = {};
-    const ss = new Set(), cc = new Set();
+    const sizeContainer = document.getElementById('filterSizesContainer');
+    const colorContainer = document.getElementById('filterColorsContainer');
+    if (!sizeContainer && !colorContainer) return;
+
+    // Mapas para agrupar: Chave (minúscula) => { label original, contagem }
+    const sizeMap = new Map();
+    const colorMap = new Map();
 
     state.allProducts.forEach(p => {
-        if (p.sizes) p.sizes.forEach(s => { const val = s.trim(); if (val) { ss.add(val); sizeCounts[val] = (sizeCounts[val] || 0) + 1; }});
-        if (p.colors) p.colors.forEach(c => { const val = c.trim(); if (val) { cc.add(val); colorCounts[val] = (colorCounts[val] || 0) + 1; }});
+        // Coleta de tamanhos
+        const productSizes = [...(p.sizes || []), ...(p.variations?.map(v => v.size) || [])];
+        productSizes.forEach(s => {
+            if (!s) return;
+            const val = s.trim();
+            const key = val.toLowerCase(); // Chave de normalização
+            if (!sizeMap.has(key)) {
+                sizeMap.set(key, { label: val, count: 0 });
+            }
+            sizeMap.get(key).count++;
+        });
+
+        // Coleta de cores
+        const productColors = [...(p.colors || []), ...(p.variations?.map(v => v.color) || [])];
+        productColors.forEach(c => {
+            if (!c) return;
+            const val = c.trim();
+            const key = val.toLowerCase(); // Chave de normalização
+            if (!colorMap.has(key)) {
+                colorMap.set(key, { label: val, count: 0 });
+            }
+            colorMap.get(key).count++;
+        });
     });
 
-    const renderChips = (set, container, type, counts) => {
+    const renderChips = (map, container, type) => {
         if (!container) return;
         container.innerHTML = '';
-        Array.from(set).sort().forEach(val => {
-            const isSelected = state.filters[type].includes(val);
-            const count = counts[val] || 0;
-            const d = document.createElement('div');
-            const label = val.charAt(0).toUpperCase() + val.slice(1).toLowerCase();
 
-            d.className = `px-3 py-2 border rounded-lg text-[11px] chip-common flex items-center justify-between gap-3 transition-all ${isSelected ? 'border-primary bg-primary text-white font-bold shadow-md' : 'border-slate-200 bg-white text-slate-600 hover:border-primary'}`;
-            d.innerHTML = `<span>${label}</span><span class="${isSelected ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-400'} px-1.5 py-0.5 rounded text-[9px]">${count}</span>`;
+        // Ordena alfabeticamente pela chave normalizada
+        const sortedKeys = Array.from(map.keys()).sort();
+
+        sortedKeys.forEach(key => {
+            const data = map.get(key);
+            // Verifica seleção comparando em minúsculo para não perder o filtro ao recarregar
+            const isSelected = state.filters[type].some(x => x.toLowerCase() === key);
+            
+            // Formatação visual (Primeira letra Maiúscula)
+            const displayLabel = data.label.charAt(0).toUpperCase() + data.label.slice(1).toLowerCase();
+
+            const d = document.createElement('div');
+            d.className = `px-3 py-2 border rounded-lg text-[11px] chip-common flex items-center justify-between gap-3 transition-all cursor-pointer ${
+                isSelected 
+                ? 'border-primary bg-primary text-white font-bold shadow-md' 
+                : 'border-slate-200 bg-white text-slate-600 hover:border-primary'
+            }`;
+
+            d.innerHTML = `
+                <span>${displayLabel}</span>
+                <span class="${isSelected ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-400'} px-1.5 py-0.5 rounded text-[9px]">
+                    ${data.count}
+                </span>
+            `;
             
             d.onclick = () => {
-                if(isSelected) state.filters[type] = state.filters[type].filter(x => x !== val);
-                else state.filters[type].push(val);
+                if (isSelected) {
+                    // Remove comparando em minúsculo
+                    state.filters[type] = state.filters[type].filter(x => x.toLowerCase() !== key);
+                } else {
+                    // Adiciona o valor normalizado para manter consistência
+                    state.filters[type].push(displayLabel); 
+                }
+                
                 populateFilterOptions(); 
                 renderCatalog();
                 updateFilterBadge();
@@ -562,8 +611,9 @@ export function populateFilterOptions() {
             container.appendChild(d);
         });
     };
-    renderChips(ss, document.getElementById('filterSizesContainer'), 'sizes', sizeCounts);
-    renderChips(cc, document.getElementById('filterColorsContainer'), 'colors', colorCounts);
+
+    renderChips(sizeMap, sizeContainer, 'sizes');
+    renderChips(colorMap, colorContainer, 'colors');
 }
 
 export function updateFavoritesUI() {
@@ -630,7 +680,11 @@ export function handleSearchInput(v) { state.filters.search = v; renderCatalog()
 export function openFilterDrawer() {
     const modal = document.getElementById('filterModal');
     const drawer = document.getElementById('filterDrawer');
+    
     if (modal && drawer) {
+        // --- ADICIONE ESTA LINHA ---
+        populateFilterOptions(); 
+        
         modal.classList.remove('hidden');
         setTimeout(() => drawer.classList.remove('translate-x-full'), 10);
     }
