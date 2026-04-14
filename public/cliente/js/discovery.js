@@ -1,5 +1,5 @@
 /* =========================================================================
-   DISCOVERY FEED COMPLETO (REELS STYLE) - VERSÃO COM FEEDBACK VISUAL NO BOTÃO
+   DISCOVERY FEED COMPLETO (REELS STYLE) - VERSÃO ESTADO PERSISTENTE AZUL
    ========================================================================= */
 
 window.openDiscoveryFeed = function() {
@@ -19,7 +19,7 @@ window.openDiscoveryFeed = function() {
     feed.classList.remove('hidden');
     feed.style.display = 'flex'; 
     
-    // Z-index ajustado para tentar mostrar notificações, mas o foco é o feedback no botão
+    // Z-index para garantir funcionamento
     feed.style.zIndex = "9998";
 
     if (!state.allProducts || state.allProducts.length === 0) {
@@ -34,8 +34,11 @@ window.openDiscoveryFeed = function() {
         const precoBruto = p.value || p.priceCard || 0;
         const formattedPrice = `R$ ${Number(precoBruto).toFixed(2).replace('.', ',')}`;
         const isFavorite = state.favorites && state.favorites.includes(p.id);
+        
+        // VERIFICA SE JÁ ESTÁ NA SACOLA PARA MANTER O ESTADO
+        const isInCart = state.cart && state.cart.some(item => item.id === p.id);
+        
         const views = p.views || 0;
-
         const tamanhos = p.sizes ? p.sizes.filter(Boolean).join(', ') : '';
         const cores = p.colors ? p.colors.filter(Boolean).join(', ') : '';
         const atributos = [tamanhos, cores].filter(Boolean).join(' • ');
@@ -74,10 +77,11 @@ window.openDiscoveryFeed = function() {
                 </button>
 
                 <button onclick="window.addToCartFromFeed('${p.id}', this)" class="flex flex-col items-center gap-1">
-                    <div class="cart-icon-container w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/10 active:scale-90 transition-all">
-                        <i data-lucide="shopping-bag" class="w-6 h-6 text-white"></i>
+                    <div class="cart-icon-container w-12 h-12 rounded-full flex items-center justify-center border transition-all active:scale-90 
+                        ${isInCart ? 'bg-blue-600 border-blue-500 shadow-lg shadow-blue-600/20' : 'bg-white/20 backdrop-blur-md border-white/10'}">
+                        <i data-lucide="${isInCart ? 'check' : 'shopping-bag'}" class="w-6 h-6 text-white"></i>
                     </div>
-                    <span class="cart-text-status text-white text-[10px] font-bold">Comprar</span>
+                    <span class="cart-text-status text-white text-[10px] font-bold">${isInCart ? 'Na Sacola' : 'Comprar'}</span>
                 </button>
 
                 <button onclick="window.openProductModalFromFeed('${p.id}')" class="flex flex-col items-center gap-1">
@@ -102,7 +106,7 @@ window.openDiscoveryFeed = function() {
     setTimeout(initReelObserver, 100);
 };
 
-// --- LOGICA ADICIONAR AO CARRINHO (COM FEEDBACK VISUAL) ---
+// --- LOGICA ADICIONAR AO CARRINHO (ESTADO AZUL) ---
 window.addToCartFromFeed = function(productId, btn) {
     const produto = state.allProducts.find(p => p.id === productId);
     if (!produto) return;
@@ -110,29 +114,23 @@ window.addToCartFromFeed = function(productId, btn) {
     if (typeof window.addToCart === 'function') {
         window.addToCart(produto, 1, {});
         
-        // MUDANÇA VISUAL DO BOTÃO
+        // Feedback Visual Azul e troca de Ícone
         const iconContainer = btn.querySelector('.cart-icon-container');
         const textStatus = btn.querySelector('.cart-text-status');
-        const icon = btn.querySelector('i');
 
         if (iconContainer) {
-            // Fica verde e sólido para indicar sucesso
-            iconContainer.classList.remove('bg-white/20', 'border-white/10');
-            iconContainer.classList.add('bg-green-500', 'border-green-400');
-            if (textStatus) textStatus.innerText = "Na Sacola";
+            iconContainer.classList.remove('bg-white/20', 'border-white/10', 'backdrop-blur-md');
+            iconContainer.classList.add('bg-blue-600', 'border-blue-500', 'shadow-lg', 'shadow-blue-600/20');
             
-            // Volta ao normal após 2 segundos
-            setTimeout(() => {
-                iconContainer.classList.add('bg-white/20', 'border-white/10');
-                iconContainer.classList.remove('bg-green-500', 'border-green-400');
-                if (textStatus) textStatus.innerText = "Comprar";
-            }, 2000);
+            if (textStatus) textStatus.innerText = "Na Sacola";
+
+            // Troca o ícone para um 'Check'
+            iconContainer.innerHTML = `<i data-lucide="check" class="w-6 h-6 text-white"></i>`;
+            if (window.lucide) lucide.createIcons();
         }
 
-        // Tenta mostrar o toast mesmo assim
-        if (typeof window.showToast === 'function') {
-            window.showToast("Adicionado à sacola! 🛍️");
-        }
+        // Tenta disparar a métrica
+        if (typeof window.reportarMetrica === 'function') window.reportarMetrica(productId, 'cart');
     }
 };
 
