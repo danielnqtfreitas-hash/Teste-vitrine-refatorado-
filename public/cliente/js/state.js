@@ -60,6 +60,7 @@ export function loadCart() {
     const CART_KEY = `cart_${state.STORE_ID}`;
     try {
         const saved = localStorage.getItem(CART_KEY);
+        // IMPORTANTE: Se 'saved' for null, forçamos o state.cart a ser um array vazio []
         state.cart = saved ? JSON.parse(saved) : [];
     } catch(e) {
         state.cart = [];
