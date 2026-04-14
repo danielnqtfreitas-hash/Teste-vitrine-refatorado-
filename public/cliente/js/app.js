@@ -95,16 +95,12 @@ try {
     const analyticsRef = doc(db, "stores", state.STORE_ID, "analytics", "product_views");
     const analyticsSnap = await getDocFromServer(analyticsRef).catch(() => null); 
     
-    // Se o documento não existir, usamos um objeto vazio
     const viewsData = (analyticsSnap && analyticsSnap.exists()) ? analyticsSnap.data() : {};
     const statsMap = viewsData.stats || {};
 
+    // 1. Primeiro, montamos todo o array de produtos com as views
     state.allProducts = data.produtos.map(p => {
-        if (typeof updateCartUI === 'function') {
-            updateCartUI(); 
-        }
         const productStats = statsMap[p.id]; 
-        // Garantimos que views seja sempre um número, mesmo que o produto não esteja no analytics
         const vCount = (productStats && typeof productStats.views === 'number') ? productStats.views : 0;
         
         return {
@@ -112,11 +108,26 @@ try {
             views: vCount
         };
     });
-    
-    console.log("✅ Visualizações sincronizadas");
+
+    console.log("✅ Visualizações sincronizadas e state.allProducts preenchido");
+
+    // 2. AGORA SIM, com os produtos prontos, chamamos as atualizações de interface
+    // Isso garante que o carrinho encontre os nomes e preços dos itens
+    if (typeof updateCartUI === 'function') {
+        updateCartUI(); 
+    }
+
+    // 3. Aproveitamos para garantir que os contadores da barra inferior estejam certos
+    if (window.updateNavigationBadges) {
+        window.updateNavigationBadges();
+    }
+
 } catch (e) {
-    console.warn("⚠️ Usando produtos sem views devido a erro:", e);
+    console.warn("⚠️ Erro ao processar produtos:", e);
     state.allProducts = data.produtos.map(p => ({ ...p, views: 0 })); 
+    
+    // Mesmo em caso de erro nas views, tentamos mostrar o carrinho
+    if (typeof updateCartUI === 'function') updateCartUI();
 }
         
         updatePremiumLoader(60);
