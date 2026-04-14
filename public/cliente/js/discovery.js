@@ -1,5 +1,5 @@
 /* =========================================================================
-   DISCOVERY FEED COMPLETO (REELS STYLE) - VERSÃO INTEGRAL COM RANDOMIZAÇÃO
+   DISCOVERY FEED COMPLETO (REELS STYLE) - VERSÃO FULLSCREEN COM ZOOM REVERSE
    ========================================================================= */
 
 window.openDiscoveryFeed = function() {
@@ -23,10 +23,10 @@ window.openDiscoveryFeed = function() {
         return;
     }
 
-    // --- ADIÇÃO CIRÚRGICA: RANDOMIZAÇÃO ---
+    // --- RANDOMIZAÇÃO (SHUFFLE) ---
     const shuffledProducts = [...state.allProducts].sort(() => Math.random() - 0.5);
 
-    // Renderização dos Itens (DESIGN ORIGINAL PRESERVADO)
+    // Renderização dos Itens (DESIGN CORRIGIDO PARA TELA CHEIA)
     container.innerHTML = shuffledProducts.map((p) => {
         const imgUrl = (p.images && p.images.length > 0) ? p.images[0] : '';
         const precoBruto = p.value || p.priceCard || 0;
@@ -34,16 +34,15 @@ window.openDiscoveryFeed = function() {
         const isFavorite = state.favorites && state.favorites.includes(p.id);
         const views = p.views || 0;
 
-        // --- ADIÇÃO CIRÚRGICA: ATRIBUTOS ---
+        // --- ATRIBUTOS ---
         const tamanhos = p.sizes ? p.sizes.filter(Boolean).join(', ') : '';
         const cores = p.colors ? p.colors.filter(Boolean).join(', ') : '';
         const atributos = [tamanhos, cores].filter(Boolean).join(' • ');
 
         return `
         <div class="reel-item h-full w-full snap-start relative flex-shrink-0 bg-black overflow-hidden group" data-id="${p.id}">
-            <img src="${imgUrl}" class="zoom-img absolute inset-0 w-full h-full object-cover opacity-30 blur-2xl">
             
-            <img src="${imgUrl}" class="absolute inset-0 w-full h-full object-contain z-10">
+            <img src="${imgUrl}" class="zoom-img absolute inset-0 w-full h-full object-cover z-10 transition-transform duration-[10s] ease-out">
 
             <div class="absolute inset-x-0 bottom-0 p-6 pb-24 z-20 bg-gradient-to-t from-black/90 via-black/40 to-transparent">
                 <h2 class="text-white text-xl font-bold drop-shadow-lg">${p.name}</h2>
@@ -110,12 +109,19 @@ function initReelObserver() {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
                 const productId = entry.target.dataset.id;
+                
+                // MIRAMOS CIRURGICAMENTE NA IMAGEM PRINCIPAL
                 const img = entry.target.querySelector('.zoom-img');
 
                 if (img) {
-                    img.style.animation = 'none';
+                    // Reinicia a animação para rodar toda vez que o item entra na tela
+                    img.style.transform = 'scale(1.2)'; // Começa com zoom
+                    
+                    // Pequeno hack para forçar o navegador a processar a mudança antes de animar
                     void img.offsetWidth; 
-                    img.style.animation = 'zoomEffect 10s ease-out forwards';
+                    
+                    // Aplica a transição para o estado original (zoom reverse)
+                    img.style.transform = 'scale(1)'; 
                 }
                 
                 if (typeof window.trackView === 'function') {
