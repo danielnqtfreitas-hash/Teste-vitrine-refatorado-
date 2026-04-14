@@ -80,7 +80,7 @@ window.openDiscoveryFeed = function() {
                     <div class="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10 active:scale-90 transition-all">
                         <i data-lucide="info" class="w-6 h-6 text-white"></i>
                     </div>
-                    <span class="text-white text-[10px] font-bold">Ver Detalhes</span>
+                    <span class="text-white text-[10px] font-bold">Ver Mais</span>
                 </button>
 
                 <button onclick="window.shareProductFromFeed('${p.id}')" class="flex flex-col items-center gap-1">
@@ -98,27 +98,30 @@ window.openDiscoveryFeed = function() {
     setTimeout(initReelObserver, 100);
 };
 
-// --- LOGICA DO CARRINHO SEM SAIR DO PROVADOR ---
+// --- LOGICA ADICIONAR AO CARRINHO (CORRIGIDA) ---
 window.addToCartFromFeed = function(productId) {
-    const p = state.allProducts.find(x => x.id === productId);
-    if (!p) return;
+    // Busca a função addToCart que está no escopo global (definida no app.js)
+    const adicionarAoCarrinho = window.addToCart;
+    const notificar = window.showToast;
 
-    // Chama a função global de adicionar ao carrinho (importada no app.js)
-    if (typeof window.addToCart === 'function') {
-        window.addToCart(p.id);
-        // Exibe a notificação rápida (Toast) definida no seu config.js/ui.js
-        if (typeof window.showToast === 'function') {
-            window.showToast("Adicionado ao carrinho!");
+    if (typeof adicionarAoCarrinho === 'function') {
+        adicionarAoCarrinho(productId);
+        if (typeof notificar === 'function') {
+            notificar("Adicionado ao carrinho! 🛍️");
         }
+    } else {
+        console.error("Função addToCart não encontrada no escopo global.");
     }
 };
 
-// --- LOGICA DO FAVORITO (GOSTEI) ---
+// --- LOGICA FAVORITO (CORRIGIDA) ---
 window.toggleFavoriteFromFeed = function(productId, btn) {
-    if (typeof window.toggleFavorite === 'function') {
+    const alternarFavorito = window.toggleFavorite || window.toggleFavoritesView;
+    
+    if (typeof alternarFavorito === 'function') {
+        // Se o seu app usa toggleFavorite(id)
         window.toggleFavorite(productId);
         
-        // Atualiza o ícone visualmente na hora
         const icon = btn.querySelector('i');
         if (icon) {
             const isFav = state.favorites.includes(productId);
@@ -135,9 +138,6 @@ window.toggleFavoriteFromFeed = function(productId, btn) {
 function initReelObserver() {
     const container = document.getElementById('reelsContainer');
     if (!container) return;
-
-    const observerOptions = { root: container, threshold: 0.6 };
-
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
@@ -148,13 +148,10 @@ function initReelObserver() {
                     void img.offsetWidth; 
                     img.style.transform = 'scale(1)'; 
                 }
-                if (typeof window.trackView === 'function') {
-                    window.trackView(productId);
-                }
+                if (typeof window.trackView === 'function') window.trackView(productId);
             }
         });
-    }, observerOptions);
-
+    }, { root: container, threshold: 0.6 });
     document.querySelectorAll('.reel-item').forEach(item => observer.observe(item));
 }
 
@@ -162,8 +159,7 @@ window.shareProductFromFeed = async function(id) {
     const p = state.allProducts.find(x => x.id === id);
     if(!p) return;
     const shareData = {
-        title: p.name,
-        text: `Olha esse produto na Vitrine: ${p.name}`,
+        title: p.name, text: `Olha esse produto na Vitrine: ${p.name}`,
         url: `${window.location.origin}${window.location.pathname}?id=${state.STORE_ID}&prod=${id}`
     };
     try {
@@ -195,7 +191,6 @@ window.closeDiscoveryFeed = function() {
 };
 
 window.openProductModalFromFeed = function(productId) {
-    // Esta função continua fechando o feed para abrir o detalhe, conforme design original
     window.closeDiscoveryFeed();
     setTimeout(() => {
         if (typeof window.openProductModal === 'function') {
