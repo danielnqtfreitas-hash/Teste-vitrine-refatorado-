@@ -1,5 +1,5 @@
 /* =========================================================================
-   DISCOVERY FEED COMPLETO (REELS STYLE) - VERSÃO AJUSTADA (Z-INDEX & CART)
+   DISCOVERY FEED COMPLETO (REELS STYLE) - VERSÃO INTEGRAL FINAL
    ========================================================================= */
 
 window.openDiscoveryFeed = function() {
@@ -11,7 +11,7 @@ window.openDiscoveryFeed = function() {
     
     if (!feed || !container) return;
 
-    // Interface
+    // Interface: Esconde o resto do app
     if (app) app.classList.add('hidden');
     if (navBottom) navBottom.classList.add('hidden');
     document.body.style.overflow = 'hidden';
@@ -19,16 +19,15 @@ window.openDiscoveryFeed = function() {
     feed.classList.remove('hidden');
     feed.style.display = 'flex'; 
     
-    // CORREÇÃO VISUAL: Garante que o feed fique abaixo do Toast (Notificação)
-    // O SweetAlert/Toast geralmente usa z-index 999999+, então deixamos o feed em 9999
-    feed.style.zIndex = "9999";
+    // Ajuste de Z-Index para que o Toast (Notificação) apareça na frente
+    feed.style.zIndex = "9998";
 
     if (!state.allProducts || state.allProducts.length === 0) {
         container.innerHTML = `<div class="text-white p-10 text-center">Nenhum produto disponível.</div>`;
         return;
     }
 
-    // --- EMBARALHAR PRODUTOS ---
+    // Embaralhar produtos para cada abertura ser diferente
     const shuffledProducts = [...state.allProducts].sort(() => Math.random() - 0.5);
 
     // Renderização dos Itens
@@ -69,7 +68,7 @@ window.openDiscoveryFeed = function() {
 
             <div class="absolute right-4 bottom-32 z-30 flex flex-col gap-6 items-center">
                 
-                <button onclick="window.toggleFavoriteFromFeed('${p.id}', this)" class="flex flex-col items-center gap-1">
+                <button onclick="window.toggleFavoriteFromFeed('${p.id}', this)" class="flex flex-col items-center gap-1 group">
                     <div class="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10 active:scale-90 transition-all">
                         <i data-lucide="heart" class="w-6 h-6 ${isFavorite ? 'fill-rose-500 text-rose-500' : 'text-white'}"></i>
                     </div>
@@ -107,37 +106,36 @@ window.openDiscoveryFeed = function() {
 
 // --- LOGICA ADICIONAR AO CARRINHO (CORRIGIDA) ---
 window.addToCartFromFeed = function(productId) {
+    const produto = state.allProducts.find(p => p.id === productId);
+    if (!produto) return;
+
     if (typeof window.addToCart === 'function') {
-        window.addToCart(productId);
+        // Envia o objeto do produto completo para o carrinho
+        window.addToCart(produto, 1, {});
         
-        // Notificação rápida (Garante que o Toast apareça na frente)
         if (typeof window.showToast === 'function') {
             window.showToast("Adicionado à sacola! 🛍️");
         }
     } else {
-        console.error("Erro: A função addToCart não foi exposta no window do app.js");
+        console.error("Função addToCart não encontrada. Verifique se window.addToCart = addToCart está no app.js");
     }
 };
 
-// --- LOGICA FAVORITO ---
+// --- LOGICA FAVORITO (CORRIGIDA) ---
 window.toggleFavoriteFromFeed = function(productId, btn) {
-    const favoritar = window.toggleFavorite || window.toggleFavoritesView;
-    
-    if (typeof favoritar === 'function') {
-        favoritar(productId);
+    if (typeof window.toggleFavorite === 'function') {
+        window.toggleFavorite(productId);
         
         const icon = btn.querySelector('i');
         if (icon) {
-            setTimeout(() => {
-                const isFav = state.favorites.includes(productId);
-                if (isFav) {
-                    icon.classList.add('fill-rose-500', 'text-rose-500');
-                    icon.classList.remove('text-white');
-                } else {
-                    icon.classList.remove('fill-rose-500', 'text-rose-500');
-                    icon.classList.add('text-white');
-                }
-            }, 50);
+            const isFav = state.favorites.includes(productId);
+            if (isFav) {
+                icon.classList.add('fill-rose-500', 'text-rose-500');
+                icon.classList.remove('text-white');
+            } else {
+                icon.classList.remove('fill-rose-500', 'text-rose-500');
+                icon.classList.add('text-white');
+            }
         }
     }
 };
