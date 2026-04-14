@@ -1,5 +1,5 @@
 /* =========================================================================
-   DISCOVERY FEED COMPLETO (REELS STYLE) - VERSÃO FINAL INTEGRAL
+   DISCOVERY FEED COMPLETO (REELS STYLE) - VERSÃO AJUSTADA (Z-INDEX & CART)
    ========================================================================= */
 
 window.openDiscoveryFeed = function() {
@@ -18,6 +18,10 @@ window.openDiscoveryFeed = function() {
 
     feed.classList.remove('hidden');
     feed.style.display = 'flex'; 
+    
+    // CORREÇÃO VISUAL: Garante que o feed fique abaixo do Toast (Notificação)
+    // O SweetAlert/Toast geralmente usa z-index 999999+, então deixamos o feed em 9999
+    feed.style.zIndex = "9999";
 
     if (!state.allProducts || state.allProducts.length === 0) {
         container.innerHTML = `<div class="text-white p-10 text-center">Nenhum produto disponível.</div>`;
@@ -101,21 +105,21 @@ window.openDiscoveryFeed = function() {
     setTimeout(initReelObserver, 100);
 };
 
-// --- LOGICA ADICIONAR AO CARRINHO (AJUSTADA) ---
+// --- LOGICA ADICIONAR AO CARRINHO (CORRIGIDA) ---
 window.addToCartFromFeed = function(productId) {
     if (typeof window.addToCart === 'function') {
         window.addToCart(productId);
         
-        // Notificação rápida
+        // Notificação rápida (Garante que o Toast apareça na frente)
         if (typeof window.showToast === 'function') {
-            window.showToast("Adicionado a sacola! 🛍️");
+            window.showToast("Adicionado à sacola! 🛍️");
         }
     } else {
         console.error("Erro: A função addToCart não foi exposta no window do app.js");
     }
 };
 
-// --- LOGICA FAVORITO (CORRIGIDA) ---
+// --- LOGICA FAVORITO ---
 window.toggleFavoriteFromFeed = function(productId, btn) {
     const favoritar = window.toggleFavorite || window.toggleFavoritesView;
     
@@ -124,7 +128,6 @@ window.toggleFavoriteFromFeed = function(productId, btn) {
         
         const icon = btn.querySelector('i');
         if (icon) {
-            // Pequeno delay para o state atualizar
             setTimeout(() => {
                 const isFav = state.favorites.includes(productId);
                 if (isFav) {
