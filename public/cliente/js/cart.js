@@ -136,6 +136,9 @@ export async function addToCart(p, q, v) {
 
     saveCart();
     updateCartUI(); 
+    
+    if (window.updateNavigationBadges) window.updateNavigationBadges();
+    
     showToast(`<b>${pAtualizado.name}</b> na sacola!`); 
     closeModalDetails(); 
 }
@@ -143,6 +146,9 @@ export async function addToCart(p, q, v) {
 // --- GERENCIAMENTO VISUAL DA SACOLA ---
 
 export function updateCartTotals() { 
+    // Se o catálogo ainda não carregou, não tenta calcular para não zerar a tela
+    if (!state.allProducts || state.allProducts.length === 0) return;
+
     const method = document.getElementById('checkPayment')?.value || "";
     const deliveryFee = parseFloat(document.getElementById('cartDeliverySelect')?.value) || 0; 
     let subtotalCalculado = 0;
@@ -159,6 +165,7 @@ export function updateCartTotals() {
         }
     });
 
+    // Atualiza os textos de subtotal e total
     document.querySelectorAll('.subtotal-display').forEach(d => {
         d.textContent = `R$ ${subtotalCalculado.toFixed(2).replace('.', ',')}`;
     });
@@ -167,8 +174,13 @@ export function updateCartTotals() {
     if(totalDisplay) {
         totalDisplay.textContent = `R$ ${(subtotalCalculado + deliveryFee).toFixed(2).replace('.', ',')}`; 
     }
+
+    // --- ESSENCIAL: Atualiza o contador da barra inferior sempre que o total mudar ---
+    if (window.updateNavigationBadges) window.updateNavigationBadges();
+    
     renderInstallments();
 }
+
 // Gera as parcelas baseadas no subtotal atual
 export function renderInstallments() {
     const select = document.getElementById('checkInstallments');
@@ -267,6 +279,7 @@ export function modQty(u, d) {
 
     saveCart();
     updateCartUI();
+if (window.updateNavigationBadges) window.updateNavigationBadges();
 }
 
 // --- CHECKOUT E FINALIZAÇÃO (WHATSAPP + FIREBASE) ---
