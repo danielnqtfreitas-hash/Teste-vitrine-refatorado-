@@ -188,11 +188,11 @@ window.openProvador = function() {
 
         Swal.fire({
             title: 'Look Adicionado!',
-            text: 'Deseja ir para o carrinho?',
+            text: 'Deseja ir para a sacola?',
             icon: 'success',
             showCancelButton: true,
             confirmButtonColor: '#000',
-            confirmButtonText: 'Ver Carrinho',
+            confirmButtonText: 'Ver Sacola',
             cancelButtonText: 'Continuar',
             heightAuto: false
         }).then((result) => {
