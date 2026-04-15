@@ -420,46 +420,38 @@ export async function checkoutWhatsApp() {
         await reserveBatch.commit();
 
         
-        // 7. CONSTRUÇÃO DA MENSAGEM WHATSAPP (VERSÃO PREMIUM - ALTA LEGIBILIDADE)
-let msg = `*RESUMO DO PEDIDO - #${shortId}*\n`;
-msg += `================================\n\n`;
-
-msg += `*1. INFORMAÇÕES DO CLIENTE*\n`;
-msg += `NOME: ${nome}\n`;
-msg += `CONTATO: ${telefone}\n`;
-msg += `LOCAL: ${isRetirada ? 'RETIRADA NO LOCAL' : 'ENTREGA DOMICILIAR'}\n`;
-if (!isRetirada) {
-    msg += `ENDEREÇO: ${enderecoCompleto}\n`;
-}
-msg += `\n`;
-
-msg += `*2. DETALHAMENTO DOS ITENS*\n`;
-msg += `--------------------------------\n`;
-state.cart.forEach(item => {
+        // 7. CONSTRUÇÃO DA MENSAGEM WHATSAPP (ESTRUTURA DE RECIBO PROFISSIONAL)
+const itensFormatados = state.cart.map(item => {
     const vars = [item.v.size, item.v.color].filter(Boolean).join(' / ');
-    msg += `QUANT: ${item.q}x\n`;
-    msg += `PRODUTO: *${item.name}*\n`;
-    if (vars) msg += `VARIANTE: ${vars}\n`;
-    msg += `SKU: ${item.sku}\n`;
-    msg += `SUBTOTAL: R$ ${(item.price * item.q).toFixed(2).replace('.', ',')}\n`;
-    msg += `--------------------------------\n`;
-});
-msg += `\n`;
+    return `--------------------------------
+PRODUTO: *${item.name}*
+QTD: ${item.q} | SKU: ${item.sku}
+${vars ? `VARIANTE: ${vars}\n` : ''}SUBTOTAL: R$ ${(item.price * item.q).toFixed(2).replace('.', ',')}`;
+}).join('\n');
 
-msg += `*3. PAGAMENTO E TOTAIS*\n`;
-msg += `MÉTODO: *${infoPagamento}*\n`;
-msg += `SUBTOTAL ITENS: R$ ${subtotal.toFixed(2).replace('.', ',')}\n`;
-if (!isRetirada) {
-    msg += `TAXA DE ENTREGA: R$ ${taxaEntrega.toFixed(2).replace('.', ',')}\n`;
-}
-msg += `\n`;
-msg += `*TOTAL FINAL: R$ ${totalFinal.toFixed(2).replace('.', ',')}*\n`;
-msg += `\n`;
-msg += `================================\n`;
-msg += `_Gerado via Vitrine Online_`;
+const msg = `
+*COMPROVANTE DE PEDIDO #\ ${shortId}*
+================================
+
+*1. DADOS DO CLIENTE*
+NOME: ${nome}
+CONTATO: ${telefone}
+PAGAMENTO: *${infoPagamento}*
+
+*2. ENTREGA / RETIRADA*
+MODO: ${isRetirada ? 'Retirada na Loja' : 'Delivery'}
+LOCAL: ${enderecoCompleto}
+
+*3. RESUMO DA SACOLA*
+${itensFormatados}
+
+================================
+SUBTOTAL: R$ ${subtotal.toFixed(2).replace('.', ',')}
+${!isRetirada ? `TAXA ENTREGA: R$ ${taxaEntrega.toFixed(2).replace('.', ',')}\n` : ''}*TOTAL FINAL: R$ ${totalFinal.toFixed(2).replace('.', ',')}*
+================================
+`.trim();
 
 const link = `https://wa.me/${state.lojaZapDestino}?text=${encodeURIComponent(msg)}`;
-
 
 // --- NAVEGAÇÃO E ALERTAS ---
 
