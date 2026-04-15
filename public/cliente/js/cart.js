@@ -420,38 +420,46 @@ export async function checkoutWhatsApp() {
         await reserveBatch.commit();
 
         
-        // 7. CONSTRUÇÃO DA MENSAGEM WHATSAPP (ESTRUTURA DE RECIBO PROFISSIONAL)
-const itensFormatados = state.cart.map(item => {
-    const vars = [item.v.size, item.v.color].filter(Boolean).join(' / ');
-    return `--------------------------------
-PRODUTO: *${item.name}*
-QTD: ${item.q} | SKU: ${item.sku}
-${vars ? `VARIANTE: ${vars}\n` : ''}SUBTOTAL: R$ ${(item.price * item.q).toFixed(2).replace('.', ',')}`;
-}).join('\n');
+        // 7. CONSTRUÇÃO DA MENSAGEM WHATSAPP
+        let msg = `*PEDIDO: #${shortId}*\n---------------------------\n`;
+        msg += `*Cliente:* ${nome}\n*ITENS:*\n`;
+        state.cart.forEach(item => {
+            const vars = [item.v.size, item.v.color].filter(Boolean).join('/');
+            msg += `• ${item.q}x ${item.name} ${vars ? '('+vars+')' : ''}\n`;
+            msg += `  Sub: R$ ${(item.price * item.q).toFixed(2).replace('.',',')} | _SKU: ${item.sku}_\n`;
+        });
+        msg += `\n*VALORES:*\nSubtotal: R$ ${subtotal.toFixed(2).replace('.',',')}\n`;
+        if(!isRetirada) msg += `Taxa: R$ ${taxaEntrega.toFixed(2).replace('.',',')}\n`;
+        msg += `Total: *R$ ${totalFinal.toFixed(2).replace('.',',')}*\n\n`;
+        msg += `*PAG:* ${infoPagamento}\n*LOCAL:* ${enderecoCompleto}\n`;
 
-const msg = `
-*COMPROVANTE DE PEDIDO #\ ${shortId}*
-================================
+        const link = `https://wa.me/${state.lojaZapDestino}?text=${encodeURIComponent(msg)}`;
+        
+        // 8. FINALIZAÇÃO E LIMPEZA
+        state.cart = [];
+        if (typeof saveCart === 'function') saveCart(); // Se existir no state.js
+        
+        // Abre o WhatsApp
+        window.open(link, '_blank');
+        
+        // Pequeno delay para garantir que o window.open não seja bloqueado antes do reload
+        setTimeout(() => {
+            window.location.reload();
+        }, 500);
 
-*1. DADOS DO CLIENTE*
-NOME: ${nome}
-CONTATO: ${telefone}
-PAGAMENTO: *${infoPagamento}*
+    } catch (e) {
+        console.error("Erro no checkout:", e);
+        if(btn) { 
+            btn.disabled = false; 
+            btn.innerHTML = "Finalizar Pedido"; 
+        }
+        // Se não for erro de estoque (já tratado pelo alertaEstoquePreso), mostra toast genérico
+        if(e.message !== "Estoque insuficiente") {
+            showToast("❌ Erro ao processar pedido. Tente novamente.");
+        }
+    }
+}
 
-*2. ENTREGA / RETIRADA*
-MODO: ${isRetirada ? 'Retirada na Loja' : 'Delivery'}
-LOCAL: ${enderecoCompleto}
-
-*3. RESUMO DA SACOLA*
-${itensFormatados}
-
-================================
-SUBTOTAL: R$ ${subtotal.toFixed(2).replace('.', ',')}
-${!isRetirada ? `TAXA ENTREGA: R$ ${taxaEntrega.toFixed(2).replace('.', ',')}\n` : ''}*TOTAL FINAL: R$ ${totalFinal.toFixed(2).replace('.', ',')}*
-================================
-`.trim();
-
-const link = `https://wa.me/${state.lojaZapDestino}?text=${encodeURIComponent(msg)}`;
 
 // --- NAVEGAÇÃO E ALERTAS ---
 
