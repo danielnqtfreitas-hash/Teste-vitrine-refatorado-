@@ -419,21 +419,41 @@ export async function checkoutWhatsApp() {
         });
         await reserveBatch.commit();
 
-        // 7. CONSTRUÇÃO DA MENSAGEM WHATSAPP
-        let msg = `🛍️ *PEDIDO: #${shortId}*\n---------------------------\n`;
-        msg += `👤 *Cliente:* ${nome}\n📦 *ITENS:*\n`;
-        state.cart.forEach(item => {
-            const vars = [item.v.size, item.v.color].filter(Boolean).join('/');
-            msg += `• ${item.q}x ${item.name} ${vars ? '('+vars+')' : ''}\n`;
-            msg += `  Sub: R$ ${(item.price * item.q).toFixed(2).replace('.',',')} | _SKU: ${item.sku}_\n`;
-        });
-        msg += `\n💰 *VALORES:*\nSubtotal: R$ ${subtotal.toFixed(2).replace('.',',')}\n`;
-        if(!isRetirada) msg += `Taxa: R$ ${taxaEntrega.toFixed(2).replace('.',',')}\n`;
-        msg += `Total: *R$ ${totalFinal.toFixed(2).replace('.',',')}*\n\n`;
-        msg += `💳 *PAG:* ${infoPagamento}\n📍 *LOCAL:* ${enderecoCompleto}\n`;
-
-        const link = `https://wa.me/${state.lojaZapDestino}?text=${encodeURIComponent(msg)}`;
         
+        // 7. CONSTRUÇÃO DA MENSAGEM WHATSAPP (VERSÃO REFINADA E SEM EMOJIS)
+let msg = `PEDIDO: #${shortId}\n`;
+msg += `------------------------------------------\n`;
+msg += `DADOS DO CLIENTE\n`;
+msg += `Nome: *${nome}*\n`;
+msg += `WhatsApp: *${telefone}*\n`;
+msg += `------------------------------------------\n`;
+
+msg += `RESUMO DOS ITENS\n`;
+state.cart.forEach(item => {
+    const vars = [item.v.size, item.v.color].filter(Boolean).join(' / ');
+    msg += `*${item.q}x ${item.name}*\n`;
+    if (vars) msg += `Variante: ${vars}\n`;
+    msg += `Ref/SKU: ${item.sku}\n`;
+    msg += `Vl. Unit: R$ ${item.price.toFixed(2).replace('.',',')}\n\n`;
+});
+
+msg += `------------------------------------------\n`;
+msg += `PAGAMENTO E ENTREGA\n`;
+msg += `Forma de Pagamento: *${infoPagamento}*\n`;
+msg += `Tipo de Entrega: *${isRetirada ? 'Retirada na Loja' : 'Delivery'}*\n`;
+msg += `Endereço: *${enderecoCompleto}*\n`;
+msg += `------------------------------------------\n`;
+
+msg += `VALORES TOTAIS\n`;
+msg += `Subtotal: R$ ${subtotal.toFixed(2).replace('.',',')}\n`;
+if(!isRetirada) {
+    msg += `Taxa de Entrega: R$ ${taxaEntrega.toFixed(2).replace('.',',')}\n`;
+}
+msg += `TOTAL DO PEDIDO: *R$ ${totalFinal.toFixed(2).replace('.',',')}*\n`;
+msg += `------------------------------------------\n`;
+
+const link = `https://wa.me/${state.lojaZapDestino}?text=${encodeURIComponent(msg)}`;
+
         // 8. FINALIZAÇÃO E LIMPEZA
         state.cart = [];
         if (typeof saveCart === 'function') saveCart(); // Se existir no state.js
