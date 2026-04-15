@@ -419,47 +419,44 @@ export async function checkoutWhatsApp() {
         });
         await reserveBatch.commit();
 
-        
-        // 7. CONSTRUÇÃO DA MENSAGEM WHATSAPP
-        let msg = `*PEDIDO: #${shortId}*\n---------------------------\n`;
-        msg += `*Cliente:* ${nome}\n*ITENS:*\n`;
+                // 7. CONSTRUÇÃO DA MENSAGEM WHATSAPP (VERSÃO RECIBO COMPLETO)
+        const checkInstallments = document.getElementById('checkInstallments')?.value || 1;
+        const trocoTexto = (pagamento === 'Dinheiro' && trocoPara) ? ` (Troco para R$ ${trocoPara})` : '';
+        const parcelasTexto = (pagamento === 'Cartão' && checkInstallments > 1) ? ` (${checkInstallments}x de R$ ${(totalFinal / checkInstallments).toFixed(2).replace('.', ',')})` : '';
+
+        let msg = `*PEDIDO: #${shortId}*\n`;
+        msg += `------------------------------------------\n\n`;
+
+        msg += `*DADOS DO CLIENTE*\n`;
+        msg += `Nome: ${nome}\n`;
+        msg += `WhatsApp: ${telefone}\n\n`;
+
+        msg += `*ITENS DO PEDIDO*\n`;
         state.cart.forEach(item => {
-            const vars = [item.v.size, item.v.color].filter(Boolean).join('/');
-            msg += `• ${item.q}x ${item.name} ${vars ? '('+vars+')' : ''}\n`;
-            msg += `  Sub: R$ ${(item.price * item.q).toFixed(2).replace('.',',')} | _SKU: ${item.sku}_\n`;
+            const vars = [item.v.size, item.v.color].filter(Boolean).join(' / ');
+            msg += `------------------------------------------\n`;
+            msg += `${item.q}x *${item.name}*\n`;
+            if (vars) msg += `Variante: ${vars}\n`;
+            msg += `SKU: ${item.sku}\n`;
+            msg += `Subtotal Item: R$ ${(item.price * item.q).toFixed(2).replace('.', ',')}\n`;
         });
-        msg += `\n*VALORES:*\nSubtotal: R$ ${subtotal.toFixed(2).replace('.',',')}\n`;
-        if(!isRetirada) msg += `Taxa: R$ ${taxaEntrega.toFixed(2).replace('.',',')}\n`;
-        msg += `Total: *R$ ${totalFinal.toFixed(2).replace('.',',')}*\n\n`;
-        msg += `*PAG:* ${infoPagamento}\n*LOCAL:* ${enderecoCompleto}\n`;
+        msg += `------------------------------------------\n\n`;
+
+        msg += `*PAGAMENTO E ENTREGA*\n`;
+        msg += `Forma: *${pagamento}${trocoTexto}${parcelasTexto}*\n`;
+        msg += `Tipo: ${isRetirada ? 'Retirada na Loja' : 'Delivery'}\n`;
+        msg += `Endereço: ${enderecoCompleto}\n\n`;
+
+        msg += `*RESUMO FINANCEIRO*\n`;
+        msg += `Subtotal: R$ ${subtotal.toFixed(2).replace('.', ',')}\n`;
+        if (!isRetirada) {
+            msg += `Taxa de Entrega: R$ ${taxaEntrega.toFixed(2).replace('.', ',')}\n`;
+        }
+        msg += `*TOTAL FINAL: R$ ${totalFinal.toFixed(2).replace('.', ',')}*\n`;
+        msg += `------------------------------------------\n\n`;
+        msg += `_Pedido gerado via sistema_`;
 
         const link = `https://wa.me/${state.lojaZapDestino}?text=${encodeURIComponent(msg)}`;
-        
-        // 8. FINALIZAÇÃO E LIMPEZA
-        state.cart = [];
-        if (typeof saveCart === 'function') saveCart(); // Se existir no state.js
-        
-        // Abre o WhatsApp
-        window.open(link, '_blank');
-        
-        // Pequeno delay para garantir que o window.open não seja bloqueado antes do reload
-        setTimeout(() => {
-            window.location.reload();
-        }, 500);
-
-    } catch (e) {
-        console.error("Erro no checkout:", e);
-        if(btn) { 
-            btn.disabled = false; 
-            btn.innerHTML = "Finalizar Pedido"; 
-        }
-        // Se não for erro de estoque (já tratado pelo alertaEstoquePreso), mostra toast genérico
-        if(e.message !== "Estoque insuficiente") {
-            showToast("❌ Erro ao processar pedido. Tente novamente.");
-        }
-    }
-}
-
 
 // --- NAVEGAÇÃO E ALERTAS ---
 
