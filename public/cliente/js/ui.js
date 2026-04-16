@@ -121,7 +121,15 @@ export async function renderCatalog() {
     // 1. Renderiza seções especiais (Novidades/Vistos)
     await renderMagicCategories(state.allProducts, state.storeConfigGlobal);
 
-    const container = els.catalogContainer();
+    // Exemplo de como ajustar o container no catálogo
+const container = els.catalogContainer();
+if (state.storeConfig?.tipoNegocio === 'restaurante') {
+    container.classList.remove('grid-cols-2', 'md:grid-cols-3', 'lg:grid-cols-4');
+    container.classList.add('grid-cols-1'); // Força lista única
+} else {
+    container.classList.add('grid-cols-2', 'md:grid-cols-3', 'lg:grid-cols-4');
+    container.classList.remove('grid-cols-1');
+}
     const empty = els.emptyState();
     
     if (!container) return; 
