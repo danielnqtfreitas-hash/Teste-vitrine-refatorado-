@@ -26,29 +26,61 @@ const els = {
 
 // --- RENDERIZAÇÃO DE CARDS (PRODUTO) ---
 
-export function mkProductCard(p) {
-    const agora = Date.now();
-    const isPromoValid = p.promoValue && p.promoValue < p.value && (p.promoUntil ? p.promoUntil > agora : true);
-    const hasPromo = !!isPromoValid;
-    
-    // Cálculos de Preço
-    const precoPixBase = p.priceCash || p.value;
-    const precoCardBase = p.priceCard || p.value;
-    const diferencaCartao = precoCardBase - precoPixBase;
-    
-    // Lógica de exibição
-    const bestPrice = hasPromo ? p.promoValue : precoPixBase;
-    const cardPriceAdaptado = hasPromo ? (p.promoValue + diferencaCartao) : precoCardBase;
+// --- RENDERIZAÇÃO DE CARDS (PRODUTO) ---
 
+export function mkProductCard(p) {
+    const tipoNegocio = state.storeConfig?.tipoNegocio || 'varejo';
     const img = p.images?.[0] || 'https://placehold.co/600?text=Sem+Imagem';
     const isFav = state.favorites.includes(p.id);
     const outOfStock = (parseInt(p.stock) || 0) <= 0;
-    
-    // Badges de desconto e estoque
+    const agora = Date.now();
+
+    // Lógica de Promoção e Preços
+    const isPromoValid = p.promoValue && p.promoValue < p.value && (p.promoUntil ? p.promoUntil > agora : true);
+    const hasPromo = !!isPromoValid;
+    const precoPixBase = p.priceCash || p.value;
+    const precoCardBase = p.priceCard || p.value;
+    const diferencaCartao = precoCardBase - precoPixBase;
+    const bestPrice = hasPromo ? p.promoValue : precoPixBase;
+    const cardPriceAdaptado = hasPromo ? (p.promoValue + diferencaCartao) : precoCardBase;
+
+    // --- LAYOUT 1: RESTAURANTE (Estilo iFood - Lista) ---
+    if (tipoNegocio === 'restaurante') {
+        return `
+            <div onclick="${outOfStock ? '' : `window.openProductModal('${p.id}')`}" 
+                 class="flex items-center p-4 border-b border-gray-100 bg-white active:bg-gray-50 transition-all cursor-pointer ${outOfStock ? 'opacity-60 grayscale' : ''}">
+                
+                <div class="flex-1 pr-3">
+                    <h3 class="font-bold text-gray-800 text-[14px] leading-tight mb-1">${p.name}</h3>
+                    <p class="text-[11px] text-gray-500 line-clamp-2 mb-2 leading-relaxed">${p.description || ''}</p>
+                    
+                    <div class="flex flex-col">
+                        <div class="flex items-center gap-2">
+                            <span class="text-green-600 font-bold text-sm">R$ ${bestPrice.toFixed(2).replace('.', ',')}</span>
+                            ${hasPromo ? `<span class="text-[10px] text-gray-400 line-through">R$ ${p.value.toFixed(2).replace('.', ',')}</span>` : ''}
+                        </div>
+                        ${outOfStock ? '<span class="text-[9px] font-black text-red-500 uppercase mt-1">Esgotado</span>' : ''}
+                    </div>
+                </div>
+
+                <div class="relative w-24 h-24 flex-shrink-0">
+                    <img src="${img}" class="w-full h-full object-cover rounded-xl shadow-sm" loading="lazy">
+                    ${hasPromo && !outOfStock ? `
+                        <span class="absolute top-0 right-0 bg-red-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded-tr-xl rounded-bl-lg">
+                            -${Math.round(((p.value - p.promoValue) / p.value) * 100)}%
+                        </span>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }
+
+    // --- LAYOUT 2: VAREJO (Original - Grade) ---
     const disc = hasPromo && !outOfStock ? `<span class="absolute top-0 right-0 bg-red-600 text-white text-[10px] font-black px-2 py-1 rounded-bl-lg z-10">-${Math.round(((p.value - p.promoValue) / p.value) * 100)}%</span>` : '';
     const stockBadge = outOfStock ? `<span class="absolute inset-0 bg-white/60 flex items-center justify-center text-red-600 font-black text-xs uppercase z-20">Esgotado</span>` : '';
 
-    return `<div onclick="${outOfStock ? '' : `window.openProductModal('${p.id}')`}" class="product-card cursor-pointer group flex flex-col h-full relative ${outOfStock ? 'opacity-70 grayscale' : ''}">
+    return `
+    <div onclick="${outOfStock ? '' : `window.openProductModal('${p.id}')`}" class="product-card cursor-pointer group flex flex-col h-full relative ${outOfStock ? 'opacity-70 grayscale' : ''}">
         <div class="aspect-square bg-white relative overflow-hidden border-b border-slate-50">
             ${stockBadge}
             <img src="${img}" class="w-full h-full object-cover transition-transform duration-500 ${outOfStock ? '' : 'group-hover:scale-105'}" loading="lazy">
@@ -101,6 +133,7 @@ export function mkProductCard(p) {
         </div>
     </div>`;
 }
+
 
 // --- RENDERIZAÇÃO DO CATÁLOGO PRINCIPAL ---
 
