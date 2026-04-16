@@ -135,6 +135,12 @@ try {
         };
     });
 
+// --- ATIVAÇÃO DO MODO DELIVERY ---
+if (state.storeConfigGlobal && state.storeConfigGlobal.tipoNegocio === 'restaurante') {
+        console.log("Modo Restaurante Detectado. Aplicando Layout...");
+        RestauranteTheme.setup(); 
+    }
+   
     console.log("✅ Visualizações sincronizadas e state.allProducts preenchido");
 
     // 2. AGORA SIM, com os produtos prontos, chamamos as atualizações de interface
