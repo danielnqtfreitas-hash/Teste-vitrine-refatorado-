@@ -26,7 +26,20 @@ const els = {
 
 // --- RENDERIZAÇÃO DE CARDS (PRODUTO) ---
 
-export function mkProductCard(p) {
+// Localize sua função original e altere o início dela:
+export function mkProductCard(product) {
+    const tipoNegocio = state.storeConfig?.tipoNegocio || 'varejo';
+
+    // Se for restaurante, interrompe e usa o layout de lista
+    if (tipoNegocio === 'restaurante' && window.RestauranteTheme) {
+        return RestauranteTheme.renderCard(product);
+    }
+
+    // ... Caso contrário, mantém o seu código original de Grade de Produtos abaixo ...
+    return `
+       <div class="original-card-style"> ... </div>
+    `;
+}
     const agora = Date.now();
     const isPromoValid = p.promoValue && p.promoValue < p.value && (p.promoUntil ? p.promoUntil > agora : true);
     const hasPromo = !!isPromoValid;
@@ -316,6 +329,27 @@ export function openProductModal(id) {
     document.getElementById('detailSku').textContent = p.sku || 'N/A';
     document.getElementById('detailDesc').textContent = p.description || ''; 
     document.getElementById('detailQtyDisplay').textContent = "1";
+
+    const containerComplements = document.getElementById('containerComplementos');
+    const variationContainer = document.getElementById('variationContainer'); // Onde ficam tamanhos/cores
+
+    if (state.storeConfig?.tipoNegocio === 'restaurante' && window.RestauranteTheme) {
+        // Se for restaurante, renderiza os complementos e esconde as variações de varejo
+        if (containerComplements) {
+            containerComplements.innerHTML = RestauranteTheme.renderComplements(p);
+            containerComplements.classList.remove('hidden');
+        }
+        if (variationContainer) variationContainer.classList.add('hidden');
+    } else {
+        // Se for varejo, limpa complementos e mostra variações (cores/tamanhos)
+        if (containerComplements) {
+            containerComplements.innerHTML = '';
+            containerComplements.classList.add('hidden');
+        }
+        if (variationContainer) variationContainer.classList.remove('hidden');
+        renderVariationUI(p); // Sua função original de tamanhos/cores
+    }
+    // ============================================================
 
     renderVariationUI(p);
     updateModalHeartBtn();
