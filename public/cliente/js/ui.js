@@ -26,21 +26,7 @@ const els = {
 
 // --- RENDERIZAÇÃO DE CARDS (PRODUTO) ---
 
-// Localize sua função original e altere o início dela:
-// --- RENDERIZAÇÃO DE CARDS (PRODUTO) ---
-
-// --- RENDERIZAÇÃO DE CARDS (PRODUTO) ---
-
 export function mkProductCard(p) {
-    // 1. VERIFICAÇÃO DE TEMA (RESTAURANTE)
-    const tipoNegocio = state.storeConfig?.tipoNegocio || 'varejo';
-
-    // Se for restaurante, usa o layout de lista do tema externo
-    if (tipoNegocio === 'restaurante' && window.RestauranteTheme) {
-        return window.RestauranteTheme.renderCard(p);
-    }
-
-    // 2. LÓGICA ORIGINAL DE VAREJO (GRADE)
     const agora = Date.now();
     const isPromoValid = p.promoValue && p.promoValue < p.value && (p.promoUntil ? p.promoUntil > agora : true);
     const hasPromo = !!isPromoValid;
@@ -50,7 +36,7 @@ export function mkProductCard(p) {
     const precoCardBase = p.priceCard || p.value;
     const diferencaCartao = precoCardBase - precoPixBase;
     
-    // Lógica de exibição de preços
+    // Lógica de exibição
     const bestPrice = hasPromo ? p.promoValue : precoPixBase;
     const cardPriceAdaptado = hasPromo ? (p.promoValue + diferencaCartao) : precoCardBase;
 
@@ -124,19 +110,9 @@ export async function renderCatalog() {
 
     const container = els.catalogContainer();
     const empty = els.emptyState();
-    if (!container) return; 
-
-    // --- LÓGICA DE FORÇAR LAYOUT (RESTAURANTE VS VAREJO) ---
-    const tipoNegocio = state.storeConfig?.tipoNegocio || 'varejo';
     
-    if (tipoNegocio === 'restaurante') {
-        // Limpa classes de grade e força lista única
-        container.className = "flex flex-col gap-2 w-full"; 
-    } else {
-        // Mantém o grid padrão para varejo
-        container.className = "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-5 p-1";
-    }
-
+    if (!container) return; 
+    
     empty.classList.add('hidden');
     container.innerHTML = '';
 
@@ -155,7 +131,7 @@ export async function renderCatalog() {
         // Filtro de Categoria
         if(state.filters.category === 'offers') { 
             if(!(p.promoValue && p.promoValue < p.value)) return false; 
-        } else if(state.filters.category && state.filters.category !== 'all' && p.category !== state.filters.category) return false;
+        } else if(state.filters.category && p.category !== state.filters.category) return false;
 
         // Filtro de Preço
         const price = (p.promoValue && p.promoValue < p.value) ? p.promoValue : p.value;
@@ -191,7 +167,7 @@ export async function renderCatalog() {
 
     // 4. Agrupa por Categoria
     const groups = {};
-    if(state.isFavoritesView || state.filters.search || (state.filters.category && state.filters.category !== 'all') || state.filters.maxPrice || state.filters.sizes.length > 0 || state.filters.colors.length > 0) {
+    if(state.isFavoritesView || state.filters.search || (state.filters.category && state.filters.category !== 'offers') || state.filters.maxPrice || state.filters.sizes.length > 0 || state.filters.colors.length > 0) {
         groups['Resultados Encontrados'] = filtered;
     } else {
         filtered.forEach(p => { 
@@ -204,32 +180,19 @@ export async function renderCatalog() {
     // 5. Renderiza os Grupos
     Object.keys(groups).sort().forEach(key => {
         const section = document.createElement('section');
-        section.className = "animate-fade-in mb-8 w-full";
-        section.innerHTML = `
-            <h3 class="font-bold text-slate-800 mb-4 px-1 text-lg flex items-center gap-2">
-                <div class="w-1 h-5 bg-primary rounded-full"></div> ${key}
-            </h3>`;
-            
+        section.className = "animate-fade-in mb-8";
+        section.innerHTML = `<h3 class="font-bold text-slate-800 mb-4 px-1 text-lg flex items-center gap-2"><div class="w-1 h-5 bg-primary rounded-full"></div> ${key}</h3>`;
         const grid = document.createElement('div');
-        
-        // Ajuste de grid interno da seção conforme o tipo de negócio
-        if (tipoNegocio === 'restaurante') {
-            grid.className = "flex flex-col gap-1 w-full"; 
-        } else {
-            grid.className = "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-5";
-        }
-
-        groups[key].forEach(p => {
-            grid.innerHTML += mkProductCard(p);
-        });
-
+        grid.className = "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-5";
+        groups[key].forEach(p => grid.innerHTML += mkProductCard(p));
         section.appendChild(grid); 
         container.appendChild(section);
     });
     
     if(window.lucide) window.lucide.createIcons();
-    if(window.initGlobalCountdowns) window.initGlobalCountdowns(); 
+    initGlobalCountdowns(); 
 }
+
 // --- MAGIC CATEGORIES (Novidades / Mais Vistos) ---
 
 async function renderMagicCategories(products, config) {
@@ -353,27 +316,6 @@ export function openProductModal(id) {
     document.getElementById('detailSku').textContent = p.sku || 'N/A';
     document.getElementById('detailDesc').textContent = p.description || ''; 
     document.getElementById('detailQtyDisplay').textContent = "1";
-
-    const containerComplements = document.getElementById('containerComplementos');
-    const variationContainer = document.getElementById('variationContainer'); // Onde ficam tamanhos/cores
-
-    if (state.storeConfig?.tipoNegocio === 'restaurante' && window.RestauranteTheme) {
-        // Se for restaurante, renderiza os complementos e esconde as variações de varejo
-        if (containerComplements) {
-            containerComplements.innerHTML = RestauranteTheme.renderComplements(p);
-            containerComplements.classList.remove('hidden');
-        }
-        if (variationContainer) variationContainer.classList.add('hidden');
-    } else {
-        // Se for varejo, limpa complementos e mostra variações (cores/tamanhos)
-        if (containerComplements) {
-            containerComplements.innerHTML = '';
-            containerComplements.classList.add('hidden');
-        }
-        if (variationContainer) variationContainer.classList.remove('hidden');
-        renderVariationUI(p); // Sua função original de tamanhos/cores
-    }
-    // ============================================================
 
     renderVariationUI(p);
     updateModalHeartBtn();
