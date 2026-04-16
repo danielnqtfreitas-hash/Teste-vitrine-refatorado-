@@ -27,19 +27,17 @@ const els = {
 // --- RENDERIZAÇÃO DE CARDS (PRODUTO) ---
 
 // Localize sua função original e altere o início dela:
-export function mkProductCard(product) {
+// --- RENDERIZAÇÃO DE CARDS (PRODUTO) ---
+
+export function mkProductCard(p) {
+    // 1. VERIFICAÇÃO DE TEMA (RESTAURANTE)
     const tipoNegocio = state.storeConfig?.tipoNegocio || 'varejo';
 
-    // Se for restaurante, interrompe e usa o layout de lista
     if (tipoNegocio === 'restaurante' && window.RestauranteTheme) {
-        return RestauranteTheme.renderCard(product);
+        return window.RestauranteTheme.renderCard(p);
     }
 
-    // ... Caso contrário, mantém o seu código original de Grade de Produtos abaixo ...
-    return `
-       <div class="original-card-style"> ... </div>
-    `;
-}
+    // 2. LÓGICA ORIGINAL DE VAREJO (SÓ EXECUTA SE NÃO FOR RESTAURANTE)
     const agora = Date.now();
     const isPromoValid = p.promoValue && p.promoValue < p.value && (p.promoUntil ? p.promoUntil > agora : true);
     const hasPromo = !!isPromoValid;
