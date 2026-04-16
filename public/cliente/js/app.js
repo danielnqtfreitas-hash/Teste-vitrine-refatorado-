@@ -11,6 +11,8 @@ import {
 
 import { state, setStoreId, loadFavorites, loadCart } from './state.js';
 
+import { RestauranteTheme } from './theme-restaurante.js';
+
 import { 
     renderCatalog, renderHeroCarousel, renderCategoryTabs, populateFilterOptions, updateFavoritesUI, 
     openProductModal, closeModalDetails, updateFilterBadge, resetAllFilters, handleSearchInput, 
