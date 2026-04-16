@@ -221,6 +221,10 @@ export async function renderCatalog() {
         section.appendChild(grid); 
         container.appendChild(section);
     });
+
+    if (state.storeConfig?.tipoNegocio === 'restaurante') {
+    RestauranteTheme.renderFloatingCart();
+    }
     
     if(window.lucide) window.lucide.createIcons();
     initGlobalCountdowns(); 
