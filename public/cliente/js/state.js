@@ -79,3 +79,21 @@ export function resetFilters() {
 
 // No final do seu state.js
 window.state = state;
+
+// Função global para calcular o preço real considerando promoções
+export function getEffectivePrice(product) {
+    if (!product) return 0;
+    
+    const originalPrice = Number(product.value || product.priceCard || 0);
+    const promoPrice = Number(product.promoPrice || 0);
+
+    // Se houver preço promocional e ele for menor que o original, usa ele
+    if (promoPrice > 0 && promoPrice < originalPrice) {
+        return promoPrice;
+    }
+    return originalPrice;
+}
+
+// Expõe para o resto do sistema
+window.getEffectivePrice = getEffectivePrice;
+
