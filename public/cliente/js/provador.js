@@ -16,6 +16,8 @@ window.openProvador = function() {
     let filterCatTop = 'Todas';
     let filterCatBot = 'Todas';
 
+    window.history.pushState({ type: 'provador' }, '', window.location.href);
+
     container.innerHTML = `
         <style>
             #provadorFullscreen {
