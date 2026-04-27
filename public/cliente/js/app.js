@@ -96,36 +96,37 @@ if (btnInicio) {
     });
 }
 
-    // "Sentinela" do botão voltar (popstate)
 window.addEventListener('popstate', (event) => {
-    // Se o modal de detalhes estiver aberto, apenas fecha ele
+    // 1. Verifica o Provador
+    const provador = document.getElementById('provadorFullscreen');
+    if (provador && provador.style.display !== 'none' && !provador.classList.contains('hidden')) {
+        if (window.closeProvador) window.closeProvador();
+        return;
+    }
+
+    // 2. Verifica o Discovery (Feed)
+    const feed = document.getElementById('discoveryFeed');
+    if (feed && !feed.classList.contains('hidden')) {
+        if (window.closeDiscoveryFeed) window.closeDiscoveryFeed();
+        return;
+    }
+
+    // 3. Verifica Modal de Detalhes
     const modalD = document.getElementById('modalDetails');
     if (modalD && !modalD.classList.contains('hidden')) {
-        // Usamos uma flag para não dar conflito com o histórico
-        modalD.classList.add('hidden'); 
+        modalD.classList.add('hidden');
         return;
     }
 
-    // Se o carrinho estiver aberto, fecha ele
+    // 4. Verifica Carrinho
     const modalC = document.getElementById('modalCart');
     if (modalC && !modalC.classList.contains('hidden')) {
-        window.closeCartModal();
+        if (window.closeCartModal) window.closeCartModal();
         return;
     }
 
-    // Se o filtro estiver aberto, fecha ele
-    const filterM = document.getElementById('filterModal');
-    if (filterM && !filterM.classList.contains('hidden')) {
-        closeFilterDrawer();
-        return;
-    }
-    
-    // Se não tiver nada aberto mas você estiver vendo Favoritos ou Busca, volta ao início
-    if (state.isFavoritesView || state.filters.search) {
-        resetAllFilters();
-    }
+    // Se chegar aqui e não tiver nada aberto, o navegador volta a página normalmente
 });
-
     
     await signInAnonymously(auth);
     onAuthStateChanged(auth, (user) => { 
