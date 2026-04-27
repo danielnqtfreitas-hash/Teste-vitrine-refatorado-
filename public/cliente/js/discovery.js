@@ -16,6 +16,8 @@ window.openDiscoveryFeed = function() {
     if (navBottom) navBottom.classList.add('hidden');
     document.body.style.overflow = 'hidden';
 
+    window.history.pushState({ type: 'discovery' }, '', window.location.href);
+
     feed.classList.remove('hidden');
     feed.style.display = 'flex'; 
     
