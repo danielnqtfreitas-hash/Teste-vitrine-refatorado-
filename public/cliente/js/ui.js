@@ -317,9 +317,8 @@ export function openProductModal(id) {
     }
 
     const newURL = window.location.pathname + `?id=${p.id}`;
-    window.history.pushState({ path: newURL }, '', newURL);
+    window.history.pushState({ type: 'modal', id: p.id }, '', newURL); 
     document.title = `${p.name} | ${state.storeConfigGlobal.storeName || 'Vitrine'}`;
-
     state.currentDetailId = id; 
     state.currentDetailQty = 1; 
     
@@ -493,9 +492,14 @@ function renderVariationUI(p) {
 }
 
 export function closeModalDetails() {
-    els.modalDetails().classList.add('hidden');
-    window.history.pushState({}, '', window.location.pathname);
+    document.getElementById('modalDetails').classList.add('hidden');
+    // Se a URL tiver um "?p=", a gente limpa ela para o padrão da loja
+    if (window.location.search.includes('&p=')) {
+        const cleanURL = `?id=${state.STORE_ID}`;
+        window.history.replaceState({}, '', cleanURL);
+    }
 }
+
 
 // --- RENDERIZAÇÃO DE INTERFACE (FILTROS, TABS, CARROSSEL) ---
 
