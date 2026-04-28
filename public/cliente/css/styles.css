@@ -32,6 +32,11 @@ body {
    COMPONENTES
    ========================================= */
 
+/* Garante que o alerta fique acima de tudo, inclusive do carrinho */
+.swal2-container {
+    z-index: 99999999 !important;
+}
+
 /* Cards de Produto */
 .product-card { 
     background: white; border-radius: 12px; overflow: hidden; transition: all 0.3s ease; border: 1px solid transparent;
