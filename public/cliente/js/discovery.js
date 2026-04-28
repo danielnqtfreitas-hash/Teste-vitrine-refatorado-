@@ -34,20 +34,18 @@ window.openDiscoveryFeed = function() {
     container.innerHTML = shuffledProducts.map((p) => {
         const imgUrl = (p.images && p.images.length > 0) ? p.images[0] : '';
 
-// 1. Pegamos os valores garantindo que sejam números
-const vOriginal = parseFloat(p.value || 0);
-const vPromo = parseFloat(p.promoPrice || 0);
+// --- Lógica de Preço Promocional ---
+const precoOriginal = Number(p.value || p.priceCard || 0);
+const precoPromo = Number(p.promoPrice || 0);
+const temPromo = precoPromo > 0 && precoPromo < precoOriginal;
 
-// 2. A regra de ouro: Só é promo se o valor for maior que 0 e menor que o original
-const temDesconto = vPromo > 0 && vPromo < vOriginal;
+// Define qual preço será exibido em destaque (o menor deles)
+const precoEfetivo = temPromo ? precoPromo : precoOriginal;
+const formattedPrice = `R$ ${precoEfetivo.toFixed(2).replace('.', ',')}`;
 
-// 3. Definimos o que mostrar
-const precoExibicao = temDesconto ? vPromo : vOriginal;
-const formattedPrice = `R$ ${precoExibicao.toFixed(2).replace('.', ',')}`;
-
-// 4. Criamos o HTML do "preço de" riscado
-const precoRiscadoHTML = temDesconto 
-    ? `<span class="line-through opacity-60 text-[11px] mr-2 text-white/80">R$ ${vOriginal.toFixed(2).replace('.', ',')}</span>` 
+// Cria o HTML do preço riscado se houver promoção
+const precoAntigoHTML = temPromo 
+    ? `<span class="line-through opacity-50 text-xs mr-2">R$ ${precoOriginal.toFixed(2).replace('.', ',')}</span>` 
     : '';
         const isFavorite = state.favorites && state.favorites.includes(p.id);
         
