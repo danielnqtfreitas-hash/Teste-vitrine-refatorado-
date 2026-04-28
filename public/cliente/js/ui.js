@@ -316,8 +316,8 @@ export function openProductModal(id) {
         window.reportarMetrica(id, 'view');
     }
 
-    const newURL = window.location.pathname + `?id=${p.id}`;
-    window.history.pushState({ type: 'modal', id: p.id }, '', newURL); 
+    const newURL = window.location.pathname + `?id=${state.STORE_ID}&p=${p.id}`;
+    window.history.pushState({ path: newURL }, '', newURL);
     document.title = `${p.name} | ${state.storeConfigGlobal.storeName || 'Vitrine'}`;
     state.currentDetailId = id; 
     state.currentDetailQty = 1; 
