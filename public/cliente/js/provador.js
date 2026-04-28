@@ -85,11 +85,11 @@ window.openProvador = function() {
         <div class="p-header">
             <div class="p-filters">
                 <select id="selCatTop">
-                    <option value="Todas">Top: Todas</option>
+                    <option value="Todas">Superior: Todas</option>
                     ${catTops.map(c => `<option value="${c}">${c}</option>`).join('')}
                 </select>
                 <select id="selCatBot">
-                    <option value="Todas">Bottom: Todas</option>
+                    <option value="Todas">Inferior: Todas</option>
                     ${catBots.map(c => `<option value="${c}">${c}</option>`).join('')}
                 </select>
             </div>
@@ -133,24 +133,34 @@ window.openProvador = function() {
         const tops = window.state.allProducts.filter(p => p.posicaoProvador === 'superior' && (filterCatTop === 'Todas' || p.category === filterCatTop));
         const bots = window.state.allProducts.filter(p => p.posicaoProvador === 'inferior' && (filterCatBot === 'Todas' || p.category === filterCatBot));
 
-        const makeHtml = (list) => list.map(p => {
-            let gallery = [p.images[0], ...(p.variations || []).map(v => v.image)].filter(Boolean);
-            gallery = [...new Set(gallery)];
+const makeHtml = (list) => list.map(p => {
+    let gallery = [p.images[0], ...(p.variations || []).map(v => v.image)].filter(Boolean);
+    gallery = [...new Set(gallery)];
 
-            return `
-                <div class="p-card" data-id="${p.id}" data-price="${p.value}" data-img="${p.images[0]}">
-                    <div class="p-side-left">
-                        ${gallery.slice(0, 5).map(img => `<img src="${img}" class="p-thumb ${img === p.images[0] ? 'active' : ''}" onclick="window.changePThumb(this, '${img}')">`).join('')}
-                    </div>
-                    <div class="p-side-right">
-                        ${(p.sizes || []).map(s => `<div class="p-size">${s}</div>`).join('')}
-                    </div>
-                    <div class="p-img-box">
-                        <img src="${p.images[0]}" class="main-img">
-                        <div class="p-individual-price">R$ ${Number(p.value).toFixed(2).replace('.', ',')}</div>
-                    </div>
-                </div>`;
-        }).join('');
+    // --- Lógica de Preço (Igual ao Discovery) ---
+    const precoOriginal = Number(p.priceCard || 0);
+    const precoPromo = Number(p.promoValue || 0);
+    const temPromo = precoPromo > 0 && precoPromo < precoOriginal;
+    const precoEfetivo = temPromo ? precoPromo : precoOriginal;
+
+    const precoHTML = temPromo 
+        ? `<span class="line-through opacity-50 mr-1">R$ ${precoOriginal.toFixed(2).replace('.', ',')}</span> R$ ${precoPromo.toFixed(2).replace('.', ',')}`
+        : `R$ ${precoOriginal.toFixed(2).replace('.', ',')}`;
+
+    return `
+        <div class="p-card" data-id="${p.id}" data-price="${precoEfetivo}" data-img="${p.images[0]}">
+            <div class="p-side-left">
+                ${gallery.slice(0, 5).map(img => `<img src="${img}" class="p-thumb ${img === p.images[0] ? 'active' : ''}" onclick="window.changePThumb(this, '${img}')">`).join('')}
+            </div>
+            <div class="p-side-right">
+                ${(p.sizes || []).map(s => `<div class="p-size">${s}</div>`).join('')}
+            </div>
+            <div class="p-img-box">
+                <img src="${p.images[0]}" class="main-img">
+                <div class="p-individual-price">${precoHTML}</div>
+            </div>
+        </div>`;
+}).join('');
 
         document.getElementById('deckTop').innerHTML = makeHtml(tops) || '<div class="p-card">Nenhum Top</div>';
         document.getElementById('deckBot').innerHTML = makeHtml(bots) || '<div class="p-card">Nenhum Bottom</div>';
