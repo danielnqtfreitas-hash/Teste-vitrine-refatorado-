@@ -78,6 +78,15 @@ export function mkProductCard(p) {
     // --- LAYOUT 2: VAREJO (Original - Grade) ---
     const disc = hasPromo && !outOfStock ? `<span class="absolute top-0 right-0 bg-red-600 text-white text-[10px] font-black px-2 py-1 rounded-bl-lg z-10">-${Math.round(((p.value - p.promoValue) / p.value) * 100)}%</span>` : '';
     const stockBadge = outOfStock ? `<span class="absolute inset-0 bg-white/60 flex items-center justify-center text-red-600 font-black text-xs uppercase z-20">Esgotado</span>` : '';
+    const tamanhosHTML = (p.sizes && p.sizes.length > 0) 
+        ? `<div class="flex flex-wrap gap-1 mt-1 mb-1">
+            ${p.sizes.map(s => `
+                <span class="text-[9px] font-bold bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded border border-gray-200 uppercase leading-none">
+                    ${s}
+                </span>
+            `).join('')}
+           </div>`
+        : `<div class="h-4"></div>`;
 
     return `
     <div onclick="${outOfStock ? '' : `window.openProductModal('${p.id}')`}" class="product-card cursor-pointer group flex flex-col h-full relative ${outOfStock ? 'opacity-70 grayscale' : ''}">
@@ -90,7 +99,7 @@ export function mkProductCard(p) {
             </button>
         </div>
         
-        <div class="p-3 md:p-4 flex flex-col flex-grow bg-white">
+                <div class="p-3 md:p-4 flex flex-col flex-grow bg-white">
             <div class="product-timer hidden mb-2 py-1 px-2 rounded-lg flex items-center gap-1.5 timer-accent animate-pulse" data-pid="${p.id}">
                 <i data-lucide="clock" class="w-3 h-3"></i>
                 <span class="text-[9px] font-black uppercase tracking-tighter countdown-text">Carregando...</span>
@@ -98,10 +107,7 @@ export function mkProductCard(p) {
             
             <h4 class="text-sm font-semibold text-slate-700 leading-snug line-clamp-2 mb-1">${p.name}</h4>
 
-            <div class="flex items-center gap-1 mb-2 opacity-0">
-                <i data-lucide="eye" class="w-3 h-3 text-slate-400"></i>
-                <span class="text-[10px] text-slate-400 font-bold">${p.views || 0} visualizações</span>
-            </div>
+            ${tamanhosHTML}
             
             <div class="mt-auto pt-1">
                 <div class="flex flex-col">
