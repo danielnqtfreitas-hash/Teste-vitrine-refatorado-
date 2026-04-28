@@ -35,15 +35,19 @@ window.openDiscoveryFeed = function() {
         const imgUrl = (p.images && p.images.length > 0) ? p.images[0] : '';
 
 // --- Lógica de Preço Promocional ---
-const precoOriginal = Number(p.value || p.priceCard || 0);
-const precoPromo = Number(p.promoPrice || 0);
+const precoOriginal = Number(p.priceCard || 0);
+const precoPromo = Number(p.promoValue || 0); 
+
+// A promoção só é válida se o valor promo for maior que 0 e menor que o original
 const temPromo = precoPromo > 0 && precoPromo < precoOriginal;
 
-// Define qual preço será exibido em destaque (o menor deles)
+// Define qual preço será exibido em destaque
 const precoEfetivo = temPromo ? precoPromo : precoOriginal;
+
+// Formatação para o padrão brasileiro (R$ 60,00)
 const formattedPrice = `R$ ${precoEfetivo.toFixed(2).replace('.', ',')}`;
 
-// Cria o HTML do preço riscado se houver promoção
+// Cria o HTML do preço riscado
 const precoAntigoHTML = temPromo 
     ? `<span class="line-through opacity-50 text-xs mr-2">R$ ${precoOriginal.toFixed(2).replace('.', ',')}</span>` 
     : '';
