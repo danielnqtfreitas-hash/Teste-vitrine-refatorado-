@@ -33,8 +33,20 @@ window.openDiscoveryFeed = function() {
 
     container.innerHTML = shuffledProducts.map((p) => {
         const imgUrl = (p.images && p.images.length > 0) ? p.images[0] : '';
-        const precoBruto = p.value || p.priceCard || 0;
-        const formattedPrice = `R$ ${Number(precoBruto).toFixed(2).replace('.', ',')}`;
+
+// --- Lógica de Preço Promocional ---
+const precoOriginal = Number(p.value || p.priceCard || 0);
+const precoPromo = Number(p.promoPrice || 0);
+const temPromo = precoPromo > 0 && precoPromo < precoOriginal;
+
+// Define qual preço será exibido em destaque (o menor deles)
+const precoEfetivo = temPromo ? precoPromo : precoOriginal;
+const formattedPrice = `R$ ${precoEfetivo.toFixed(2).replace('.', ',')}`;
+
+// Cria o HTML do preço riscado se houver promoção
+const precoAntigoHTML = temPromo 
+    ? `<span class="line-through opacity-50 text-xs mr-2">R$ ${precoOriginal.toFixed(2).replace('.', ',')}</span>` 
+    : '';
         const isFavorite = state.favorites && state.favorites.includes(p.id);
         
         // VERIFICA SE JÁ ESTÁ NA SACOLA PARA MANTER O ESTADO
@@ -58,7 +70,11 @@ window.openDiscoveryFeed = function() {
                 </p>
 
                 <div class="flex items-center gap-3 mt-2">
-                    <span class="text-rose-400 text-lg font-black">${formattedPrice}</span>
+                    <div class="flex items-baseline">
+    ${precoAntigoHTML}
+    <span class="text-rose-400 text-lg font-black">${formattedPrice}</span>
+</div>
+
                     <span class="bg-white/10 text-white/60 text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1">
                         <i data-lucide="eye" class="w-3 h-3"></i> <span id="view-count-${p.id}">${views}</span>
                     </span>
