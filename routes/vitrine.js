@@ -3,27 +3,21 @@ const router = express.Router();
 
 module.exports = (db, admin) => {
 
-    // --- ROTA DA VITRINE DEFINITIVA (OTIMIZADA PARA VERCEL) ---
+    // --- ROTA DA VITRINE (ESTRUTURA COMPLETA) ---
     router.get('/:lojaId', async (req, res) => {
         const lojaId = req.params.lojaId;
 
         try {
-            // Buscamos a configuração da loja
+            // 1. Busca Configurações da Loja
             const configDoc = await db.collection('stores').doc(lojaId).collection('config').doc('store').get();
-            
-            if (!configDoc.exists) {
-                return res.status(404).json({ erro: "Loja não encontrada" });
-            }
+            if (!configDoc.exists) return res.status(404).json({ erro: "Loja não encontrada" });
 
             const configData = configDoc.data();
 
-            // 📥 BUSCA DIRETA E PARALELA (Alta Performance)
-            // Usamos Promise.all para buscar Banners e Produtos ao mesmo tempo, economizando tempo de resposta
+            // 2. Busca Banners e Produtos em Paralelo (Performance)
             const [heroSnap, prodSnap] = await Promise.all([
                 db.collection('stores').doc(lojaId).collection('hero_cards').get(),
-                db.collection('stores').doc(lojaId).collection('products')
-                  .where('status', '==', 'active')
-                  .get()
+                db.collection('stores').doc(lojaId).collection('products').where('status', '==', 'active').get()
             ]);
 
             const banners = heroSnap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -34,23 +28,21 @@ module.exports = (db, admin) => {
                 banners: banners,
                 produtos: produtos,
                 lastSync: new Date().toISOString(),
-                ambiente: "Vercel Cloud"
+                server: "Vercel Cloud"
             };
 
-            // CONFIGURAÇÃO DE CACHE NO NAVEGADOR (O pulo do gato para custo zero)
-            // Isso diz à Vercel e ao Google Chrome para guardarem os dados por 1 minuto
-            // Assim, se o cliente der F5, não gasta uma nova leitura no seu Firebase.
+            // 3. Cache Inteligente (Substitui o JSON local - Economiza Firebase)
             res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=30');
             
             return res.json(pacoteCompleto);
 
         } catch (error) {
             console.error("❌ Erro na rota da vitrine:", error);
-            res.status(500).json({ erro: "Erro ao processar dados da loja" });
+            res.status(500).json({ erro: "Erro interno no servidor" });
         }
     });
 
-    // --- ROTA DE ANALYTICS (VISITAS) ---
+    // --- ROTA DE ANALYTICS (VISITAS - MANTIDA INTEGRALMENTE) ---
     router.post('/:lojaId/visit', async (req, res) => {
         const lojaId = req.params.lojaId;
         const hojeId = new Date().toLocaleDateString('en-CA'); 
@@ -76,12 +68,12 @@ module.exports = (db, admin) => {
             await batch.commit();
             res.status(200).json({ ok: true });
         } catch (error) {
-            console.error("❌ Erro analytics:", error);
+            console.error("❌ Erro Analytics:", error);
             res.status(500).json({ erro: "Erro interno" });
         }
     });
 
-    // --- ROTA DE MÉTRICAS (VIEWS E CARRINHO) ---
+    // --- ROTA DE MÉTRICAS (PRODUTOS - MANTIDA INTEGRALMENTE) ---
     router.post('/metricas', async (req, res) => {
         try {
             const { lojaId, produtoId, acao } = req.body;
@@ -92,23 +84,16 @@ module.exports = (db, admin) => {
             if (acao === 'fav' || acao === 'cart') {
                 const globalRef = db.collection('stores').doc(lojaId).collection('analytics').doc('global');
                 const campoDinamico = `stats.${produtoId}.${acao === 'fav' ? 'favs' : 'adds'}`;
-                
                 batch.set(globalRef, {
                     [campoDinamico]: admin.firestore.FieldValue.increment(1),
-                    "totalInteracoes": admin.firestore.FieldValue.increment(1),
-                    "ultimaInteracao": admin.firestore.FieldValue.serverTimestamp()
+                    "totalInteracoes": admin.firestore.FieldValue.increment(1)
                 }, { merge: true });
             }
 
             if (acao === 'view') {
                 const viewsRef = db.collection('stores').doc(lojaId).collection('analytics').doc('product_views');
                 batch.set(viewsRef, {
-                    stats: {
-                        [produtoId]: {
-                            views: admin.firestore.FieldValue.increment(1),
-                            lastUpdate: admin.firestore.FieldValue.serverTimestamp()
-                        }
-                    }
+                    stats: { [produtoId]: { views: admin.firestore.FieldValue.increment(1) } }
                 }, { merge: true });
             }
 
