@@ -190,8 +190,12 @@ async function initFlow() {
 
         // Busca na API (Ajustado para o novo server.js)
         const response = await fetch(`/api/produtos/${state.STORE_ID}`, {
-            headers: { 'Accept': 'application/json' }
-        });
+    method: 'GET',
+    headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+    }
+});
         
         if (!response.ok) throw new Error("Loja não encontrada");
         const data = await response.json(); 
