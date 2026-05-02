@@ -96,160 +96,146 @@ if (btnInicio) {
     });
 }
 
-/* =========================================================================
-   VITRINE ONLINE - MOTOR PRINCIPAL (v3.0 Backend-Driven)
-   ========================================================================= */
-
-// --- 1. CONTROLE DE NAVEGAÇÃO E MODAIS (POPSTATE) ---
 window.addEventListener('popstate', (event) => {
+    // 1. Verifica o Provador
     const provador = document.getElementById('provadorFullscreen');
     if (provador && provador.style.display !== 'none' && !provador.classList.contains('hidden')) {
         if (window.closeProvador) window.closeProvador();
         return;
     }
+
+    // 2. Verifica o Discovery (Feed)
     const feed = document.getElementById('discoveryFeed');
     if (feed && !feed.classList.contains('hidden')) {
         if (window.closeDiscoveryFeed) window.closeDiscoveryFeed();
         return;
     }
+
+    // 3. Verifica Modal de Detalhes
     const modalD = document.getElementById('modalDetails');
     if (modalD && !modalD.classList.contains('hidden')) {
         modalD.classList.add('hidden');
         return;
     }
+
+    // 4. Verifica Carrinho
     const modalC = document.getElementById('modalCart');
     if (modalC && !modalC.classList.contains('hidden')) {
         if (window.closeCartModal) window.closeCartModal();
         return;
     }
+
+    // Se chegar aqui e não tiver nada aberto, o navegador volta a página normalmente
 });
-
-// --- 2. INICIALIZAÇÃO E BLINDAGEM DE ROTA (CAPTURA DE ID) ---
-document.addEventListener('DOMContentLoaded', async () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const pathSegments = window.location.pathname.split('/');
     
-    let storeId = urlParams.get('id') || 
-                  (pathSegments[1] && pathSegments[1] !== "index.html" ? pathSegments[1] : null) || 
-                  localStorage.getItem('last_store_id');
-    
-    if (!storeId || ["index.html", "undefined", "null", ""].includes(storeId)) {
-        storeId = "admin"; 
-    }
-
-    localStorage.setItem('last_store_id', storeId);
-
-    if (!urlParams.get('id')) {
-        const newUrl = `${window.location.protocol}//${window.location.host}${window.location.pathname}?id=${storeId}`;
-        window.history.replaceState({ path: newUrl }, '', newUrl);
-    }
-
-    const activeSession = localStorage.getItem('active_store_session');
-    if (activeSession && activeSession !== storeId) {
-        state.cart = []; 
-        state.favorites = [];
-    }
-    
-    localStorage.setItem('active_store_session', storeId);
-
-    setStoreId(storeId);
-    loadCart();      
-    loadFavorites(); 
-
-    if (window.updateNavigationBadges) window.updateNavigationBadges();
-
-    // Evento do Botão Início
-    const btnInicio = document.getElementById('navInicio') || document.querySelector('a[href="#inicio"]');
-    if (btnInicio) {
-        btnInicio.addEventListener('click', (e) => {
-            e.preventDefault();
-            closeFilterDrawer();
-            closeModalDetails();
-            resetAllFilters(); 
-            document.getElementById('catalogSection')?.classList.remove('hidden');
-            document.getElementById('cartSection')?.classList.add('hidden');
-            document.getElementById('profileSection')?.classList.add('hidden');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        });
-    }
-
-    // Auth e Start
     await signInAnonymously(auth);
     onAuthStateChanged(auth, (user) => { 
         if(user) initFlow(); 
     });
 
     setupSwipes();
+    
     if (window.lucide) lucide.createIcons(); 
 });
 
-// --- 3. FLUXO DE CARREGAMENTO (AJUSTADO VERCEL) ---
 async function initFlow() {
     try {
         updatePremiumLoader(10); 
 
-        // Busca na API (Ajustado para o novo server.js)
-        const response = await fetch(`/api/produtos/${state.STORE_ID}`, {
-    method: 'GET',
-    headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-    }
-});
-        
+        // 1. Busca produtos na sua API
+        const response = await fetch(`/api/produtos/${state.STORE_ID}`);
         if (!response.ok) throw new Error("Loja não encontrada");
         const data = await response.json(); 
         updatePremiumLoader(40); 
 
         state.storeConfigGlobal = data.config;
 
-        // Sincronização de Produtos e Views
-        state.allProducts = data.produtos.map(p => ({
+// --- BLOCO DE SINCRONIZAÇÃO DE VISUALIZAÇÕES (BLINDADO) ---
+try {
+    const analyticsRef = doc(db, "stores", state.STORE_ID, "analytics", "product_views");
+    const analyticsSnap = await getDocFromServer(analyticsRef).catch(() => null); 
+    
+    const viewsData = (analyticsSnap && analyticsSnap.exists()) ? analyticsSnap.data() : {};
+    const statsMap = viewsData.stats || {};
+
+    // 1. Primeiro, montamos todo o array de produtos com as views
+    state.allProducts = data.produtos.map(p => {
+        const productStats = statsMap[p.id]; 
+        const vCount = (productStats && typeof productStats.views === 'number') ? productStats.views : 0;
+        
+        return {
             ...p,
-            views: p.views || 0
-        }));
+            views: vCount
+        };
+    });
 
-        // Ativação Modo Restaurante
-        if (state.storeConfigGlobal && state.storeConfigGlobal.tipoNegocio === 'restaurante') {
-            if (typeof RestauranteTheme !== 'undefined') RestauranteTheme.setup(); 
-        }
+// --- ATIVAÇÃO DO MODO DELIVERY ---
+if (state.storeConfigGlobal && state.storeConfigGlobal.tipoNegocio === 'restaurante') {
+        console.log("Modo Restaurante Detectado. Aplicando Layout...");
+        RestauranteTheme.setup(); 
+    }
    
-        if (typeof updateCartUI === 'function') updateCartUI(); 
-        if (window.updateNavigationBadges) window.updateNavigationBadges();
+    console.log("✅ Visualizações sincronizadas e state.allProducts preenchido");
 
+    // 2. AGORA SIM, com os produtos prontos, chamamos as atualizações de interface
+    // Isso garante que o carrinho encontre os nomes e preços dos itens
+    if (typeof updateCartUI === 'function') {
+        updateCartUI(); 
+    }
+
+    // 3. Aproveitamos para garantir que os contadores da barra inferior estejam certos
+    if (window.updateNavigationBadges) {
+        window.updateNavigationBadges();
+    }
+
+} catch (e) {
+    console.warn("⚠️ Erro ao processar produtos:", e);
+    state.allProducts = data.produtos.map(p => ({ ...p, views: 0 })); 
+    
+    // Mesmo em caso de erro nas views, tentamos mostrar o carrinho
+    if (typeof updateCartUI === 'function') updateCartUI();
+}
+        
         updatePremiumLoader(60);
 
-        // Configuração do Provador (Fashion)
-        try {
-            state.tops = state.allProducts.filter(p => p.disponivelProvador && p.posicaoProvador === 'superior');
-            state.bottoms = state.allProducts.filter(p => p.disponivelProvador && p.posicaoProvador === 'inferior');
-            const isFashionStore = state.tops.length > 0 && state.bottoms.length > 0;
-            if (typeof setupFooterButton === 'function') setupFooterButton(isFashionStore);
-        } catch (e) { console.error("Erro Provador:", e); }
+        // --- LOGICA DE DETECÇÃO DO PROVADOR ---
+try {
+    // Filtramos os produtos que o lojista marcou no painel
+    state.tops = state.allProducts.filter(p => p.disponivelProvador && p.posicaoProvador === 'superior');
+    state.bottoms = state.allProducts.filter(p => p.disponivelProvador && p.posicaoProvador === 'inferior');
 
-        // Processamento de UI
-        if (typeof checkStoreStatus === 'function') checkStoreStatus(state.storeConfigGlobal);
+    // Se a loja tiver pelo menos 1 de cada, ativamos o modo Provador
+    const isFashionStore = state.tops.length > 0 && state.bottoms.length > 0;
+    setupFooterButton(isFashionStore);
+
+} catch (e) {
+    console.error("Erro ao configurar provador:", e);
+}
+
+        // 2. Processamento Restante
+        checkStoreStatus(state.storeConfigGlobal);
         state.banners = data.banners || [];
         state.categories = Array.from(new Set(data.produtos.map(p => p.category).filter(Boolean))).sort();
 
+        // 3. Renderização
         applyStoreConfig(data.config);
         renderHeroCarousel(state.banners);
         renderCategoryTabs();
+        
+        // Renderiza com as views injetadas
         await renderCatalog();
         
         updatePremiumLoader(100);
-        
-        // Registro de visita (POST para o backend da Vercel)
-        fetch(`/api/produtos/${state.STORE_ID}/visit`, { method: 'POST' });
-        if (typeof checkDeepLink === 'function') checkDeepLink();
+        window.updateNavigationBadges();
+        registerVisit(); 
+        checkDeepLink();
 
     } catch (error) {
-        console.error("❌ Erro fatal:", error);
-        const loader = document.getElementById('initialLoader');
-        if(loader) loader.classList.add('hidden');
+        console.error("❌ Erro fatal no initFlow:", error);
+        const loader = document.getElementById('premium-loader');
+        if(loader) loader.style.display = 'none';
     }
 }
-
 // --- 3. CONFIGURAÇÕES VISUAIS DINÂMICAS ---
 
 function applyStoreConfig(d) {
@@ -590,6 +576,5 @@ window.addToCart = addToCart;
 window.showToast = showToast;
 window.toggleFavorite = toggleFavorite;
 window.openProductModal = openProductModal;
-
 
 
