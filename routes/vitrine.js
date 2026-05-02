@@ -1,78 +1,48 @@
 const express = require('express');
 const router = express.Router();
-const path = require('path');
-const fs = require('fs');
 
 module.exports = (db, admin) => {
 
-    // --- ROTA DA VITRINE COM CACHE INTELIGENTE ---
+    // --- ROTA DA VITRINE DEFINITIVA (OTIMIZADA PARA VERCEL) ---
     router.get('/:lojaId', async (req, res) => {
         const lojaId = req.params.lojaId;
-        const pastaData = path.join(__dirname, '../data'); 
-        const caminhoArquivo = path.join(pastaData, `${lojaId}.json`);
-        const forceRefresh = req.query.refresh === 'true';
 
         try {
+            // Buscamos a configuração da loja
             const configDoc = await db.collection('stores').doc(lojaId).collection('config').doc('store').get();
-            if (!configDoc.exists) return res.status(404).json({ erro: "Loja não encontrada" });
+            
+            if (!configDoc.exists) {
+                return res.status(404).json({ erro: "Loja não encontrada" });
+            }
 
             const configData = configDoc.data();
+
+            // 📥 BUSCA DIRETA E PARALELA (Alta Performance)
+            // Usamos Promise.all para buscar Banners e Produtos ao mesmo tempo, economizando tempo de resposta
+            const [heroSnap, prodSnap] = await Promise.all([
+                db.collection('stores').doc(lojaId).collection('hero_cards').get(),
+                db.collection('stores').doc(lojaId).collection('products')
+                  .where('status', '==', 'active')
+                  .get()
+            ]);
+
+            const banners = heroSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+            const produtos = prodSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+            const pacoteCompleto = {
+                config: configData,
+                banners: banners,
+                produtos: produtos,
+                lastSync: new Date().toISOString(),
+                ambiente: "Vercel Cloud"
+            };
+
+            // CONFIGURAÇÃO DE CACHE NO NAVEGADOR (O pulo do gato para custo zero)
+            // Isso diz à Vercel e ao Google Chrome para guardarem os dados por 1 minuto
+            // Assim, se o cliente der F5, não gasta uma nova leitura no seu Firebase.
+            res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=30');
             
-            let serverLastUpdate = 0;
-            if (configData.lastUpdate) {
-                if (typeof configData.lastUpdate.toDate === 'function') {
-                    serverLastUpdate = configData.lastUpdate.toDate().getTime();
-                } else if (configData.lastUpdate.seconds) {
-                    serverLastUpdate = configData.lastUpdate.seconds * 1000;
-                } else {
-                    serverLastUpdate = new Date(configData.lastUpdate).getTime() || 0;
-                }
-            }
-
-            let deveAtualizar = !fs.existsSync(caminhoArquivo) || forceRefresh;
-
-            if (!deveAtualizar && fs.existsSync(caminhoArquivo)) {
-                try {
-                    const cacheLocal = JSON.parse(fs.readFileSync(caminhoArquivo, 'utf8'));
-                    const localLastUpdate = cacheLocal.config && cacheLocal.config.lastUpdate 
-                        ? new Date(cacheLocal.config.lastUpdate).getTime() 
-                        : 0;
-
-                    if (serverLastUpdate > localLastUpdate) {
-                        console.log(`✨ Mudança detectada para a loja ${lojaId}. Atualizando cache...`);
-                        deveAtualizar = true;
-                    }
-                } catch (e) {
-                    deveAtualizar = true;
-                }
-            }
-
-            if (deveAtualizar) {
-                console.log(`📥 Sincronizando dados completos: stores/${lojaId}`);
-
-                const [heroSnap, prodSnap] = await Promise.all([
-                    db.collection('stores').doc(lojaId).collection('hero_cards').get(),
-                    db.collection('stores').doc(lojaId).collection('products').where('status', '==', 'active').get()
-                ]);
-
-                const banners = heroSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-                const produtos = prodSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-
-                const pacoteCompleto = {
-                    config: configData,
-                    banners: banners,
-                    produtos: produtos,
-                    lastSync: new Date().toISOString()
-                };
-
-                if (!fs.existsSync(pastaData)) fs.mkdirSync(pastaData);
-                fs.writeFileSync(caminhoArquivo, JSON.stringify(pacoteCompleto, null, 2));
-                
-                return res.json(pacoteCompleto);
-            }
-
-            const dataLocal = fs.readFileSync(caminhoArquivo, 'utf8');
-            res.json(JSON.parse(dataLocal));
+            return res.json(pacoteCompleto);
 
         } catch (error) {
             console.error("❌ Erro na rota da vitrine:", error);
@@ -88,15 +58,15 @@ module.exports = (db, admin) => {
 
         try {
             const batch = db.batch();
-
             const historyRef = db.collection('stores').doc(lojaId).collection('analytics_history').doc(hojeId);
+            const globalRef = db.collection('stores').doc(lojaId).collection('analytics').doc('global');
+
             batch.set(historyRef, { 
                 visits: admin.firestore.FieldValue.increment(1), 
                 [horaAtual]: admin.firestore.FieldValue.increment(1), 
                 date: admin.firestore.FieldValue.serverTimestamp() 
             }, { merge: true });
 
-            const globalRef = db.collection('stores').doc(lojaId).collection('analytics').doc('global');
             batch.set(globalRef, { 
                 totalVisits: admin.firestore.FieldValue.increment(1), 
                 [`visits_${horaAtual}`]: admin.firestore.FieldValue.increment(1), 
@@ -106,12 +76,12 @@ module.exports = (db, admin) => {
             await batch.commit();
             res.status(200).json({ ok: true });
         } catch (error) {
-            console.error("❌ Erro ao registrar visita no backend:", error);
+            console.error("❌ Erro analytics:", error);
             res.status(500).json({ erro: "Erro interno" });
         }
     });
 
-        // --- ROTA DE MÉTRICAS (VIEWS, FAVORITOS E CARRINHO) ---
+    // --- ROTA DE MÉTRICAS (VIEWS E CARRINHO) ---
     router.post('/metricas', async (req, res) => {
         try {
             const { lojaId, produtoId, acao } = req.body;
@@ -119,7 +89,6 @@ module.exports = (db, admin) => {
 
             const batch = db.batch();
 
-            // 1. Atualiza o Global (como você já fazia para favs e adds)
             if (acao === 'fav' || acao === 'cart') {
                 const globalRef = db.collection('stores').doc(lojaId).collection('analytics').doc('global');
                 const campoDinamico = `stats.${produtoId}.${acao === 'fav' ? 'favs' : 'adds'}`;
@@ -131,7 +100,6 @@ module.exports = (db, admin) => {
                 }, { merge: true });
             }
 
-            // 2. LOGICA PARA "MAIS VISTOS": Atualiza o documento product_views
             if (acao === 'view') {
                 const viewsRef = db.collection('stores').doc(lojaId).collection('analytics').doc('product_views');
                 batch.set(viewsRef, {
@@ -147,59 +115,10 @@ module.exports = (db, admin) => {
             await batch.commit();
             res.status(200).json({ success: true });
         } catch (error) {
-            console.error("❌ ERRO NO FIREBASE (Métricas):", error); 
-            res.status(500).json({ error: "Erro interno no servidor" });
+            console.error("❌ Erro Métricas:", error); 
+            res.status(500).json({ error: "Erro interno" });
         }
     });
-
-
-   // --- ROTA DE RANKING REFORMULADA ---
-router.get('/:lojaId/ranking', async (req, res) => {
-    const lojaId = req.params.lojaId;
-    try {
-        const globalRef = db.collection('stores').doc(lojaId).collection('analytics').doc('global');
-        const doc = await globalRef.get();
-
-        if (!doc.exists) return res.status(404).json({ erro: "Nenhum dado encontrado" });
-
-        const data = doc.data();
-        const rankingRaw = [];
-
-        // Lógica para capturar campos que começam com "stats."
-        Object.keys(data).forEach(key => {
-            if (key.startsWith('stats.')) {
-                const partes = key.split('.'); // [stats, prod_id, acao]
-                const prodId = partes[1];
-                const acao = partes[2];
-
-                // Procura se já adicionamos esse produto na lista
-                let item = rankingRaw.find(r => r.id === prodId);
-                if (!item) {
-                    item = { id: prodId, favs: 0, adds: 0 };
-                    rankingRaw.push(item);
-                }
-
-                if (acao === 'favs') item.favs = data[key];
-                if (acao === 'adds') item.adds = data[key];
-            }
-        });
-
-        // Calcula pontuação e ordena
-        const rankingFinal = rankingRaw.map(item => ({
-            ...item,
-            pontuacao: item.favs + item.adds
-        })).sort((a, b) => b.pontuacao - a.pontuacao);
-
-        res.json({
-            loja: lojaId,
-            totalInteracoes: data.totalInteracoes || 0,
-            ranking: rankingFinal.slice(0, 10)
-        });
-    } catch (error) {
-        console.error("Erro no Ranking:", error);
-        res.status(500).json({ erro: "Erro ao buscar ranking" });
-    }
-});
 
     return router; 
 };
