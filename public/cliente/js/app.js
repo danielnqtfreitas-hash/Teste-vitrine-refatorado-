@@ -24,18 +24,22 @@ import { addToCart, checkoutWhatsApp, updateCartUI, updateCartTotals, goToStep1,
 
 // --- 1. INICIALIZAÇÃO E BLINDAGEM DE ROTA ---
 
+// --- 1. INICIALIZAÇÃO E BLINDAGEM DE ROTA (CORRIGIDO) ---
 document.addEventListener('DOMContentLoaded', async () => {
     const urlParams = new URLSearchParams(window.location.search);
     const pathSegments = window.location.pathname.split('/');
     
-    let storeId = urlParams.get('id') || 
-                  (pathSegments[1] && pathSegments[1] !== "index.html" ? pathSegments[1] : null) || 
+    // PRIORIDADE: 1º Path amigável (/nome-da-loja), 2º Query String (?id=), 3º LocalStorage
+    let storeId = (pathSegments[1] && !["index.html", "cliente", "undefined", ""].includes(pathSegments[1]) ? pathSegments[1] : null) || 
+                  urlParams.get('id') || 
                   localStorage.getItem('last_store_id');
     
-    if (!storeId || ["index.html", "undefined", "null", ""].includes(storeId)) {
+    // Se não encontrar nada, define um padrão
+    if (!storeId || storeId === "null" || storeId === "undefined") {
         storeId = "admin"; 
     }
 
+    // Salva para futuras visitas
     localStorage.setItem('last_store_id', storeId);
 
     if (!urlParams.get('id')) {
