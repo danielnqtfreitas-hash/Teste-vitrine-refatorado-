@@ -4,26 +4,25 @@
  * =========================================================================
  */
 
+// AJUSTE ESSENCIAL: Caminhos absolutos para que o link limpo encontre os arquivos
 import { 
     auth, signInAnonymously, onAuthStateChanged, db, doc, getDocFromServer, getDocs, getDocsFromServer, collection, 
     writeBatch, increment, serverTimestamp, setDoc, hideLoader, showToast, sanitizeTerm, isBotLikely 
-} from './config.js';
+} from '/cliente/config.js';
 
-import { state, setStoreId, loadFavorites, loadCart } from './state.js';
-
-import { RestauranteTheme } from './theme-restaurante.js';
+import { state, setStoreId, loadFavorites, loadCart } from '/cliente/state.js';
+import { RestauranteTheme } from '/cliente/theme-restaurante.js';
 
 import { 
     renderCatalog, renderHeroCarousel, renderCategoryTabs, populateFilterOptions, updateFavoritesUI, 
     openProductModal, closeModalDetails, updateFilterBadge, resetAllFilters, handleSearchInput, 
     openFilterDrawer, closeFilterDrawer, openImageZoom, closeImageZoom, setupSwipes, adjustDetailQty, 
     shareProduct, openDeliveryModal, toggleFavoritesView, setDetailImage, mkProductCard , checkStoreStatus
-} from './ui.js';
+} from '/cliente/ui.js';
 
-import { addToCart, checkoutWhatsApp, updateCartUI, updateCartTotals, goToStep1, goToStep2, toggleAddressFields, modQty, alertaEstoquePreso } from './cart.js';
+import { addToCart, checkoutWhatsApp, updateCartUI, updateCartTotals, goToStep1, goToStep2, toggleAddressFields, modQty, alertaEstoquePreso } from '/cliente/cart.js';
 
-
-// --- 1. INICIALIZAÇÃO E BLINDAGEM DE ROTA (Ajuste para Domínio Próprio) ---
+// --- 1. INICIALIZAÇÃO E BLINDAGEM DE ROTA ---
 
 document.addEventListener('DOMContentLoaded', async () => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -111,7 +110,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             await initializeAppContent(storeId);
         }
     });
-}); 
+});
 
 
 window.addEventListener('popstate', (event) => {
