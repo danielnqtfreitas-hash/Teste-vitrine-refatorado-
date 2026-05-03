@@ -4,23 +4,23 @@
  * =========================================================================
  */
 
-// AJUSTE ESSENCIAL: Caminhos absolutos para que o link limpo encontre os arquivos
+// AJUSTE DE CAMINHO: Agora apontando para a sua pasta 'js' dentro de 'cliente'
 import { 
     auth, signInAnonymously, onAuthStateChanged, db, doc, getDocFromServer, getDocs, getDocsFromServer, collection, 
     writeBatch, increment, serverTimestamp, setDoc, hideLoader, showToast, sanitizeTerm, isBotLikely 
-} from '/cliente/config.js';
+} from '/cliente/js/config.js';
 
-import { state, setStoreId, loadFavorites, loadCart } from '/cliente/state.js';
-import { RestauranteTheme } from '/cliente/theme-restaurante.js';
+import { state, setStoreId, loadFavorites, loadCart } from '/cliente/js/state.js';
+import { RestauranteTheme } from '/cliente/js/theme-restaurante.js';
 
 import { 
     renderCatalog, renderHeroCarousel, renderCategoryTabs, populateFilterOptions, updateFavoritesUI, 
     openProductModal, closeModalDetails, updateFilterBadge, resetAllFilters, handleSearchInput, 
     openFilterDrawer, closeFilterDrawer, openImageZoom, closeImageZoom, setupSwipes, adjustDetailQty, 
     shareProduct, openDeliveryModal, toggleFavoritesView, setDetailImage, mkProductCard , checkStoreStatus
-} from '/cliente/ui.js';
+} from '/cliente/js/ui.js';
 
-import { addToCart, checkoutWhatsApp, updateCartUI, updateCartTotals, goToStep1, goToStep2, toggleAddressFields, modQty, alertaEstoquePreso } from '/cliente/cart.js';
+import { addToCart, checkoutWhatsApp, updateCartUI, updateCartTotals, goToStep1, goToStep2, toggleAddressFields, modQty, alertaEstoquePreso } from '/cliente/js/cart.js';
 
 // --- 1. INICIALIZAÇÃO E BLINDAGEM DE ROTA ---
 
@@ -28,12 +28,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const urlParams = new URLSearchParams(window.location.search);
     const pathSegments = window.location.pathname.split('/');
     
-    // Captura Inteligente: Aceita o ?id= ou o link /loja/ ou o cache do celular
+    // Captura Inteligente do ID: Aceita /dandan ou ?id=dandan
     let storeId = urlParams.get('id') || 
                   (pathSegments[1] && !["index.html", "cliente", "api", ""].includes(pathSegments[1]) ? pathSegments[1] : null) || 
                   localStorage.getItem('last_store_id');
     
-    // Fallback de segurança para não quebrar a página
+    // Fallback de segurança
     if (!storeId || ["undefined", "null", ""].includes(storeId)) {
         storeId = "admin"; 
     }
@@ -42,16 +42,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // --- BLOCO DE SINCRONIZAÇÃO DE SESSÃO (Mantido integralmente) ---
     const activeSession = localStorage.getItem('active_store_session');
-    
     if (activeSession && activeSession !== storeId) {
-        // Limpa memória se trocar de loja, mas não apaga o localStorage
         state.cart = []; 
         state.favorites = [];
     }
-    
     localStorage.setItem('active_store_session', storeId);
 
-    // Inicialização da Loja
+    // Inicializa motor da loja
     setStoreId(storeId);
     loadCart();      
     loadFavorites(); 
@@ -62,31 +59,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // --- LÓGICA DO BOTÃO INÍCIO (Mantido integralmente) ---
     const btnInicio = document.getElementById('navInicio') || document.querySelector('a[href="#inicio"]');
-
     if (btnInicio) {
         btnInicio.addEventListener('click', (e) => {
             e.preventDefault();
-            
-            // Fecha componentes abertos
             if (typeof closeFilterDrawer === 'function') closeFilterDrawer();
             if (typeof closeModalDetails === 'function') closeModalDetails();
             if (typeof resetAllFilters === 'function') resetAllFilters(); 
-
-            // Reseta visualização das seções
             document.getElementById('catalogSection')?.classList.remove('hidden');
             document.getElementById('cartSection')?.classList.add('hidden');
             document.getElementById('profileSection')?.classList.add('hidden');
-            
             window.scrollTo({ top: 0, behavior: 'smooth' });
-            console.log("🏠 Vitrine reiniciada com sucesso!");
         });
     }
 
     // --- ANALYTICS & BOT CHECK (Mantido integralmente) ---
     const isBot = isBotLikely();
-    const isInternal = urlParams.get('source') === 'internal';
-
-    if (!isBot && !isInternal) {
+    if (!isBot && urlParams.get('source') !== 'internal') {
         try {
             const batch = writeBatch(db);
             const statsRef = doc(db, 'store_stats', storeId);
@@ -95,9 +83,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 last_visit: serverTimestamp() 
             }, { merge: true });
             await batch.commit();
-        } catch (e) {
-            console.warn("Analytics bypass");
-        }
+        } catch (e) { console.warn("Analytics skip"); }
     }
 
     // --- AUTENTICAÇÃO E CARREGAMENTO ---
@@ -106,12 +92,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             await signInAnonymously(auth);
         } else {
             state.user = user;
-            // Carrega os dados da loja (Produtos, Banners, Config)
             await initializeAppContent(storeId);
         }
     });
 });
-
 
 window.addEventListener('popstate', (event) => {
     // 1. Verifica o Provador
