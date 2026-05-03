@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "name": "vitrine-online",
   "rewrites": [
     {
       "source": "/api/:path*",
@@ -10,8 +11,22 @@
       "destination": "/cliente/:path*"
     },
     {
+      "source": "/assets/:path*",
+      "destination": "/cliente/assets/:path*"
+    },
+    {
       "source": "/:lojaId",
-      "destination": "/cliente/?id=:lojaId"
+      "destination": "/cliente/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET,OPTIONS,PATCH,DELETE,POST,PUT" },
+        { "key": "Cache-Control", "value": "public, max-age=3600, s-maxage=3600, stale-while-revalidate=600" }
+      ]
     }
   ]
 }
