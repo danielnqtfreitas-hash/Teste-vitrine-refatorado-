@@ -28,73 +28,92 @@ document.addEventListener('DOMContentLoaded', async () => {
     const urlParams = new URLSearchParams(window.location.search);
     const pathSegments = window.location.pathname.split('/');
     
+    // CAPTURA DO ID: 1. Busca no ?id= | 2. Busca na URL limpa /dandan | 3. Busca no Cache
     let storeId = urlParams.get('id') || 
-                  (pathSegments[1] && pathSegments[1] !== "index.html" ? pathSegments[1] : null) || 
+                  (pathSegments[1] && !["index.html", "cliente", "api", ""].includes(pathSegments[1]) ? pathSegments[1] : null) || 
                   localStorage.getItem('last_store_id');
     
-    if (!storeId || ["index.html", "undefined", "null", ""].includes(storeId)) {
+    // Proteção contra valores nulos ou indefinidos
+    if (!storeId || ["undefined", "null", ""].includes(storeId)) {
         storeId = "admin"; 
     }
 
     localStorage.setItem('last_store_id', storeId);
 
-    if (!urlParams.get('id')) {
-        const newUrl = `${window.location.protocol}//${window.location.host}${window.location.pathname}?id=${storeId}`;
-        window.history.replaceState({ path: newUrl }, '', newUrl);
-    }
-
-   // --- BLOCO DE SINCRONIZAÇÃO DE SESSÃO CORRIGIDO ---
+    // --- BLOCO DE SINCRONIZAÇÃO DE SESSÃO (Sua lógica original mantida) ---
     const activeSession = localStorage.getItem('active_store_session');
     
     if (activeSession && activeSession !== storeId) {
-        // Se mudou de loja, limpamos o carrinho que está na MEMÓRIA 
-        // para não vazar itens da loja anterior enquanto a nova carrega
+        // Se mudou de loja, limpa o estado na memória
         state.cart = []; 
         state.favorites = [];
-        
-        // Opcional: Se você quiser deletar permanentemente o carrinho da loja anterior 
-        // do celular do cliente quando ele muda de loja, descomente a linha abaixo:
-        // localStorage.removeItem(`cart_${activeSession}`);
     }
     
     // Atualiza a sessão ativa para a nova loja
     localStorage.setItem('active_store_session', storeId);
 
-    // Agora sim, carregamos os dados específicos da loja atual
+    // Carregamento de dados específicos da loja atual
     setStoreId(storeId);
-    loadCart();      // Isso vai buscar no localStorage a chave cart_IDDALOJA
-    loadFavorites(); // Isso vai buscar no localStorage a chave favs_IDDALOJA
+    loadCart();      
+    loadFavorites(); 
 
-    // Atualiza os badges da barra inferior imediatamente após carregar
+    // Atualiza os badges da barra inferior
     if (window.updateNavigationBadges) {
         window.updateNavigationBadges();
     }
 
-    // Localiza o botão de início (ajusta o ID se necessário conforme o teu HTML)
-const btnInicio = document.getElementById('navInicio') || document.querySelector('a[href="#inicio"]');
+    // --- LÓGICA DO BOTÃO INÍCIO (Sua lógica original mantida) ---
+    const btnInicio = document.getElementById('navInicio') || document.querySelector('a[href="#inicio"]');
 
-if (btnInicio) {
-    btnInicio.addEventListener('click', (e) => {
-        e.preventDefault();
-        
-        // 1. Fecha qualquer modal ou drawer que esteja aberto
-        closeFilterDrawer();
-        closeModalDetails();
+    if (btnInicio) {
+        btnInicio.addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            // Fecha modais e drawers (usando suas funções existentes)
+            if (typeof closeFilterDrawer === 'function') closeFilterDrawer();
+            if (typeof closeModalDetails === 'function') closeModalDetails();
+            if (typeof resetAllFilters === 'function') resetAllFilters(); 
 
-        // 2. Reseta todos os filtros e estados de favoritos
-        resetAllFilters(); 
+            // Garante visibilidade das seções
+            document.getElementById('catalogSection')?.classList.remove('hidden');
+            document.getElementById('cartSection')?.classList.add('hidden');
+            document.getElementById('profileSection')?.classList.add('hidden');
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            console.log("🏠 Vitrine reiniciada com sucesso!");
+        });
+    }
 
-        // 3. Garante que as secções de Carrinho ou Perfil fiquem escondidas
-        document.getElementById('catalogSection')?.classList.remove('hidden');
-        document.getElementById('cartSection')?.classList.add('hidden');
-        document.getElementById('profileSection')?.classList.add('hidden');
-        
-        // 4. Feedback visual: volta ao topo suavemente
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        
-        console.log("🏠 Vitrine reiniciada com sucesso!");
+    // --- ANALYTICS & BOT CHECK (Sua lógica original mantida) ---
+    const isBot = isBotLikely();
+    const isInternal = urlParams.get('source') === 'internal';
+
+    if (!isBot && !isInternal) {
+        try {
+            const batch = writeBatch(db);
+            const statsRef = doc(db, 'store_stats', storeId);
+            batch.set(statsRef, { 
+                visits: increment(1), 
+                last_visit: serverTimestamp() 
+            }, { merge: true });
+            await batch.commit();
+        } catch (e) {
+            console.warn("Analytics bypass");
+        }
+    }
+
+    // --- AUTENTICAÇÃO E CARREGAMENTO DE CONTEÚDO ---
+    onAuthStateChanged(auth, async (user) => {
+        if (!user) {
+            await signInAnonymously(auth);
+        } else {
+            state.user = user;
+            // Aqui ele chama o seu backend (vitrine.js) com o storeId correto
+            await initializeAppContent(storeId);
+        }
     });
-}
+});
+
 
 window.addEventListener('popstate', (event) => {
     // 1. Verifica o Provador
