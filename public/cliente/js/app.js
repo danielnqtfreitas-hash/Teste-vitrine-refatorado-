@@ -23,96 +23,78 @@ import {
 import { addToCart, checkoutWhatsApp, updateCartUI, updateCartTotals, goToStep1, goToStep2, toggleAddressFields, modQty, alertaEstoquePreso } from './cart.js';
 
 // --- 1. INICIALIZAÇÃO E BLINDAGEM DE ROTA ---
+
 document.addEventListener('DOMContentLoaded', async () => {
     const urlParams = new URLSearchParams(window.location.search);
     const pathSegments = window.location.pathname.split('/');
     
-    // 1. CAPTURA INTELIGENTE DO ID (Aceita /dandan ou ?id=dandan)
     let storeId = urlParams.get('id') || 
-                  (pathSegments[1] && !["index.html", "cliente", "api", ""].includes(pathSegments[1]) ? pathSegments[1] : null) || 
+                  (pathSegments[1] && pathSegments[1] !== "index.html" ? pathSegments[1] : null) || 
                   localStorage.getItem('last_store_id');
     
-    // Fallback de segurança para não ficar sem ID
     if (!storeId || ["index.html", "undefined", "null", ""].includes(storeId)) {
         storeId = "admin"; 
     }
 
-    // Salva a última loja visitada
     localStorage.setItem('last_store_id', storeId);
 
-    // --- REMOVIDO: O bloco que forçava o ?id= na URL foi retirado para permitir o link limpo ---
+    if (!urlParams.get('id')) {
+        const newUrl = `${window.location.protocol}//${window.location.host}${window.location.pathname}?id=${storeId}`;
+        window.history.replaceState({ path: newUrl }, '', newUrl);
+    }
 
-   // --- 2. BLOCO DE SINCRONIZAÇÃO DE SESSÃO (Mantido integralmente) ---
+   // --- BLOCO DE SINCRONIZAÇÃO DE SESSÃO CORRIGIDO ---
     const activeSession = localStorage.getItem('active_store_session');
     
     if (activeSession && activeSession !== storeId) {
-        // Se mudou de loja, limpamos o estado em memória para evitar vazamento de dados
+        // Se mudou de loja, limpamos o carrinho que está na MEMÓRIA 
+        // para não vazar itens da loja anterior enquanto a nova carrega
         state.cart = []; 
         state.favorites = [];
+        
+        // Opcional: Se você quiser deletar permanentemente o carrinho da loja anterior 
+        // do celular do cliente quando ele muda de loja, descomente a linha abaixo:
+        // localStorage.removeItem(`cart_${activeSession}`);
     }
     
-    // Atualiza a sessão ativa
+    // Atualiza a sessão ativa para a nova loja
     localStorage.setItem('active_store_session', storeId);
 
-    // 3. CARREGAMENTO DE DADOS ESPECÍFICOS
+    // Agora sim, carregamos os dados específicos da loja atual
     setStoreId(storeId);
-    loadCart();      // Busca no localStorage cart_IDDALOJA
-    loadFavorites(); // Busca no localStorage favs_IDDALOJA
+    loadCart();      // Isso vai buscar no localStorage a chave cart_IDDALOJA
+    loadFavorites(); // Isso vai buscar no localStorage a chave favs_IDDALOJA
 
-    // Atualiza os badges da barra inferior
+    // Atualiza os badges da barra inferior imediatamente após carregar
     if (window.updateNavigationBadges) {
         window.updateNavigationBadges();
     }
 
-    // 4. LÓGICA DO BOTÃO INÍCIO (Mantida integralmente)
-    const btnInicio = document.getElementById('navInicio') || document.querySelector('a[href="#inicio"]');
+    // Localiza o botão de início (ajusta o ID se necessário conforme o teu HTML)
+const btnInicio = document.getElementById('navInicio') || document.querySelector('a[href="#inicio"]');
 
-    if (btnInicio) {
-        btnInicio.addEventListener('click', (e) => {
-            e.preventDefault();
-            
-            // Fecha modais e drawers
-            closeFilterDrawer();
-            closeModalDetails();
+if (btnInicio) {
+    btnInicio.addEventListener('click', (e) => {
+        e.preventDefault();
+        
+        // 1. Fecha qualquer modal ou drawer que esteja aberto
+        closeFilterDrawer();
+        closeModalDetails();
 
-            // Reseta filtros
-            resetAllFilters(); 
+        // 2. Reseta todos os filtros e estados de favoritos
+        resetAllFilters(); 
 
-            // Controla visibilidade das seções
-            document.getElementById('catalogSection')?.classList.remove('hidden');
-            document.getElementById('cartSection')?.classList.add('hidden');
-            document.getElementById('profileSection')?.classList.add('hidden');
-            
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-            console.log("🏠 Vitrine reiniciada com sucesso!");
-        });
-    }
-
-    // 5. ANALYTICS & BOT CHECK (Importante: adicione aqui para não perder as estatísticas)
-    const isBot = isBotLikely();
-    if (!isBot && urlParams.get('source') !== 'internal') {
-        try {
-            const batch = writeBatch(db);
-            const statsRef = doc(db, 'store_stats', storeId);
-            batch.set(statsRef, { 
-                visits: increment(1), 
-                last_visit: serverTimestamp() 
-            }, { merge: true });
-            await batch.commit();
-        } catch (e) { console.warn("Analytics skip"); }
-    }
-
-    // 6. AUTENTICAÇÃO (Sua lógica original para carregar o conteúdo)
-    onAuthStateChanged(auth, async (user) => {
-        if (!user) {
-            await signInAnonymously(auth);
-        } else {
-            state.user = user;
-            await initializeAppContent(storeId);
-        }
+        // 3. Garante que as secções de Carrinho ou Perfil fiquem escondidas
+        document.getElementById('catalogSection')?.classList.remove('hidden');
+        document.getElementById('cartSection')?.classList.add('hidden');
+        document.getElementById('profileSection')?.classList.add('hidden');
+        
+        // 4. Feedback visual: volta ao topo suavemente
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        console.log("🏠 Vitrine reiniciada com sucesso!");
     });
-});
-
+}
 
 window.addEventListener('popstate', (event) => {
     // 1. Verifica o Provador
@@ -594,5 +576,4 @@ window.addToCart = addToCart;
 window.showToast = showToast;
 window.toggleFavorite = toggleFavorite;
 window.openProductModal = openProductModal;
-
 
