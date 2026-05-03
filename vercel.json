@@ -2,12 +2,16 @@
   "version": 2,
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "/server.js"
+      "source": "/api/:path*",
+      "destination": "/api/:path*"
     },
     {
-      "source": "/(.*)",
-      "destination": "/public/$1"
+      "source": "/cliente/:path*",
+      "destination": "/cliente/:path*"
+    },
+    {
+      "source": "/:lojaId",
+      "destination": "/cliente/?id=:lojaId"
     }
   ]
 }
