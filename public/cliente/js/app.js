@@ -4,23 +4,23 @@
  * =========================================================================
  */
 
-// AJUSTE DE CAMINHO: Agora apontando para a sua pasta 'js' dentro de 'cliente'
 import { 
     auth, signInAnonymously, onAuthStateChanged, db, doc, getDocFromServer, getDocs, getDocsFromServer, collection, 
     writeBatch, increment, serverTimestamp, setDoc, hideLoader, showToast, sanitizeTerm, isBotLikely 
-} from '/cliente/js/config.js';
+} from './config.js';
 
-import { state, setStoreId, loadFavorites, loadCart } from '/cliente/js/state.js';
-import { RestauranteTheme } from '/cliente/js/theme-restaurante.js';
+import { state, setStoreId, loadFavorites, loadCart } from './state.js';
+
+import { RestauranteTheme } from './theme-restaurante.js';
 
 import { 
     renderCatalog, renderHeroCarousel, renderCategoryTabs, populateFilterOptions, updateFavoritesUI, 
     openProductModal, closeModalDetails, updateFilterBadge, resetAllFilters, handleSearchInput, 
     openFilterDrawer, closeFilterDrawer, openImageZoom, closeImageZoom, setupSwipes, adjustDetailQty, 
     shareProduct, openDeliveryModal, toggleFavoritesView, setDetailImage, mkProductCard , checkStoreStatus
-} from '/cliente/js/ui.js';
+} from './ui.js';
 
-import { addToCart, checkoutWhatsApp, updateCartUI, updateCartTotals, goToStep1, goToStep2, toggleAddressFields, modQty, alertaEstoquePreso } from '/cliente/js/cart.js';
+import { addToCart, checkoutWhatsApp, updateCartUI, updateCartTotals, goToStep1, goToStep2, toggleAddressFields, modQty, alertaEstoquePreso } from './cart.js';
 
 // --- 1. INICIALIZAÇÃO E BLINDAGEM DE ROTA ---
 
@@ -28,74 +28,73 @@ document.addEventListener('DOMContentLoaded', async () => {
     const urlParams = new URLSearchParams(window.location.search);
     const pathSegments = window.location.pathname.split('/');
     
-    // Captura Inteligente do ID: Aceita /dandan ou ?id=dandan
     let storeId = urlParams.get('id') || 
-                  (pathSegments[1] && !["index.html", "cliente", "api", ""].includes(pathSegments[1]) ? pathSegments[1] : null) || 
+                  (pathSegments[1] && pathSegments[1] !== "index.html" ? pathSegments[1] : null) || 
                   localStorage.getItem('last_store_id');
     
-    // Fallback de segurança
-    if (!storeId || ["undefined", "null", ""].includes(storeId)) {
+    if (!storeId || ["index.html", "undefined", "null", ""].includes(storeId)) {
         storeId = "admin"; 
     }
 
     localStorage.setItem('last_store_id', storeId);
 
-    // --- BLOCO DE SINCRONIZAÇÃO DE SESSÃO (Mantido integralmente) ---
+    if (!urlParams.get('id')) {
+        const newUrl = `${window.location.protocol}//${window.location.host}${window.location.pathname}?id=${storeId}`;
+        window.history.replaceState({ path: newUrl }, '', newUrl);
+    }
+
+   // --- BLOCO DE SINCRONIZAÇÃO DE SESSÃO CORRIGIDO ---
     const activeSession = localStorage.getItem('active_store_session');
+    
     if (activeSession && activeSession !== storeId) {
+        // Se mudou de loja, limpamos o carrinho que está na MEMÓRIA 
+        // para não vazar itens da loja anterior enquanto a nova carrega
         state.cart = []; 
         state.favorites = [];
+        
+        // Opcional: Se você quiser deletar permanentemente o carrinho da loja anterior 
+        // do celular do cliente quando ele muda de loja, descomente a linha abaixo:
+        // localStorage.removeItem(`cart_${activeSession}`);
     }
+    
+    // Atualiza a sessão ativa para a nova loja
     localStorage.setItem('active_store_session', storeId);
 
-    // Inicializa motor da loja
+    // Agora sim, carregamos os dados específicos da loja atual
     setStoreId(storeId);
-    loadCart();      
-    loadFavorites(); 
+    loadCart();      // Isso vai buscar no localStorage a chave cart_IDDALOJA
+    loadFavorites(); // Isso vai buscar no localStorage a chave favs_IDDALOJA
 
+    // Atualiza os badges da barra inferior imediatamente após carregar
     if (window.updateNavigationBadges) {
         window.updateNavigationBadges();
     }
 
-    // --- LÓGICA DO BOTÃO INÍCIO (Mantido integralmente) ---
-    const btnInicio = document.getElementById('navInicio') || document.querySelector('a[href="#inicio"]');
-    if (btnInicio) {
-        btnInicio.addEventListener('click', (e) => {
-            e.preventDefault();
-            if (typeof closeFilterDrawer === 'function') closeFilterDrawer();
-            if (typeof closeModalDetails === 'function') closeModalDetails();
-            if (typeof resetAllFilters === 'function') resetAllFilters(); 
-            document.getElementById('catalogSection')?.classList.remove('hidden');
-            document.getElementById('cartSection')?.classList.add('hidden');
-            document.getElementById('profileSection')?.classList.add('hidden');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        });
-    }
+    // Localiza o botão de início (ajusta o ID se necessário conforme o teu HTML)
+const btnInicio = document.getElementById('navInicio') || document.querySelector('a[href="#inicio"]');
 
-    // --- ANALYTICS & BOT CHECK (Mantido integralmente) ---
-    const isBot = isBotLikely();
-    if (!isBot && urlParams.get('source') !== 'internal') {
-        try {
-            const batch = writeBatch(db);
-            const statsRef = doc(db, 'store_stats', storeId);
-            batch.set(statsRef, { 
-                visits: increment(1), 
-                last_visit: serverTimestamp() 
-            }, { merge: true });
-            await batch.commit();
-        } catch (e) { console.warn("Analytics skip"); }
-    }
+if (btnInicio) {
+    btnInicio.addEventListener('click', (e) => {
+        e.preventDefault();
+        
+        // 1. Fecha qualquer modal ou drawer que esteja aberto
+        closeFilterDrawer();
+        closeModalDetails();
 
-    // --- AUTENTICAÇÃO E CARREGAMENTO ---
-    onAuthStateChanged(auth, async (user) => {
-        if (!user) {
-            await signInAnonymously(auth);
-        } else {
-            state.user = user;
-            await initializeAppContent(storeId);
-        }
+        // 2. Reseta todos os filtros e estados de favoritos
+        resetAllFilters(); 
+
+        // 3. Garante que as secções de Carrinho ou Perfil fiquem escondidas
+        document.getElementById('catalogSection')?.classList.remove('hidden');
+        document.getElementById('cartSection')?.classList.add('hidden');
+        document.getElementById('profileSection')?.classList.add('hidden');
+        
+        // 4. Feedback visual: volta ao topo suavemente
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        console.log("🏠 Vitrine reiniciada com sucesso!");
     });
-});
+}
 
 window.addEventListener('popstate', (event) => {
     // 1. Verifica o Provador
@@ -577,4 +576,3 @@ window.addToCart = addToCart;
 window.showToast = showToast;
 window.toggleFavorite = toggleFavorite;
 window.openProductModal = openProductModal;
-
