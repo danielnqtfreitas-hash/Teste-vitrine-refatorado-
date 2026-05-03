@@ -14,19 +14,11 @@
       "source": "/assets/:path*",
       "destination": "/cliente/assets/:path*"
     },
+
+    /* 🔥 ROTA DINÂMICA - SEMPRE POR ÚLTIMO */
     {
       "source": "/:lojaId",
       "destination": "/cliente/index.html"
-    }
-  ],
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        { "key": "Access-Control-Allow-Origin", "value": "*" },
-        { "key": "Access-Control-Allow-Methods", "value": "GET,OPTIONS,PATCH,DELETE,POST,PUT" },
-        { "key": "Cache-Control", "value": "public, max-age=3600, s-maxage=3600, stale-while-revalidate=600" }
-      ]
     }
   ]
 }
