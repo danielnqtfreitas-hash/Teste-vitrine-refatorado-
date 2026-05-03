@@ -28,67 +28,56 @@ document.addEventListener('DOMContentLoaded', async () => {
     const urlParams = new URLSearchParams(window.location.search);
     const pathSegments = window.location.pathname.split('/');
     
-    // CAPTURA DO ID: 1. Busca no ?id= | 2. Busca na URL limpa /dandan | 3. Busca no Cache
+    // CAPTURA INTELIGENTE: Tenta ?id= OU pega o nome após a barra /
     let storeId = urlParams.get('id') || 
                   (pathSegments[1] && !["index.html", "cliente", "api", ""].includes(pathSegments[1]) ? pathSegments[1] : null) || 
                   localStorage.getItem('last_store_id');
     
-    // Proteção contra valores nulos ou indefinidos
+    // Fallback de segurança
     if (!storeId || ["undefined", "null", ""].includes(storeId)) {
         storeId = "admin"; 
     }
 
     localStorage.setItem('last_store_id', storeId);
 
-    // --- BLOCO DE SINCRONIZAÇÃO DE SESSÃO (Sua lógica original mantida) ---
+    // --- BLOCO DE SINCRONIZAÇÃO DE SESSÃO (Mantido integralmente) ---
     const activeSession = localStorage.getItem('active_store_session');
     
     if (activeSession && activeSession !== storeId) {
-        // Se mudou de loja, limpa o estado na memória
         state.cart = []; 
         state.favorites = [];
     }
     
-    // Atualiza a sessão ativa para a nova loja
     localStorage.setItem('active_store_session', storeId);
 
-    // Carregamento de dados específicos da loja atual
+    // Inicializa dados
     setStoreId(storeId);
     loadCart();      
     loadFavorites(); 
 
-    // Atualiza os badges da barra inferior
     if (window.updateNavigationBadges) {
         window.updateNavigationBadges();
     }
 
-    // --- LÓGICA DO BOTÃO INÍCIO (Sua lógica original mantida) ---
+    // --- LÓGICA DO BOTÃO INÍCIO (Mantido integralmente) ---
     const btnInicio = document.getElementById('navInicio') || document.querySelector('a[href="#inicio"]');
-
     if (btnInicio) {
         btnInicio.addEventListener('click', (e) => {
             e.preventDefault();
-            
-            // Fecha modais e drawers (usando suas funções existentes)
             if (typeof closeFilterDrawer === 'function') closeFilterDrawer();
             if (typeof closeModalDetails === 'function') closeModalDetails();
             if (typeof resetAllFilters === 'function') resetAllFilters(); 
-
-            // Garante visibilidade das seções
             document.getElementById('catalogSection')?.classList.remove('hidden');
             document.getElementById('cartSection')?.classList.add('hidden');
             document.getElementById('profileSection')?.classList.add('hidden');
-            
             window.scrollTo({ top: 0, behavior: 'smooth' });
             console.log("🏠 Vitrine reiniciada com sucesso!");
         });
     }
 
-    // --- ANALYTICS & BOT CHECK (Sua lógica original mantida) ---
+    // --- ANALYTICS (Mantido integralmente) ---
     const isBot = isBotLikely();
-    const isInternal = urlParams.get('source') === 'internal';
-
-    if (!isBot && !isInternal) {
+    if (!isBot && urlParams.get('source') !== 'internal') {
         try {
             const batch = writeBatch(db);
             const statsRef = doc(db, 'store_stats', storeId);
@@ -97,22 +86,20 @@ document.addEventListener('DOMContentLoaded', async () => {
                 last_visit: serverTimestamp() 
             }, { merge: true });
             await batch.commit();
-        } catch (e) {
-            console.warn("Analytics bypass");
-        }
+        } catch (e) { console.warn("Analytics skip"); }
     }
 
-    // --- AUTENTICAÇÃO E CARREGAMENTO DE CONTEÚDO ---
+    // --- AUTENTICAÇÃO E CARREGAMENTO ---
     onAuthStateChanged(auth, async (user) => {
         if (!user) {
             await signInAnonymously(auth);
         } else {
             state.user = user;
-            // Aqui ele chama o seu backend (vitrine.js) com o storeId correto
+            // CHAMA O BACKEND (vitrine.js) COM O ID CAPTURADO
             await initializeAppContent(storeId);
         }
     });
-});
+}); 
 
 
 window.addEventListener('popstate', (event) => {
