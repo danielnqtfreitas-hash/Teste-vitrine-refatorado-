@@ -990,18 +990,22 @@ function updateStoreUI(isOpen, message, banner, buttons) {
     }
 }
 
-function checkProvadorVisibility() {
+export function checkProvadorVisibility() {
     const hasProvadorItems = state.allProducts.some(p => 
         p.posicaoProvador === 'superior' || p.posicaoProvador === 'inferior'
     );
 
-    const btnProvador = document.getElementById('btnOpenProvador'); // Use o ID real do seu botão
-    if (btnProvador) {
-        if (hasProvadorItems) {
-            btnProvador.classList.remove('hidden');
-        } else {
-            btnProvador.classList.add('hidden');
-        }
+    const btnProvador = document.getElementById('btnOpenProvador');
+    const btnBairros = document.getElementById('btnOpenBairros');
+
+    if (hasProvadorItems) {
+        // Se tem provador: mostra provador e esconde bairros
+        if (btnProvador) btnProvador.classList.remove('hidden');
+        if (btnBairros) btnBairros.classList.add('hidden');
+    } else {
+        // Se não tem: esconde provador e mostra bairros
+        if (btnProvador) btnProvador.classList.add('hidden');
+        if (btnBairros) btnBairros.classList.remove('hidden');
     }
 }
 
