@@ -989,3 +989,19 @@ function updateStoreUI(isOpen, message, banner, buttons) {
         });
     }
 }
+
+function checkProvadorVisibility() {
+    const hasProvadorItems = state.allProducts.some(p => 
+        p.posicaoProvador === 'superior' || p.posicaoProvador === 'inferior'
+    );
+
+    const btnProvador = document.getElementById('btnOpenProvador'); // Use o ID real do seu botão
+    if (btnProvador) {
+        if (hasProvadorItems) {
+            btnProvador.classList.remove('hidden');
+        } else {
+            btnProvador.classList.add('hidden');
+        }
+    }
+}
+
