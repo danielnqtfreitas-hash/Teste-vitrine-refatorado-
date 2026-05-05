@@ -999,13 +999,18 @@ export function checkProvadorVisibility() {
     const btnBairros = document.getElementById('btnOpenBairros');
 
     if (hasProvadorItems) {
-        // Se tem provador: mostra provador e esconde bairros
-        if (btnProvador) btnProvador.classList.remove('hidden');
+        // Cenário: Tem roupas -> Foca no Provador
+        if (btnProvador) {
+            btnProvador.classList.remove('hidden');
+            btnProvador.onclick = () => window.openProvador(); // Garante a função do provador
+        }
         if (btnBairros) btnBairros.classList.add('hidden');
     } else {
-        // Se não tem: esconde provador e mostra bairros
+        // Cenário: Não tem roupas -> Volta para Bairros de Entrega
         if (btnProvador) btnProvador.classList.add('hidden');
-        if (btnBairros) btnBairros.classList.remove('hidden');
+        if (btnBairros) {
+            btnBairros.classList.remove('hidden');
+            btnBairros.onclick = () => openDeliveryModal(); // Garante a função original de bairros
+        }
     }
 }
-
