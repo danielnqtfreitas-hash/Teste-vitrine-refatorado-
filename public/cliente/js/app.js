@@ -174,24 +174,28 @@ try {
     });
 
 // --- LÓGICA DE TROCA DO BOTÃO (PROVADOR VS BAIRROS) ---
-    const temProdutosProvador = state.allProducts.some(p => 
+     const temProdutosProvador = state.allProducts.some(p => 
         p.posicaoProvador === 'superior' || p.posicaoProvador === 'inferior'
     );
 
     const btnProvador = document.getElementById('btnOpenProvador');
-    const btnBairros = document.getElementById('btnOpenBairros'); // Certifique-se que este ID existe no seu HTML
+    const btnBairros = document.getElementById('btnOpenBairros');
 
     if (btnProvador && btnBairros) {
         if (temProdutosProvador) {
-            // Caso tenha itens de provador: Mostra Provador, Esconde Bairros
             btnProvador.classList.remove('hidden');
             btnBairros.classList.add('hidden');
         } else {
-            // Caso NÃO tenha itens: Esconde Provador, Mostra Bairros
             btnProvador.classList.add('hidden');
             btnBairros.classList.remove('hidden');
         }
     }
+
+    // --- ADICIONE ESSA LINHA AQUI ---
+    // Isso ativa os cliques nos dois botões (Bairros e Provador)
+    if (typeof setupBotoesAlternados === 'function') {
+        setupBotoesAlternados();
+    } 
     
 // --- ATIVAÇÃO DO MODO DELIVERY ---
 if (state.storeConfigGlobal && state.storeConfigGlobal.tipoNegocio === 'restaurante') {
