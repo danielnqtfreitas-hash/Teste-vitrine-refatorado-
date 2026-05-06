@@ -160,10 +160,10 @@ export async function renderCatalog() {
 
     // 2. Filtra produtos (Mantendo toda a sua lógica de SKUs, Variações e Atributos)
     let filtered = state.allProducts.filter(p => {
-        // Filtro de Favoritos[cite: 6]
+        // Filtro de Favoritos
         if(state.isFavoritesView) return state.favorites.includes(p.id);
         
-        // Filtro de Busca (Nome e SKU)[cite: 6]
+        // Filtro de Busca (Nome e SKU)
         if(state.filters.search) {
             const searchLower = state.filters.search.toLowerCase();
             const nameMatch = p.name?.toLowerCase().includes(searchLower);
@@ -171,16 +171,16 @@ export async function renderCatalog() {
             if (!nameMatch && !skuMatch) return false;
         }
 
-        // Filtro de Categoria e Ofertas[cite: 6]
+        // Filtro de Categoria e Ofertas
         if(state.filters.category === 'offers') { 
             if(!(p.promoValue && p.promoValue < p.value)) return false; 
         } else if(state.filters.category && p.category !== state.filters.category) return false;
 
-        // Filtro de Preço dinâmico[cite: 6]
+        // Filtro de Preço dinâmico
         const price = (p.promoValue && p.promoValue < p.value) ? p.promoValue : p.value;
         if(state.filters.maxPrice && price > state.filters.maxPrice) return false;
 
-        // Filtros Complexos de Tamanhos e Cores (Variações)[cite: 6]
+        // Filtros Complexos de Tamanhos e Cores (Variações)
         if(state.filters.sizes.length > 0 || state.filters.colors.length > 0) {
             const selectedSizesLower = state.filters.sizes.map(s => s.toLowerCase());
             const selectedColorsLower = state.filters.colors.map(c => c.toLowerCase());
@@ -202,13 +202,13 @@ export async function renderCatalog() {
         return true;
     });
 
-    // 3. Exibe mensagem de vazio se nenhum produto passar pelos filtros[cite: 6]
+    // 3. Exibe mensagem de vazio se nenhum produto passar pelos filtros
     if (filtered.length === 0) {
         empty.classList.remove('hidden');
         return;
     }
 
-    // 4. Agrupa por Categoria (Lógica de agrupamento preservada)[cite: 6]
+    // 4. Agrupa por Categoria (Lógica de agrupamento preservada)
     const groups = {};
     const hasActiveFilters = state.isFavoritesView || state.filters.search || 
                            (state.filters.category && state.filters.category !== 'offers') || 
@@ -225,14 +225,12 @@ export async function renderCatalog() {
         });
     }
 
-    // 5. Renderiza os Grupos com Detecção de Layout (Lista vs Grade)
-    const isRestaurante = state.storeConfigGlobal?.tipoNegocio === 'restaurante';[cite: 5, 6]
-
+    // 5. Renderiza os Grupos e Seções[cite: 5]
     Object.keys(groups).sort().forEach(key => {
         const section = document.createElement('section');
         section.className = "animate-fade-in mb-8";
         
-        // Cabeçalho da Categoria[cite: 6]
+        // Cabeçalho da Categoria
         section.innerHTML = `
             <h3 class="font-bold text-slate-800 mb-4 px-1 text-lg flex items-center gap-2">
                 <div class="w-1 h-5 bg-primary rounded-full"></div> 
@@ -241,36 +239,23 @@ export async function renderCatalog() {
         `;
         
         const grid = document.createElement('div');
-
-        // LOGICA DE DESIGN DINÂMICO[cite: 6]
-        if (isRestaurante) {
-            // Estilo Delivery: Itens empilhados em lista com linha divisória[cite: 6]
-            grid.className = "flex flex-col bg-white divide-y divide-gray-100 border-t border-b border-gray-100 md:border-none md:rounded-2xl overflow-hidden"; 
-        } else {
-            // Estilo Varejo: Grade de produtos lado a lado[cite: 6]
-            grid.className = "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-5"; 
-        }
+        grid.className = "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-5";
         
-        // Renderiza cada card de produto chamando a função mkProductCard já existente[cite: 6]
+        // Renderiza cada card de produto
         groups[key].forEach(p => {
-            grid.innerHTML += mkProductCard(p);[cite: 6]
+            grid.innerHTML += mkProductCard(p);
         });
         
         section.appendChild(grid); 
         container.appendChild(section);
     });
 
-    // 6. Funções Específicas de Tema e Interface[cite: 5, 6]
-    if (isRestaurante) {
+    // 6. Funções Específicas de Tema e Interface[cite: 5]
+    if (state.storeConfigGlobal?.tipoNegocio === 'restaurante') {
         if (typeof RestauranteTheme !== 'undefined') {
-            RestauranteTheme.renderFloatingCart();[cite: 5]
+            RestauranteTheme.renderFloatingCart();
         }
     }
-    
-    // Reinicializa ícones do Lucide e contagens regressivas[cite: 4, 5, 6]
-    if(window.lucide) window.lucide.createIcons();
-    if(typeof initGlobalCountdowns === 'function') initGlobalCountdowns(); 
-}
     
     // Reinicializa componentes globais
     if(window.lucide) window.lucide.createIcons();
