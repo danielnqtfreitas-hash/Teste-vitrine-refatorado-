@@ -149,33 +149,35 @@ async function initFlow() {
         // --- 1. BLOCO DE SINCRONIZAÇÃO DE VERSÃO (GATEKEEPER) ---
         const configRef = doc(db, "stores", state.STORE_ID, "config", "store");
         
-        // CRUCIAL: getDocFromServer ignora o cache persistente do Firebase e traz o dado real
+        // getDocFromServer ignora o cache do Firebase e traz o dado real do banco
         const serverSnap = await getDocFromServer(configRef);
         const serverData = serverSnap.exists() ? serverSnap.data() : {};
         
-        const serverLastUpdate = serverData.lastUpdate || 0;
-        const localLastUpdate = localStorage.getItem(`lastUpdate_${state.STORE_ID}`);
+        // Forçamos a conversão para número para evitar erro de string vs number[cite: 1]
+        const serverLastUpdate = Number(serverData.lastUpdate) || 0;
+        const localLastUpdate = Number(localStorage.getItem(`lastUpdate_${state.STORE_ID}`)) || 0;
         const cachedProducts = localStorage.getItem(`cache_produtos_${state.STORE_ID}`);
+
+        console.log(`[Cache Debug] Servidor: ${serverLastUpdate} | Local: ${localLastUpdate}`);
 
         let data;
 
-        // LÓGICA DE DECISÃO: Só faz o fetch pesado se o timestamp do servidor for diferente
-        if (cachedProducts && localLastUpdate && Number(localLastUpdate) === serverLastUpdate) {
+        // Só usamos o cache se os timestamps forem IDÊNTICOS e o cache existir
+        if (cachedProducts && localLastUpdate !== 0 && localLastUpdate === serverLastUpdate) {
             console.log("🚀 Cache validado. Carregando dados locais...");
             data = JSON.parse(cachedProducts);
         } else {
-            console.log("📡 Versão nova ou cache vazio. Baixando via API...");
+            console.log("📡 Versão nova ou divergente. Baixando via API...");
             
-            // O parâmetro ?v= força o navegador e a CDN a ignorarem caches antigos da URL
+            // O parâmetro ?v= ajuda a limpar caches de rede (CDN/Browser)[cite: 1]
             const response = await fetch(`/api/produtos/${state.STORE_ID}?v=${serverLastUpdate}`);
             if (!response.ok) throw new Error("Loja não encontrada na API");
             data = await response.json(); 
 
-            // Atualiza o cache local para a próxima visita[cite: 6]
+            // Atualiza o cache local com os novos dados e o novo timestamp[cite: 1]
             localStorage.setItem(`cache_produtos_${state.STORE_ID}`, JSON.stringify(data));
-            localStorage.setItem(`lastUpdate_${state.STORE_ID}`, serverLastUpdate);
+            localStorage.setItem(`lastUpdate_${state.STORE_ID}`, serverLastUpdate.toString());
         }
-
         updatePremiumLoader(40); 
         state.storeConfigGlobal = data.config;
 
