@@ -630,31 +630,32 @@ window.updateBottomNavAction = function() {
     if (!btnAction || !iconElement || !textElement) return;
 
     if (hasProvador) {
-        // --- MODO PROVADOR (Moda) ---
-        textElement.innerText = "Provador";
-        btnAction.onclick = () => window.openProvador();
-        
-        // Estilo visual padrão
-        iconCont.className = "bg-slate-100 p-2 rounded-xl transition-all";
-        iconCont.style.backgroundColor = ""; // Remove cor primária se houver
-        
-        // Troca o ícone para 'shirt'
-        iconElement.setAttribute('data-lucide', 'shirt');
-        iconElement.className = "w-5 h-5 stroke-[1.5] text-slate-700";
-    } else {
-        // --- MODO ENTREGA (Geral/Restaurante) ---[cite: 1, 6]
-        textElement.innerText = "Entrega";
-        btnAction.onclick = () => window.openDeliveryModal();
-        
-        // Estilo visual com a cor da loja[cite: 5]
-        const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--color-primary');
-        iconCont.style.backgroundColor = primaryColor;
-        iconCont.className = "p-2 rounded-xl shadow-sm text-white transition-all";
-        
-        // Troca o ícone para 'truck'[cite: 6]
-        iconElement.setAttribute('data-lucide', 'truck');
-        iconElement.className = "w-5 h-5 stroke-[1.5]";
-    }
+      // --- MODO PROVADOR (Moda) ---
+    textElement.innerText = "Provador";
+    btnAction.onclick = () => window.openProvador();
+    
+    iconCont.className = "bg-slate-100 p-2 rounded-xl transition-all";
+    iconCont.style.backgroundColor = ""; 
+    
+    // Troca o ícone para 'shirt'
+    iconElement.setAttribute('data-lucide', 'shirt');
+    // CORREÇÃO: Usar setAttribute em vez de .className para SVGs
+    iconElement.setAttribute('class', "w-5 h-5 stroke-[1.5] text-slate-700"); 
+
+} else {
+    // --- MODO ENTREGA (Geral/Restaurante) ---
+    textElement.innerText = "Entrega";
+    btnAction.onclick = () => window.openDeliveryModal();
+    
+    const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--color-primary');
+    iconCont.style.backgroundColor = primaryColor;
+    iconCont.className = "p-2 rounded-xl shadow-sm text-white transition-all";
+    
+    // Troca o ícone para 'truck'
+    iconElement.setAttribute('data-lucide', 'truck');
+    // CORREÇÃO: Usar setAttribute em vez de .className para SVGs
+    iconElement.setAttribute('class', "w-5 h-5 stroke-[1.5]"); 
+}
 
     // CRUCIAL: Comando para o Lucide desenhar o novo ícone na tela[cite: 4, 5]
     if (window.lucide) {
