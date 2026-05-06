@@ -146,14 +146,14 @@ async function initFlow() {
     try {
         updatePremiumLoader(10); 
 
-        // --- 1. BLOCO DE SINCRONIZAÇÃO DE VERSÃO (GATEKEEPER) ---
+        // --- 1. BLOCO DE SINCRONIZAÇÃO DE VERSÃO (CORRIGIDO) ---
         const configRef = doc(db, "stores", state.STORE_ID, "config", "store");
         
-        // getDocFromServer ignora o cache do Firebase e traz o dado real do banco
+        // Buscamos o dado real do servidor para garantir que o lastUpdate seja o mais recente
         const serverSnap = await getDocFromServer(configRef);
         const serverData = serverSnap.exists() ? serverSnap.data() : {};
         
-        // Forçamos a conversão para número para evitar erro de string vs number[cite: 1]
+        // Converte o int64 do Firestore para Number do JS para comparação segura
         const serverLastUpdate = Number(serverData.lastUpdate) || 0;
         const localLastUpdate = Number(localStorage.getItem(`lastUpdate_${state.STORE_ID}`)) || 0;
         const cachedProducts = localStorage.getItem(`cache_produtos_${state.STORE_ID}`);
@@ -162,42 +162,43 @@ async function initFlow() {
 
         let data;
 
-        // Só usamos o cache se os timestamps forem IDÊNTICOS e o cache existir
-        if (cachedProducts && localLastUpdate !== 0 && localLastUpdate === serverLastUpdate) {
+        // LÓGICA: Só usa cache se o timestamp local for IGUAL ao do servidor e maior que zero
+        if (cachedProducts && localLastUpdate > 0 && localLastUpdate === serverLastUpdate) {
             console.log("🚀 Cache validado. Carregando dados locais...");
             data = JSON.parse(cachedProducts);
         } else {
             console.log("📡 Versão nova ou divergente. Baixando via API...");
             
-            // O parâmetro ?v= ajuda a limpar caches de rede (CDN/Browser)[cite: 1]
-            const response = await fetch(`/api/produtos/${state.STORE_ID}?v=${serverLastUpdate}`);
+            // Adicionamos o timestamp na URL para evitar que o navegador sirva um cache antigo da própria API[cite: 1]
+            const response = await fetch(`/api/produtos/${state.STORE_ID}?v=${serverLastUpdate}&t=${Date.now()}`);
             if (!response.ok) throw new Error("Loja não encontrada na API");
+            
             data = await response.json(); 
 
-            // Atualiza o cache local com os novos dados e o novo timestamp[cite: 1]
+            // Atualiza o localStorage com os novos dados e o novo timestamp para a próxima conferência[cite: 1]
             localStorage.setItem(`cache_produtos_${state.STORE_ID}`, JSON.stringify(data));
             localStorage.setItem(`lastUpdate_${state.STORE_ID}`, serverLastUpdate.toString());
         }
+
         updatePremiumLoader(40); 
         state.storeConfigGlobal = data.config;
 
         // --- 2. BLOCO DE SINCRONIZAÇÃO DE VISUALIZAÇÕES (ANALYTICS) ---
         try {
             const analyticsRef = doc(db, "stores", state.STORE_ID, "analytics", "product_views");
-            // Buscamos as views sempre do servidor para estarem atualizadas[cite: 6]
             const analyticsSnap = await getDocFromServer(analyticsRef).catch(() => null); 
             
             const viewsData = (analyticsSnap && analyticsSnap.exists()) ? analyticsSnap.data() : {};
             const statsMap = viewsData.stats || {};
 
-            // Monta o array global mesclando produtos (cache/API) com as views reais[cite: 6, 7]
+            // Mescla os produtos com as visualizações vindas do servidor
             state.allProducts = data.produtos.map(p => {
                 const productStats = statsMap[p.id]; 
                 const vCount = (productStats && typeof productStats.views === 'number') ? productStats.views : 0;
                 return { ...p, views: vCount };
             });
 
-            // --- LÓGICA DE INTERFACE: PROVADOR VS BAIRROS ---
+            // Lógica de interface (Provador vs Bairros)
             const temProdutosProvador = state.allProducts.some(p => 
                 p.posicaoProvador === 'superior' || p.posicaoProvador === 'inferior'
             );
@@ -219,9 +220,7 @@ async function initFlow() {
                 setupBotoesAlternados();
             } 
             
-            // --- ATIVAÇÃO DO MODO RESTAURANTE ---
             if (state.storeConfigGlobal && state.storeConfigGlobal.tipoNegocio === 'restaurante') {
-                console.log("Modo Restaurante Detectado.");
                 RestauranteTheme.setup(); 
             }
            
@@ -257,8 +256,7 @@ async function initFlow() {
         renderHeroCarousel(state.banners);
         renderCategoryTabs();
         
-        // Renderiza o catálogo (o ui.js agora limpa o container antes de desenhar)[cite: 6]
-        await renderCatalog();
+        await renderCatalog(); // O catálogo agora limpa o container antes de desenhar
         
         updatePremiumLoader(100);
         if (window.updateNavigationBadges) {
@@ -269,9 +267,8 @@ async function initFlow() {
 
     } catch (error) {
         console.error("❌ Erro fatal no initFlow:", error);
-        // Em caso de erro, limpa o timestamp para tentar recuperar no próximo refresh
         localStorage.removeItem(`lastUpdate_${state.STORE_ID}`);
-        const loader = document.getElementById('premium-loader');
+        const loader = document.getElementById('initialLoader');
         if(loader) loader.style.display = 'none';
     }
 }
