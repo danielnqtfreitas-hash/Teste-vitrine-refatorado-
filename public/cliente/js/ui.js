@@ -225,14 +225,15 @@ export async function renderCatalog() {
         });
     }
 
-    // 5. Renderiza os Grupos com Detecção de Layout (Lista vs Grade)
-    const isRestaurante = state.storeConfigGlobal?.tipoNegocio === 'restaurante';[cite: 5, 6]
+ // 5. Renderiza os Grupos com Detecção de Layout
+    // REMOVA AS CITAÇÕES DAQUI:
+    const isRestaurante = state.storeConfigGlobal?.tipoNegocio === 'restaurante';
 
     Object.keys(groups).sort().forEach(key => {
         const section = document.createElement('section');
         section.className = "animate-fade-in mb-8";
         
-        // Cabeçalho da Categoria[cite: 6]
+        // Cabeçalho da Categoria
         section.innerHTML = `
             <h3 class="font-bold text-slate-800 mb-4 px-1 text-lg flex items-center gap-2">
                 <div class="w-1 h-5 bg-primary rounded-full"></div> 
@@ -242,37 +243,27 @@ export async function renderCatalog() {
         
         const grid = document.createElement('div');
 
-        // LOGICA DE DESIGN DINÂMICO[cite: 6]
         if (isRestaurante) {
-            // Estilo Delivery: Itens empilhados em lista com linha divisória[cite: 6]
             grid.className = "flex flex-col bg-white divide-y divide-gray-100 border-t border-b border-gray-100 md:border-none md:rounded-2xl overflow-hidden"; 
         } else {
-            // Estilo Varejo: Grade de produtos lado a lado[cite: 6]
             grid.className = "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-5"; 
         }
         
-        // Renderiza cada card de produto chamando a função mkProductCard já existente[cite: 6]
         groups[key].forEach(p => {
-            grid.innerHTML += mkProductCard(p);[cite: 6]
+            grid.innerHTML += mkProductCard(p);
         });
         
         section.appendChild(grid); 
         container.appendChild(section);
     });
 
-    // 6. Funções Específicas de Tema e Interface[cite: 5, 6]
+    // 6. Funções Específicas de Tema
     if (isRestaurante) {
         if (typeof RestauranteTheme !== 'undefined') {
-            RestauranteTheme.renderFloatingCart();[cite: 5]
+            RestauranteTheme.renderFloatingCart();
         }
     }
     
-    // Reinicializa ícones do Lucide e contagens regressivas[cite: 4, 5, 6]
-    if(window.lucide) window.lucide.createIcons();
-    if(typeof initGlobalCountdowns === 'function') initGlobalCountdowns(); 
-}
-    
-    // Reinicializa componentes globais
     if(window.lucide) window.lucide.createIcons();
     if(typeof initGlobalCountdowns === 'function') initGlobalCountdowns(); 
 }
