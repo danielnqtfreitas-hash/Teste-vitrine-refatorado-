@@ -128,11 +128,20 @@ window.openProvador = function() {
         el.classList.add('active');
         updateUI();
     };
+   
+const render = () => {
+    // Adicionamos a checagem p.disponivelProvador === true
+    const tops = window.state.allProducts.filter(p => 
+        p.posicaoProvador === 'superior' && 
+        p.disponivelProvador === true && 
+        (filterCatTop === 'Todas' || p.category === filterCatTop)
+    );
 
-    const render = () => {
-        const tops = window.state.allProducts.filter(p => p.posicaoProvador === 'superior' && (filterCatTop === 'Todas' || p.category === filterCatTop));
-        const bots = window.state.allProducts.filter(p => p.posicaoProvador === 'inferior' && (filterCatBot === 'Todas' || p.category === filterCatBot));
-
+    const bots = window.state.allProducts.filter(p => 
+        p.posicaoProvador === 'inferior' && 
+        p.disponivelProvador === true && 
+        (filterCatBot === 'Todas' || p.category === filterCatBot)
+    );
 const makeHtml = (list) => list.map(p => {
     let gallery = [p.images[0], ...(p.variations || []).map(v => v.image)].filter(Boolean);
     gallery = [...new Set(gallery)];
