@@ -146,6 +146,25 @@ async function initFlow() {
     try {
         updatePremiumLoader(10); 
 
+        // --- NOVO BLOCO DE VERIFICAÇÃO DE CACHE ---
+        const configRef = doc(db, "stores", state.STORE_ID, "config", "store");
+        // getDocFromServer força a busca no Firebase, ignorando cache local do SDK
+        const serverSnap = await getDocFromServer(configRef);
+        const serverData = serverSnap.exists() ? serverSnap.data() : {};
+        
+        const localLastUpdate = localStorage.getItem(`lastUpdate_${state.STORE_ID}`);
+        const serverLastUpdate = serverData.lastUpdate || 0;
+
+        // Se o servidor for mais novo que o local, limpamos o cache de produtos
+        if (serverLastUpdate > Number(localLastUpdate)) {
+            console.log("🔄 Nova atualização detectada. Limpando cache...");
+            // Se você usa uma chave específica para o cache de produtos no localStorage, limpe-a aqui
+            // Ex: localStorage.removeItem(`cache_produtos_${state.STORE_ID}`);
+            
+            // Atualiza o timestamp local para o novo
+            localStorage.setItem(`lastUpdate_${state.STORE_ID}`, serverLastUpdate);
+        }
+
         // 1. Busca produtos na sua API
         const response = await fetch(`/api/produtos/${state.STORE_ID}`);
         if (!response.ok) throw new Error("Loja não encontrada");
