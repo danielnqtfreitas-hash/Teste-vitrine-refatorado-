@@ -141,42 +141,46 @@ export function mkProductCard(p) {
 }
 
 
-// --- RENDERIZAÇÃO DO CATÁLOGO PRINCIPAL ---
+/// --- RENDERIZAÇÃO DO CATÁLOGO PRINCIPAL (ATUALIZADA) ---
 
 export async function renderCatalog() {
     // 1. Renderiza seções especiais (Novidades/Vistos)
-    await renderMagicCategories(state.allProducts, state.storeConfigGlobal);
+    if (typeof renderMagicCategories === 'function') {
+        await renderMagicCategories(state.allProducts, state.storeConfigGlobal);
+    }
 
     const container = els.catalogContainer();
     const empty = els.emptyState();
     
     if (!container) return; 
     
+    // Reset visual inicial: oculta erro e limpa o container para refletir exclusões
     empty.classList.add('hidden');
     container.innerHTML = '';
 
-    // 2. Filtra produtos
+    // 2. Filtra produtos (Mantendo toda a sua lógica de SKUs, Variações e Atributos)
     let filtered = state.allProducts.filter(p => {
+        // Filtro de Favoritos
         if(state.isFavoritesView) return state.favorites.includes(p.id);
         
-        // Filtro de Busca
+        // Filtro de Busca (Nome e SKU)
         if(state.filters.search) {
             const searchLower = state.filters.search.toLowerCase();
-            const nameMatch = p.name.toLowerCase().includes(searchLower);
+            const nameMatch = p.name?.toLowerCase().includes(searchLower);
             const skuMatch = p.sku && p.sku.toLowerCase().includes(searchLower);
             if (!nameMatch && !skuMatch) return false;
         }
 
-        // Filtro de Categoria
+        // Filtro de Categoria e Ofertas
         if(state.filters.category === 'offers') { 
             if(!(p.promoValue && p.promoValue < p.value)) return false; 
         } else if(state.filters.category && p.category !== state.filters.category) return false;
 
-        // Filtro de Preço
+        // Filtro de Preço dinâmico
         const price = (p.promoValue && p.promoValue < p.value) ? p.promoValue : p.value;
         if(state.filters.maxPrice && price > state.filters.maxPrice) return false;
 
-        // Filtros de Tamanhos e Cores
+        // Filtros Complexos de Tamanhos e Cores (Variações)
         if(state.filters.sizes.length > 0 || state.filters.colors.length > 0) {
             const selectedSizesLower = state.filters.sizes.map(s => s.toLowerCase());
             const selectedColorsLower = state.filters.colors.map(c => c.toLowerCase());
@@ -184,8 +188,8 @@ export async function renderCatalog() {
             if (p.variations && p.variations.length > 0) {
                 const hasMatch = p.variations.some(v => {
                     if (!v.active) return false;
-                    const sizeMatch = state.filters.sizes.length === 0 || selectedSizesLower.includes(v.size.toLowerCase());
-                    const colorMatch = state.filters.colors.length === 0 || selectedColorsLower.includes(v.color.toLowerCase());
+                    const sizeMatch = state.filters.sizes.length === 0 || selectedSizesLower.includes(v.size?.toLowerCase());
+                    const colorMatch = state.filters.colors.length === 0 || selectedColorsLower.includes(v.color?.toLowerCase());
                     return sizeMatch && colorMatch;
                 });
                 if (!hasMatch) return false;
@@ -198,15 +202,20 @@ export async function renderCatalog() {
         return true;
     });
 
-    // 3. Exibe mensagem de vazio se necessário
+    // 3. Exibe mensagem de vazio se nenhum produto passar pelos filtros
     if (filtered.length === 0) {
         empty.classList.remove('hidden');
         return;
     }
 
-    // 4. Agrupa por Categoria
+    // 4. Agrupa por Categoria (Lógica de agrupamento preservada)
     const groups = {};
-    if(state.isFavoritesView || state.filters.search || (state.filters.category && state.filters.category !== 'offers') || state.filters.maxPrice || state.filters.sizes.length > 0 || state.filters.colors.length > 0) {
+    const hasActiveFilters = state.isFavoritesView || state.filters.search || 
+                           (state.filters.category && state.filters.category !== 'offers') || 
+                           state.filters.maxPrice || state.filters.sizes.length > 0 || 
+                           state.filters.colors.length > 0;
+
+    if(hasActiveFilters) {
         groups['Resultados Encontrados'] = filtered;
     } else {
         filtered.forEach(p => { 
@@ -216,24 +225,41 @@ export async function renderCatalog() {
         });
     }
 
-    // 5. Renderiza os Grupos
+    // 5. Renderiza os Grupos e Seções[cite: 5]
     Object.keys(groups).sort().forEach(key => {
         const section = document.createElement('section');
         section.className = "animate-fade-in mb-8";
-        section.innerHTML = `<h3 class="font-bold text-slate-800 mb-4 px-1 text-lg flex items-center gap-2"><div class="w-1 h-5 bg-primary rounded-full"></div> ${key}</h3>`;
+        
+        // Cabeçalho da Categoria
+        section.innerHTML = `
+            <h3 class="font-bold text-slate-800 mb-4 px-1 text-lg flex items-center gap-2">
+                <div class="w-1 h-5 bg-primary rounded-full"></div> 
+                ${key}
+            </h3>
+        `;
+        
         const grid = document.createElement('div');
         grid.className = "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-5";
-        groups[key].forEach(p => grid.innerHTML += mkProductCard(p));
+        
+        // Renderiza cada card de produto
+        groups[key].forEach(p => {
+            grid.innerHTML += mkProductCard(p);
+        });
+        
         section.appendChild(grid); 
         container.appendChild(section);
     });
 
-    if (state.storeConfig?.tipoNegocio === 'restaurante') {
-    RestauranteTheme.renderFloatingCart();
+    // 6. Funções Específicas de Tema e Interface[cite: 5]
+    if (state.storeConfigGlobal?.tipoNegocio === 'restaurante') {
+        if (typeof RestauranteTheme !== 'undefined') {
+            RestauranteTheme.renderFloatingCart();
+        }
     }
     
+    // Reinicializa componentes globais
     if(window.lucide) window.lucide.createIcons();
-    initGlobalCountdowns(); 
+    if(typeof initGlobalCountdowns === 'function') initGlobalCountdowns(); 
 }
 
 // --- MAGIC CATEGORIES (Novidades / Mais Vistos) ---
