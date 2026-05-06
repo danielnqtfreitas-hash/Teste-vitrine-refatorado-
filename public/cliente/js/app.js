@@ -264,6 +264,8 @@ async function initFlow() {
         }
         registerVisit(); 
         checkDeepLink();
+        await renderCatalog();
+window.updateBottomNavAction();
 
     } catch (error) {
         console.error("❌ Erro fatal no initFlow:", error);
@@ -612,3 +614,42 @@ window.addToCart = addToCart;
 window.showToast = showToast;
 window.toggleFavorite = toggleFavorite;
 window.openProductModal = openProductModal;
+
+window.updateBottomNavAction = function() {
+    // Verifica se existe algum produto com provador disponível no catálogo atual
+    const hasProvador = state.allProducts.some(p => 
+        p.disponivelProvador === true && 
+        (p.posicaoProvador === 'superior' || p.posicaoProvador === 'inferior' || p.posicaoProvador === 'inteiro')
+    );
+
+    const btnAction = document.getElementById('btnNavAction');
+    const iconCont = document.getElementById('btnNavIconCont');
+    const icon = document.getElementById('btnNavIcon');
+    const text = document.getElementById('btnNavText');
+
+    if (!btnAction || !iconCont || !text) return;
+
+    if (hasProvador) {
+        // MODO MODA: Ativa o Provador[cite: 3, 5]
+        text.innerText = "Provador";
+        btnAction.onclick = () => window.openProvador();
+        iconCont.className = "bg-slate-100 p-2 rounded-xl";
+        icon.setAttribute('data-lucide', 'shirt');
+        icon.className = "w-5 h-5 stroke-[1.5] text-slate-700";
+    } else {
+        // MODO GERAL: Ativa Bairros/Entrega[cite: 5, 6]
+        text.innerText = "Entrega";
+        btnAction.onclick = () => window.openDeliveryModal();
+        
+        // Estilização usando a cor primária da loja
+        const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--color-primary');
+        iconCont.style.backgroundColor = primaryColor;
+        iconCont.className = "p-2 rounded-xl shadow-sm text-white";
+        
+        icon.setAttribute('data-lucide', 'truck');
+        icon.className = "w-5 h-5 stroke-[1.5]";
+    }
+
+    // Re-renderiza o ícone do Lucide após a troca
+    if (window.lucide) lucide.createIcons();
+};
