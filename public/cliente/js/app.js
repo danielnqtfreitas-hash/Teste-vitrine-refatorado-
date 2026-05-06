@@ -220,9 +220,9 @@ async function initFlow() {
                 setupBotoesAlternados();
             } 
             
-            if (state.storeConfigGlobal && state.storeConfigGlobal.tipoNegocio === 'restaurante') {
-                RestauranteTheme.setup(); 
-            }
+         if (state.storeConfig && state.storeConfig.tipoNegocio === 'restaurante') {
+    RestauranteTheme.setup(); 
+}
            
             if (typeof updateCartUI === 'function') {
                 updateCartUI(); 
@@ -264,6 +264,8 @@ async function initFlow() {
         }
         registerVisit(); 
         checkDeepLink();
+        await renderCatalog();
+window.updateBottomNavAction();
 
     } catch (error) {
         console.error("❌ Erro fatal no initFlow:", error);
@@ -612,3 +614,50 @@ window.addToCart = addToCart;
 window.showToast = showToast;
 window.toggleFavorite = toggleFavorite;
 window.openProductModal = openProductModal;
+
+window.updateBottomNavAction = function() {
+    // 1. Verifica se há produtos configurados para o provador[cite: 3, 5]
+    const hasProvador = state.allProducts.some(p => 
+        p.disponivelProvador === true && 
+        (p.posicaoProvador === 'superior' || p.posicaoProvador === 'inferior' || p.posicaoProvador === 'inteiro')
+    );
+
+    const btnAction = document.getElementById('btnNavAction');
+    const iconCont = document.getElementById('btnNavIconCont');
+    const iconElement = document.getElementById('btnNavIcon');
+    const textElement = document.getElementById('btnNavText');
+
+    if (!btnAction || !iconElement || !textElement) return;
+
+    if (hasProvador) {
+        // --- MODO PROVADOR (Moda) ---
+        textElement.innerText = "Provador";
+        btnAction.onclick = () => window.openProvador();
+        
+        // Estilo visual padrão
+        iconCont.className = "bg-slate-100 p-2 rounded-xl transition-all";
+        iconCont.style.backgroundColor = ""; // Remove cor primária se houver
+        
+        // Troca o ícone para 'shirt'
+        iconElement.setAttribute('data-lucide', 'shirt');
+        iconElement.className = "w-5 h-5 stroke-[1.5] text-slate-700";
+    } else {
+        // --- MODO ENTREGA (Geral/Restaurante) ---[cite: 1, 6]
+        textElement.innerText = "Entrega";
+        btnAction.onclick = () => window.openDeliveryModal();
+        
+        // Estilo visual com a cor da loja[cite: 5]
+        const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--color-primary');
+        iconCont.style.backgroundColor = primaryColor;
+        iconCont.className = "p-2 rounded-xl shadow-sm text-white transition-all";
+        
+        // Troca o ícone para 'truck'[cite: 6]
+        iconElement.setAttribute('data-lucide', 'truck');
+        iconElement.className = "w-5 h-5 stroke-[1.5]";
+    }
+
+    // CRUCIAL: Comando para o Lucide desenhar o novo ícone na tela[cite: 4, 5]
+    if (window.lucide) {
+        window.lucide.createIcons();
+    }
+};
