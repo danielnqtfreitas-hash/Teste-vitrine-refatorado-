@@ -146,9 +146,10 @@ async function initFlow() {
     try {
         updatePremiumLoader(10); 
 
-        // --- 1. BLOCO DE VERIFICAÇÃO DE CACHE INTELIGENTE ---
+        // --- 1. BLOCO DE SINCRONIZAÇÃO DE VERSÃO (GATEKEEPER) ---
         const configRef = doc(db, "stores", state.STORE_ID, "config", "store");
-        // getDocFromServer força a busca no Firebase, ignorando o cache local do SDK[cite: 5]
+        
+        // CRUCIAL: getDocFromServer ignora o cache persistente do Firebase e traz o dado real
         const serverSnap = await getDocFromServer(configRef);
         const serverData = serverSnap.exists() ? serverSnap.data() : {};
         
@@ -158,18 +159,19 @@ async function initFlow() {
 
         let data;
 
-        // Se o timestamp for igual e houver cache, evita o download pesado[cite: 5]
+        // LÓGICA DE DECISÃO: Só faz o fetch pesado se o timestamp do servidor for diferente
         if (cachedProducts && localLastUpdate && Number(localLastUpdate) === serverLastUpdate) {
-            console.log("🚀 Cache atualizado. Carregando dados locais...");
+            console.log("🚀 Cache validado. Carregando dados locais...");
             data = JSON.parse(cachedProducts);
         } else {
-            console.log("📡 Nova atualização detectada ou cache vazio. Baixando via API...");
-            // O parâmetro ?v evita que o navegador sirva um cache antigo da própria rota fetch[cite: 5]
+            console.log("📡 Versão nova ou cache vazio. Baixando via API...");
+            
+            // O parâmetro ?v= força o navegador e a CDN a ignorarem caches antigos da URL
             const response = await fetch(`/api/produtos/${state.STORE_ID}?v=${serverLastUpdate}`);
-            if (!response.ok) throw new Error("Loja não encontrada");
+            if (!response.ok) throw new Error("Loja não encontrada na API");
             data = await response.json(); 
 
-            // Atualiza o cache local e o timestamp para a próxima visita[cite: 5]
+            // Atualiza o cache local para a próxima visita[cite: 6]
             localStorage.setItem(`cache_produtos_${state.STORE_ID}`, JSON.stringify(data));
             localStorage.setItem(`lastUpdate_${state.STORE_ID}`, serverLastUpdate);
         }
@@ -177,26 +179,23 @@ async function initFlow() {
         updatePremiumLoader(40); 
         state.storeConfigGlobal = data.config;
 
-        // --- 2. BLOCO DE SINCRONIZAÇÃO DE VISUALIZAÇÕES (BLINDADO) ---
+        // --- 2. BLOCO DE SINCRONIZAÇÃO DE VISUALIZAÇÕES (ANALYTICS) ---
         try {
             const analyticsRef = doc(db, "stores", state.STORE_ID, "analytics", "product_views");
+            // Buscamos as views sempre do servidor para estarem atualizadas[cite: 6]
             const analyticsSnap = await getDocFromServer(analyticsRef).catch(() => null); 
             
             const viewsData = (analyticsSnap && analyticsSnap.exists()) ? analyticsSnap.data() : {};
             const statsMap = viewsData.stats || {};
 
-            // Mapeamos os produtos (vindos do cache ou API) com as visualizações atuais[cite: 5]
+            // Monta o array global mesclando produtos (cache/API) com as views reais[cite: 6, 7]
             state.allProducts = data.produtos.map(p => {
                 const productStats = statsMap[p.id]; 
                 const vCount = (productStats && typeof productStats.views === 'number') ? productStats.views : 0;
-                
-                return {
-                    ...p,
-                    views: vCount
-                };
+                return { ...p, views: vCount };
             });
 
-            // --- LÓGICA DE TROCA DO BOTÃO (PROVADOR VS BAIRROS) ---
+            // --- LÓGICA DE INTERFACE: PROVADOR VS BAIRROS ---
             const temProdutosProvador = state.allProducts.some(p => 
                 p.posicaoProvador === 'superior' || p.posicaoProvador === 'inferior'
             );
@@ -214,26 +213,18 @@ async function initFlow() {
                 }
             }
 
-            // Ativa os cliques nos botões de Bairros e Provador[cite: 5]
             if (typeof setupBotoesAlternados === 'function') {
                 setupBotoesAlternados();
             } 
             
-            // --- ATIVAÇÃO DO MODO DELIVERY / RESTAURANTE ---
+            // --- ATIVAÇÃO DO MODO RESTAURANTE ---
             if (state.storeConfigGlobal && state.storeConfigGlobal.tipoNegocio === 'restaurante') {
-                console.log("Modo Restaurante Detectado. Aplicando Layout...");
+                console.log("Modo Restaurante Detectado.");
                 RestauranteTheme.setup(); 
             }
            
-            console.log("✅ Visualizações sincronizadas e state.allProducts preenchido");
-
-            // Atualiza interface do carrinho e badges[cite: 5]
             if (typeof updateCartUI === 'function') {
                 updateCartUI(); 
-            }
-
-            if (window.updateNavigationBadges) {
-                window.updateNavigationBadges();
             }
 
         } catch (e) {
@@ -244,7 +235,7 @@ async function initFlow() {
         
         updatePremiumLoader(60);
 
-        // --- 3. LÓGICA DE DETECÇÃO DO PROVADOR ---
+        // --- 3. CONFIGURAÇÃO DO RODAPÉ E PROVADOR ---
         try {
             state.tops = state.allProducts.filter(p => p.disponivelProvador && p.posicaoProvador === 'superior');
             state.bottoms = state.allProducts.filter(p => p.disponivelProvador && p.posicaoProvador === 'inferior');
@@ -252,7 +243,7 @@ async function initFlow() {
             const isFashionStore = state.tops.length > 0 && state.bottoms.length > 0;
             setupFooterButton(isFashionStore);
         } catch (e) {
-            console.error("Erro ao configurar provador:", e);
+            console.error("Erro no setup do provador:", e);
         }
 
         // --- 4. PROCESSAMENTO FINAL E RENDERIZAÇÃO ---
@@ -264,21 +255,22 @@ async function initFlow() {
         renderHeroCarousel(state.banners);
         renderCategoryTabs();
         
-        // Renderiza o catálogo (a função renderCatalog no ui.js limpa o container antes)[cite: 5]
+        // Renderiza o catálogo (o ui.js agora limpa o container antes de desenhar)[cite: 6]
         await renderCatalog();
         
         updatePremiumLoader(100);
-        window.updateNavigationBadges();
+        if (window.updateNavigationBadges) {
+            window.updateNavigationBadges();
+        }
         registerVisit(); 
         checkDeepLink();
 
     } catch (error) {
         console.error("❌ Erro fatal no initFlow:", error);
-        const loader = document.getElementById('initialLoader');
-        if(loader) {
-            loader.style.opacity = '0';
-            setTimeout(() => loader.classList.add('hidden'), 500);
-        }
+        // Em caso de erro, limpa o timestamp para tentar recuperar no próximo refresh
+        localStorage.removeItem(`lastUpdate_${state.STORE_ID}`);
+        const loader = document.getElementById('premium-loader');
+        if(loader) loader.style.display = 'none';
     }
 }
 // --- 3. CONFIGURAÇÕES VISUAIS DINÂMICAS ---
