@@ -985,3 +985,12 @@ header {
     animation: slide-up 0.3s ease-out;
 }
 
+/* Garante que o container de restaurante não tenha padding excessivo nas laterais */
+body[data-theme="restaurante"] #catalogContainer {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+body[data-theme="restaurante"] .product-card-restaurante {
+    border-bottom: 1px solid #f1f5f9;
+}
