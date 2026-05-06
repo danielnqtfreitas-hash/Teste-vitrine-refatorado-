@@ -643,18 +643,22 @@ window.updateBottomNavAction = function() {
     iconElement.setAttribute('class', "w-5 h-5 stroke-[1.5] text-slate-700"); 
 
 } else {
-    // --- MODO ENTREGA (Geral/Restaurante) ---
+   // --- MODO PROVADOR ---
+textElement.innerText = "Provador";
+btnAction.onclick = () => window.openProvador();
+iconCont.className = "bg-slate-100 p-2 rounded-xl transition-all"; // Este pode manter (é uma DIV)
+
+// ALTERE ESTA LINHA:
+iconElement.setAttribute('class', "w-5 h-5 stroke-[1.5] text-slate-700");[cite: 1]
+
+// --- MODO ENTREGA ---
+} else {
     textElement.innerText = "Entrega";
     btnAction.onclick = () => window.openDeliveryModal();
-    
-    const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--color-primary');
-    iconCont.style.backgroundColor = primaryColor;
-    iconCont.className = "p-2 rounded-xl shadow-sm text-white transition-all";
-    
-    // Troca o ícone para 'truck'
-    iconElement.setAttribute('data-lucide', 'truck');
-    // CORREÇÃO: Usar setAttribute em vez de .className para SVGs
-    iconElement.setAttribute('class', "w-5 h-5 stroke-[1.5]"); 
+    iconCont.className = "p-2 rounded-xl shadow-sm text-white transition-all"; // Este pode manter
+
+    // ALTERE ESTA LINHA:
+    iconElement.setAttribute('class', "w-5 h-5 stroke-[1.5]");[cite: 1]
 }
 
     // CRUCIAL: Comando para o Lucide desenhar o novo ícone na tela[cite: 4, 5]
