@@ -490,12 +490,12 @@
     <span class="text-[10px] font-semibold mt-1">Amei</span>
  </button>
 
-    <button onclick="openProvador()" class="nav-btn-item">
-        <div class="bg-slate-100 p-2 rounded-xl">
-            <i data-lucide="shirt" class="w-5 h-5 stroke-[1.5] text-slate-700"></i>
-        </div>
-        <span class="text-[10px] font-semibold mt-1">Provador</span>
-    </button>
+  <button id="btnNavAction" onclick="openProvador()" class="nav-btn-item">
+    <div id="btnNavIconCont" class="bg-slate-100 p-2 rounded-xl">
+        <i id="btnNavIcon" data-lucide="shirt" class="w-5 h-5 stroke-[1.5] text-slate-700"></i>
+    </div>
+    <span id="btnNavText" class="text-[10px] font-semibold mt-1">Provador</span>
+</button>
 </nav>
 
 <div id="discoveryFeed" class="hidden fixed inset-0 bg-black z-[99999] flex flex-col">
