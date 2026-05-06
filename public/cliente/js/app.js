@@ -146,129 +146,97 @@ async function initFlow() {
     try {
         updatePremiumLoader(10); 
 
-        // --- 1. BLOCO DE SINCRONIZAÇÃO DE VERSÃO (CORRIGIDO) ---
-        const configRef = doc(db, "stores", state.STORE_ID, "config", "store");
-        
-        // Buscamos o dado real do servidor para garantir que o lastUpdate seja o mais recente
-        const serverSnap = await getDocFromServer(configRef);
-        const serverData = serverSnap.exists() ? serverSnap.data() : {};
-        
-        // Converte o int64 do Firestore para Number do JS para comparação segura
-        const serverLastUpdate = Number(serverData.lastUpdate) || 0;
-        const localLastUpdate = Number(localStorage.getItem(`lastUpdate_${state.STORE_ID}`)) || 0;
-        const cachedProducts = localStorage.getItem(`cache_produtos_${state.STORE_ID}`);
-
-        console.log(`[Cache Debug] Servidor: ${serverLastUpdate} | Local: ${localLastUpdate}`);
-
-        let data;
-
-        // LÓGICA: Só usa cache se o timestamp local for IGUAL ao do servidor e maior que zero
-        if (cachedProducts && localLastUpdate > 0 && localLastUpdate === serverLastUpdate) {
-            console.log("🚀 Cache validado. Carregando dados locais...");
-            data = JSON.parse(cachedProducts);
-        } else {
-            console.log("📡 Versão nova ou divergente. Baixando via API...");
-            
-            // Adicionamos o timestamp na URL para evitar que o navegador sirva um cache antigo da própria API[cite: 1]
-            const response = await fetch(`/api/produtos/${state.STORE_ID}?v=${serverLastUpdate}&t=${Date.now()}`);
-            if (!response.ok) throw new Error("Loja não encontrada na API");
-            
-            data = await response.json(); 
-
-            // Atualiza o localStorage com os novos dados e o novo timestamp para a próxima conferência[cite: 1]
-            localStorage.setItem(`cache_produtos_${state.STORE_ID}`, JSON.stringify(data));
-            localStorage.setItem(`lastUpdate_${state.STORE_ID}`, serverLastUpdate.toString());
-        }
-
+        // 1. Busca produtos na sua API
+        const response = await fetch(`/api/produtos/${state.STORE_ID}`);
+        if (!response.ok) throw new Error("Loja não encontrada");
+        const data = await response.json(); 
         updatePremiumLoader(40); 
+
         state.storeConfigGlobal = data.config;
 
-        // --- 2. BLOCO DE SINCRONIZAÇÃO DE VISUALIZAÇÕES (ANALYTICS) ---
-        try {
-            const analyticsRef = doc(db, "stores", state.STORE_ID, "analytics", "product_views");
-            const analyticsSnap = await getDocFromServer(analyticsRef).catch(() => null); 
-            
-            const viewsData = (analyticsSnap && analyticsSnap.exists()) ? analyticsSnap.data() : {};
-            const statsMap = viewsData.stats || {};
+// --- BLOCO DE SINCRONIZAÇÃO DE VISUALIZAÇÕES (BLINDADO) ---
+try {
+    const analyticsRef = doc(db, "stores", state.STORE_ID, "analytics", "product_views");
+    const analyticsSnap = await getDocFromServer(analyticsRef).catch(() => null); 
+    
+    const viewsData = (analyticsSnap && analyticsSnap.exists()) ? analyticsSnap.data() : {};
+    const statsMap = viewsData.stats || {};
 
-            // Mescla os produtos com as visualizações vindas do servidor
-            state.allProducts = data.produtos.map(p => {
-                const productStats = statsMap[p.id]; 
-                const vCount = (productStats && typeof productStats.views === 'number') ? productStats.views : 0;
-                return { ...p, views: vCount };
-            });
+    // 1. Primeiro, montamos todo o array de produtos com as views
+    state.allProducts = data.produtos.map(p => {
+        const productStats = statsMap[p.id]; 
+        const vCount = (productStats && typeof productStats.views === 'number') ? productStats.views : 0;
+        
+        return {
+            ...p,
+            views: vCount
+        };
+    });
 
-            // Lógica de interface (Provador vs Bairros)
-            const temProdutosProvador = state.allProducts.some(p => 
-                p.posicaoProvador === 'superior' || p.posicaoProvador === 'inferior'
-            );
+// --- ATIVAÇÃO DO MODO DELIVERY ---
+if (state.storeConfigGlobal && state.storeConfigGlobal.tipoNegocio === 'restaurante') {
+        console.log("Modo Restaurante Detectado. Aplicando Layout...");
+        RestauranteTheme.setup(); 
+    }
+   
+    console.log("✅ Visualizações sincronizadas e state.allProducts preenchido");
 
-            const btnProvador = document.getElementById('btnOpenProvador');
-            const btnBairros = document.getElementById('btnOpenBairros');
+    // 2. AGORA SIM, com os produtos prontos, chamamos as atualizações de interface
+    // Isso garante que o carrinho encontre os nomes e preços dos itens
+    if (typeof updateCartUI === 'function') {
+        updateCartUI(); 
+    }
 
-            if (btnProvador && btnBairros) {
-                if (temProdutosProvador) {
-                    btnProvador.classList.remove('hidden');
-                    btnBairros.classList.add('hidden');
-                } else {
-                    btnProvador.classList.add('hidden');
-                    btnBairros.classList.remove('hidden');
-                }
-            }
+    // 3. Aproveitamos para garantir que os contadores da barra inferior estejam certos
+    if (window.updateNavigationBadges) {
+        window.updateNavigationBadges();
+    }
 
-            if (typeof setupBotoesAlternados === 'function') {
-                setupBotoesAlternados();
-            } 
-            
-            if (state.storeConfigGlobal && state.storeConfigGlobal.tipoNegocio === 'restaurante') {
-                RestauranteTheme.setup(); 
-            }
-           
-            if (typeof updateCartUI === 'function') {
-                updateCartUI(); 
-            }
-
-        } catch (e) {
-            console.warn("⚠️ Erro ao processar analytics:", e);
-            state.allProducts = data.produtos.map(p => ({ ...p, views: 0 })); 
-            if (typeof updateCartUI === 'function') updateCartUI();
-        }
+} catch (e) {
+    console.warn("⚠️ Erro ao processar produtos:", e);
+    state.allProducts = data.produtos.map(p => ({ ...p, views: 0 })); 
+    
+    // Mesmo em caso de erro nas views, tentamos mostrar o carrinho
+    if (typeof updateCartUI === 'function') updateCartUI();
+}
         
         updatePremiumLoader(60);
 
-        // --- 3. CONFIGURAÇÃO DO RODAPÉ E PROVADOR ---
-        try {
-            state.tops = state.allProducts.filter(p => p.disponivelProvador && p.posicaoProvador === 'superior');
-            state.bottoms = state.allProducts.filter(p => p.disponivelProvador && p.posicaoProvador === 'inferior');
+        // --- LOGICA DE DETECÇÃO DO PROVADOR ---
+try {
+    // Filtramos os produtos que o lojista marcou no painel
+    state.tops = state.allProducts.filter(p => p.disponivelProvador && p.posicaoProvador === 'superior');
+    state.bottoms = state.allProducts.filter(p => p.disponivelProvador && p.posicaoProvador === 'inferior');
 
-            const isFashionStore = state.tops.length > 0 && state.bottoms.length > 0;
-            setupFooterButton(isFashionStore);
-        } catch (e) {
-            console.error("Erro no setup do provador:", e);
-        }
+    // Se a loja tiver pelo menos 1 de cada, ativamos o modo Provador
+    const isFashionStore = state.tops.length > 0 && state.bottoms.length > 0;
+    setupFooterButton(isFashionStore);
 
-        // --- 4. PROCESSAMENTO FINAL E RENDERIZAÇÃO ---
+} catch (e) {
+    console.error("Erro ao configurar provador:", e);
+}
+
+        // 2. Processamento Restante
         checkStoreStatus(state.storeConfigGlobal);
         state.banners = data.banners || [];
         state.categories = Array.from(new Set(data.produtos.map(p => p.category).filter(Boolean))).sort();
 
+        // 3. Renderização
         applyStoreConfig(data.config);
         renderHeroCarousel(state.banners);
         renderCategoryTabs();
         
-        await renderCatalog(); // O catálogo agora limpa o container antes de desenhar
+        // Renderiza com as views injetadas
+        await renderCatalog();
         
         updatePremiumLoader(100);
-        if (window.updateNavigationBadges) {
-            window.updateNavigationBadges();
-        }
+        window.updateNavigationBadges();
         registerVisit(); 
         checkDeepLink();
 
     } catch (error) {
         console.error("❌ Erro fatal no initFlow:", error);
-        localStorage.removeItem(`lastUpdate_${state.STORE_ID}`);
-        const loader = document.getElementById('initialLoader');
+        const loader = document.getElementById('premium-loader');
         if(loader) loader.style.display = 'none';
     }
 }
@@ -612,4 +580,3 @@ window.addToCart = addToCart;
 window.showToast = showToast;
 window.toggleFavorite = toggleFavorite;
 window.openProductModal = openProductModal;
-
