@@ -627,6 +627,40 @@ function updatePremiumLoader(progress, logoUrl = null) {
     }
 }
 
+// --- FUNÇÃO PARA ADAPTAR O MENU PARA RESTAURANTE ---
+window.setupMenuRestaurante = function() {
+    const nav = document.querySelector('nav.fixed.bottom-0');
+    if (!nav) return;
+
+    // Limpa o menu de moda e injeta o de delivery
+    nav.innerHTML = `
+        <button onclick="window.location.reload()" class="nav-btn-item group flex flex-col items-center">
+            <div class="bg-slate-100 p-2 rounded-xl active:scale-90 transition-transform">
+                <i data-lucide="home" class="w-5 h-5 text-slate-700"></i>
+            </div>
+            <span class="text-[10px] font-semibold mt-1">Início</span>
+        </button>
+
+        <button onclick="window.openCart()" class="nav-btn-item group relative flex flex-col items-center">
+            <div class="bg-slate-100 p-2 rounded-xl active:scale-90 transition-transform">
+                <i data-lucide="shopping-bag" class="w-5 h-5 text-slate-700"></i>
+                <span id="cartBadgeBottom" class="absolute -top-1 -right-1 bg-red-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full hidden">0</span>
+            </div>
+            <span class="text-[10px] font-semibold mt-1">Sacola</span>
+        </button>
+
+        <button onclick="window.openDeliveryModal()" class="nav-btn-item group flex flex-col items-center">
+            <div class="bg-slate-100 p-2 rounded-xl active:scale-90 transition-transform">
+                <i data-lucide="map-pin" class="w-5 h-5 text-slate-700"></i>
+            </div>
+            <span class="text-[10px] font-semibold mt-1">Bairros</span>
+        </button>
+    `;
+
+    // Re-renderiza os ícones do Lucide
+    if (window.lucide) window.lucide.createIcons();
+};
+
 // EXPOSIÇÃO DE FUNÇÕES PARA O DISCOVERY/REELS (Escopo Global)
 window.addToCart = addToCart;
 window.showToast = showToast;
