@@ -29,20 +29,18 @@ const els = {
 // --- RENDERIZAÇÃO DE CARDS (PRODUTO) ---
 
 export function mkProductCard(p) {
-    const tipoNegocio = state.storeConfigGlobal?.tipoNegocio || 'varejo';
+    const tipoNegocio = state.storeConfig?.tipoNegocio || 'varejo';
     const img = p.images?.[0] || 'https://placehold.co/600?text=Sem+Imagem';
     const isFav = state.favorites.includes(p.id);
     const outOfStock = (parseInt(p.stock) || 0) <= 0;
     const agora = Date.now();
 
-    // Lógica de Promoção e Preços (Unificada para ambos os layouts)
+    // Lógica de Promoção e Preços
     const isPromoValid = p.promoValue && p.promoValue < p.value && (p.promoUntil ? p.promoUntil > agora : true);
     const hasPromo = !!isPromoValid;
-    
-    const precoPixBase = p.priceCash || p.value || 0;
-    const precoCardBase = p.priceCard || p.value || 0;
+    const precoPixBase = p.priceCash || p.value;
+    const precoCardBase = p.priceCard || p.value;
     const diferencaCartao = precoCardBase - precoPixBase;
-    
     const bestPrice = hasPromo ? p.promoValue : precoPixBase;
     const cardPriceAdaptado = hasPromo ? (p.promoValue + diferencaCartao) : precoCardBase;
 
@@ -77,19 +75,22 @@ export function mkProductCard(p) {
         `;
     }
 
-    // --- LAYOUT 2: VAREJO (Grade original) ---
+    // --- LAYOUT 2: VAREJO (Original - Grade) ---
     const disc = hasPromo && !outOfStock ? `<span class="absolute top-0 right-0 bg-red-600 text-white text-[10px] font-black px-2 py-1 rounded-bl-lg z-10">-${Math.round(((p.value - p.promoValue) / p.value) * 100)}%</span>` : '';
     const stockBadge = outOfStock ? `<span class="absolute inset-0 bg-white/60 flex items-center justify-center text-red-600 font-black text-xs uppercase z-20">Esgotado</span>` : '';
-    
     const tamanhosHTML = (p.sizes && p.sizes.length > 0) 
         ? `<div class="flex flex-wrap gap-1 mt-1 mb-1">
-            ${p.sizes.map(s => `<span class="text-[9px] font-bold bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded border border-gray-200 uppercase leading-none">${s}</span>`).join('')}
+            ${p.sizes.map(s => `
+                <span class="text-[9px] font-bold bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded border border-gray-200 uppercase leading-none">
+                    ${s}
+                </span>
+            `).join('')}
            </div>`
         : `<div class="h-4"></div>`;
 
     return `
     <div onclick="${outOfStock ? '' : `window.openProductModal('${p.id}')`}" class="product-card cursor-pointer group flex flex-col h-full relative ${outOfStock ? 'opacity-70 grayscale' : ''}">
-        <div class="aspect-square bg-white relative overflow-hidden border-b border-slate-50 rounded-t-2xl">
+        <div class="aspect-square bg-white relative overflow-hidden border-b border-slate-50">
             ${stockBadge}
             <img src="${img}" class="w-full h-full object-cover transition-transform duration-500 ${outOfStock ? '' : 'group-hover:scale-105'}" loading="lazy">
             ${disc}
@@ -98,8 +99,14 @@ export function mkProductCard(p) {
             </button>
         </div>
         
-        <div class="p-3 md:p-4 flex flex-col flex-grow bg-white rounded-b-2xl shadow-sm border border-t-0 border-gray-100">
+                <div class="p-3 md:p-4 flex flex-col flex-grow bg-white">
+            <div class="product-timer hidden mb-2 py-1 px-2 rounded-lg flex items-center gap-1.5 timer-accent animate-pulse" data-pid="${p.id}">
+                <i data-lucide="clock" class="w-3 h-3"></i>
+                <span class="text-[9px] font-black uppercase tracking-tighter countdown-text">Carregando...</span>
+            </div>
+            
             <h4 class="text-sm font-semibold text-slate-700 leading-snug line-clamp-2 mb-1">${p.name}</h4>
+
             ${tamanhosHTML}
             
             <div class="mt-auto pt-1">
@@ -108,11 +115,11 @@ export function mkProductCard(p) {
                         ${hasPromo ? 'Oferta Especial' : 'À vista no Pix'}
                     </span>
                     <div class="flex items-center justify-between">
-                        <span class="text-lg md:text-xl font-black text-slate-900 tracking-tight">
+                        <span class="text-lg md:text-xl font-display font-black text-slate-900 tracking-tight">
                             R$ ${bestPrice.toFixed(2).replace('.',',')}
                         </span>
                         ${outOfStock ? '' : `
-                        <button onclick="event.stopPropagation(); window.quickAdd('${p.id}')" class="w-8 h-8 rounded-full bg-primary/10 hover:bg-primary text-primary hover:text-white flex items-center justify-center transition-colors">
+                        <button onclick="event.stopPropagation(); window.quickAdd('${p.id}')" class="w-8 h-8 rounded-full bg-primary/10 hover:bg-primary text-primary hover:text-white flex items-center justify-center transition-colors active-scale">
                             <i data-lucide="plus" class="w-5 h-5"></i>
                         </button>`}
                     </div>
@@ -134,10 +141,10 @@ export function mkProductCard(p) {
 }
 
 
-/// --- RENDERIZAÇÃO DO CATÁLOGO PRINCIPAL (FORMA FINAL) ---
+/// --- RENDERIZAÇÃO DO CATÁLOGO PRINCIPAL (ATUALIZADA) ---
 
 export async function renderCatalog() {
-    // 1. Renderiza seções especiais (Novidades/Vistos) - Preservado
+    // 1. Renderiza seções especiais (Novidades/Vistos)
     if (typeof renderMagicCategories === 'function') {
         await renderMagicCategories(state.allProducts, state.storeConfigGlobal);
     }
@@ -147,19 +154,16 @@ export async function renderCatalog() {
     
     if (!container) return; 
     
-    // Reset visual inicial
+    // Reset visual inicial: oculta erro e limpa o container para refletir exclusões
     empty.classList.add('hidden');
     container.innerHTML = '';
 
-    // Variável de controle do tema
-    const isRestaurante = state.storeConfigGlobal?.tipoNegocio === 'restaurante';
-
-    // 2. Filtra produtos (Toda a sua lógica original de Busca, Categoria, Preço e Variações mantida)
+    // 2. Filtra produtos (Mantendo toda a sua lógica de SKUs, Variações e Atributos)
     let filtered = state.allProducts.filter(p => {
         // Filtro de Favoritos
         if(state.isFavoritesView) return state.favorites.includes(p.id);
         
-        // Filtro de Busca
+        // Filtro de Busca (Nome e SKU)
         if(state.filters.search) {
             const searchLower = state.filters.search.toLowerCase();
             const nameMatch = p.name?.toLowerCase().includes(searchLower);
@@ -172,11 +176,11 @@ export async function renderCatalog() {
             if(!(p.promoValue && p.promoValue < p.value)) return false; 
         } else if(state.filters.category && p.category !== state.filters.category) return false;
 
-        // Filtro de Preço
+        // Filtro de Preço dinâmico
         const price = (p.promoValue && p.promoValue < p.value) ? p.promoValue : p.value;
         if(state.filters.maxPrice && price > state.filters.maxPrice) return false;
 
-        // Filtros de Variações (Tamanhos/Cores)
+        // Filtros Complexos de Tamanhos e Cores (Variações)
         if(state.filters.sizes.length > 0 || state.filters.colors.length > 0) {
             const selectedSizesLower = state.filters.sizes.map(s => s.toLowerCase());
             const selectedColorsLower = state.filters.colors.map(c => c.toLowerCase());
@@ -198,13 +202,13 @@ export async function renderCatalog() {
         return true;
     });
 
-    // 3. Exibe mensagem de vazio
+    // 3. Exibe mensagem de vazio se nenhum produto passar pelos filtros
     if (filtered.length === 0) {
         empty.classList.remove('hidden');
         return;
     }
 
-    // 4. Agrupa por Categoria
+    // 4. Agrupa por Categoria (Lógica de agrupamento preservada)
     const groups = {};
     const hasActiveFilters = state.isFavoritesView || state.filters.search || 
                            (state.filters.category && state.filters.category !== 'offers') || 
@@ -221,12 +225,12 @@ export async function renderCatalog() {
         });
     }
 
-    // 5. Renderiza os Grupos e Seções
+    // 5. Renderiza os Grupos e Seções[cite: 5]
     Object.keys(groups).sort().forEach(key => {
         const section = document.createElement('section');
         section.className = "animate-fade-in mb-8";
         
-        // Cabeçalho da Categoria estilizado
+        // Cabeçalho da Categoria
         section.innerHTML = `
             <h3 class="font-bold text-slate-800 mb-4 px-1 text-lg flex items-center gap-2">
                 <div class="w-1 h-5 bg-primary rounded-full"></div> 
@@ -235,37 +239,25 @@ export async function renderCatalog() {
         `;
         
         const grid = document.createElement('div');
-
-        // AJUSTE DINÂMICO DE LAYOUT:
-        if (isRestaurante) {
-            // Se for restaurante, vira uma lista vertical com divisores (estilo iFood)
-            grid.className = "flex flex-col w-full bg-white divide-y divide-gray-100";
-        } else {
-            // Se for varejo, mantém o grid de colunas original
-            grid.className = "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-5";
-        }
+        grid.className = "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-5";
         
-        // Renderiza cada card usando o molde específico
+        // Renderiza cada card de produto
         groups[key].forEach(p => {
-            if (isRestaurante && typeof RestauranteTheme !== 'undefined') {
-                grid.innerHTML += RestauranteTheme.renderCard(p);
-            } else {
-                grid.innerHTML += mkProductCard(p);
-            }
+            grid.innerHTML += mkProductCard(p);
         });
         
         section.appendChild(grid); 
         container.appendChild(section);
     });
 
-    // 6. Funções Específicas de Tema e Interface
-    if (isRestaurante) {
+    // 6. Funções Específicas de Tema e Interface[cite: 5]
+    if (state.storeConfigGlobal?.tipoNegocio === 'restaurante') {
         if (typeof RestauranteTheme !== 'undefined') {
             RestauranteTheme.renderFloatingCart();
         }
     }
     
-    // Reinicializa ícones e contadores
+    // Reinicializa componentes globais
     if(window.lucide) window.lucide.createIcons();
     if(typeof initGlobalCountdowns === 'function') initGlobalCountdowns(); 
 }
