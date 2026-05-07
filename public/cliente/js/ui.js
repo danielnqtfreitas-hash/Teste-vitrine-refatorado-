@@ -406,125 +406,71 @@ export function openProductModal(id) {
     if(window.lucide) window.lucide.createIcons();
 }
 
-// --- FUNÇÃO AUXILIAR: RENDERIZAÇÃO ESTILO IFOOD ---
-// --- FUNÇÃO AUXILIAR: RENDERIZAÇÃO ESTILO IFOOD COM GRUPOS DE COMPLEMENTOS ---
-function renderRestauranteModal(p) {
-    const modal = els.modalDetails();
-    const bestPrice = (p.promoValue && p.promoValue < p.value) ? p.promoValue : (p.priceCash || p.value);
-    
-    // 1. Renderiza os Grupos de Complementos
-    const complementosHTML = (p.complements || []).map(group => {
-        const isRequired = group.min > 0;
+// --- MOTOR DE CÁLCULO E VALIDAÇÃO PARA RESTAURANTE ---
+window.validateAndTotalRestaurante = function() {
+    const p = state.allProducts.find(x => x.id === state.currentDetailId);
+    if (!p) return;
+
+    let allGroupsValid = true;
+    let extraPrice = 0;
+
+    // 1. Percorre cada grupo de complementos (ex: "cremes", "frutas")
+    document.querySelectorAll('.complement-group').forEach(groupEl => {
+        const min = parseInt(groupEl.dataset.min) || 0;
+        const max = parseInt(groupEl.dataset.max) || 99;
+        const gid = groupEl.dataset.groupId;
         
-        return `
-            <div class="complement-group mb-6" data-group-id="${group.id}" data-min="${group.min}" data-max="${group.max}">
-                <div class="bg-gray-50 px-6 py-3 border-y border-gray-100 flex justify-between items-center">
-                    <div>
-                        <h3 class="text-sm font-black text-gray-800 uppercase tracking-wide">${group.name}</h3>
-                        <p class="text-[10px] text-gray-400 font-bold uppercase">
-                            ${isRequired ? `Obrigatório • ` : ''} Escolha de ${group.min} a ${group.max}
-                        </p>
-                    </div>
-                    ${isRequired ? `<span class="bg-gray-800 text-white text-[9px] px-2 py-0.5 rounded font-black uppercase">Obrigatório</span>` : ''}
-                </div>
-                
-                <div class="px-6">
-                    ${group.items.filter(it => it.status === 'active').map(item => `
-                        <label class="flex items-center justify-between py-4 border-b border-gray-50 active:bg-gray-50 cursor-pointer">
-                            <div class="flex flex-col">
-                                <span class="font-medium text-gray-700 text-sm">${item.name}</span>
-                                ${item.price > 0 ? `<span class="text-xs text-green-600">+ R$ ${item.price.toFixed(2).replace('.', ',')}</span>` : '<span class="text-xs text-gray-400">Grátis</span>'}
-                            </div>
-                            <input type="checkbox" 
-                                   name="comp_${group.id}" 
-                                   value="${item.id}" 
-                                   data-item-name="${item.name}"
-                                   data-group-name="${group.name}"
-                                   data-price="${item.price || 0}" 
-                                   onchange="validateAndTotalRestaurante('${group.id}')"
-                                   class="w-6 h-6 rounded-full border-gray-300 text-red-600 focus:ring-red-500">
-                        </label>
-                    `).join('')}
-                </div>
-            </div>
-        `;
-    }).join('');
-
-    modal.innerHTML = `
-        <div class="fixed inset-0 z-[1000] bg-white flex flex-col animate-slide-up">
-            <div class="relative h-64 w-full shrink-0">
-                <button onclick="window.closeModalDetails()" class="absolute top-4 left-4 z-20 bg-black/40 text-white p-2 rounded-full backdrop-blur-md">
-                    <i data-lucide="chevron-left"></i>
-                </button>
-                <img src="${p.images?.[0]}" class="w-full h-full object-cover">
-            </div>
-
-            <div class="flex-1 overflow-y-auto pb-32">
-                <div class="p-6">
-                    <h2 class="text-2xl font-black text-gray-900 mb-1">${p.name}</h2>
-                    <p class="text-gray-500 text-sm leading-relaxed mb-4">${p.description || ''}</p>
-                    <span class="text-xl font-bold text-gray-900">R$ ${bestPrice.toFixed(2).replace('.', ',')}</span>
-                </div>
-
-                ${complementosHTML}
-
-                <div class="p-6">
-                    <label class="block text-xs font-black uppercase text-gray-400 mb-2">Alguma observação?</label>
-                    <textarea id="productObs" placeholder="Ex: tirar cebola, ponto da carne..." 
-                        class="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 text-sm h-24 outline-none focus:border-red-200"></textarea>
-                </div>
-            </div>
-
-            <div class="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 flex items-center gap-4 shadow-lg">
-                <div class="flex items-center gap-4 bg-gray-100 px-4 py-2 rounded-xl">
-                    <button onclick="window.adjustDetailQty(-1)" class="text-red-600 font-black text-xl">-</button>
-                    <span id="detailQtyDisplay" class="font-bold text-gray-800">1</span>
-                    <button onclick="window.adjustDetailQty(1)" class="text-red-600 font-black text-xl">+</button>
-                </div>
-                
-                <button id="detailAddBtn" class="flex-1 bg-gray-300 text-gray-500 h-14 rounded-xl font-bold flex items-center justify-between px-6 cursor-not-allowed" disabled>
-                    <span>Adicionar</span>
-                    <span id="totalPriceModal">R$ ${bestPrice.toFixed(2).replace('.', ',')}</span>
-                </button>
-            </div>
-        </div>
-    `;
-
-    // Ação do Botão
-   const btnAdd = document.getElementById('detailAddBtn');
-if (btnAdd) {
-    btnAdd.onclick = () => {
-        // 1. Coleta todos os complementos marcados
-        const complementosSelecionados = [];
-        document.querySelectorAll('input[name^="comp_"]:checked').forEach(cb => {
-            complementosSelecionados.push({
-                grupo: cb.dataset.groupName,
-                nome: cb.dataset.itemName,
-                preco: parseFloat(cb.dataset.price || 0)
-            });
+        // Seleciona apenas os marcados DESTE grupo
+        const checked = groupEl.querySelectorAll(`input[name="comp_${gid}"]:checked`);
+        
+        // Lógica de Trava (iFood): Se atingiu o máximo, desabilita os outros checkboxes do grupo
+        const notChecked = groupEl.querySelectorAll(`input[name="comp_${gid}"]:not(:checked)`);
+        notChecked.forEach(input => {
+            input.disabled = (checked.length >= max);
+            input.parentElement.style.opacity = (checked.length >= max) ? '0.5' : '1';
         });
 
-        // 2. Cria o objeto de seleção formatado para Restaurante
-        const selection = {
-            isRestaurante: true,
-            complementos: complementosSelecionados,
-            observacao: document.getElementById('productObs')?.value || "",
-            image: p.images?.[0] || '',
-            // Mantemos campos vazios para não quebrar a lógica de varejo no banco
-            size: null,
-            color: 'Padrão' 
-        };
-
-        // 3. Envia para o carrinho
-        console.log("Enviando pedido de restaurante:", selection);
-        window.addToCart(p, state.currentDetailQty, selection);
-        
-        // 4. Fecha o modal após adicionar
-        if (typeof window.closeModalDetails === 'function') {
-            window.closeModalDetails();
+        // Validação: Verifica se atingiu o mínimo exigido
+        if (checked.length < min) {
+            allGroupsValid = false;
         }
-    };
-}
+
+        // Soma o preço dos itens marcados
+        checked.forEach(cb => {
+            extraPrice += parseFloat(cb.dataset.price || 0);
+        });
+    });
+
+    // 2. Cálculo do Total (Preço Base + Extras) * Quantidade
+    const basePrice = (p.promoValue && p.promoValue < p.value) ? p.promoValue : (p.priceCash || p.value);
+    const total = (basePrice + extraPrice) * (state.currentDetailQty || 1);
+    
+    // 3. Atualiza o Visual do Botão
+    const priceDisplay = document.getElementById('totalPriceModal');
+    const addBtn = document.getElementById('detailAddBtn');
+
+    if (priceDisplay) priceDisplay.innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
+
+    if (allGroupsValid) {
+        addBtn.disabled = false;
+        addBtn.className = "flex-1 bg-[#EA1D2C] text-white h-14 rounded-xl font-bold flex items-center justify-between px-6 active:scale-95 transition-transform cursor-pointer";
+    } else {
+        addBtn.disabled = true;
+        addBtn.className = "flex-1 bg-gray-300 text-gray-500 h-14 rounded-xl font-bold flex items-center justify-between px-6 cursor-not-allowed";
+    }
+};
+
+// --- AJUSTE NA FUNÇÃO DE QUANTIDADE ---
+window.adjustDetailQty = function(val) {
+    state.currentDetailQty = Math.max(1, (state.currentDetailQty || 1) + val);
+    const display = document.getElementById('detailQtyDisplay');
+    if (display) display.innerText = state.currentDetailQty;
+    
+    // Se estiver no modo restaurante, atualiza o preço total do botão
+    if (state.storeConfigGlobal?.tipoNegocio === 'restaurante') {
+        window.validateAndTotalRestaurante();
+    }
+};
 
 // --- VALIDAÇÃO E CÁLCULO (ESTILO IFOOD) ---
 // Função para validar se os requisitos mínimos de cada grupo foram atingidos
