@@ -994,3 +994,15 @@ body[data-theme="restaurante"] #catalogContainer {
 body[data-theme="restaurante"] .product-card-restaurante {
     border-bottom: 1px solid #f1f5f9;
 }
+
+/* Garante que o modal detalhes fique acima de TUDO */
+#modalDetails {
+    position: relative;
+    z-index: 9999 !important;
+}
+
+/* Evita que o corpo da página role enquanto o modal está aberto */
+body.modal-open {
+    overflow: hidden;
+    height: 100vh;
+}
