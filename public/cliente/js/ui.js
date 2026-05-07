@@ -1211,36 +1211,3 @@ export function checkProvadorVisibility() {
         }
     }
 }
-
-export function setupMenuRestaurante() {
-    const nav = document.querySelector('nav.fixed.bottom-0');
-    if (!nav) return;
-
-    // Definimos apenas os botões desejados
-    nav.innerHTML = `
-        <button onclick="window.location.reload()" class="nav-btn-item group">
-            <div class="bg-slate-100 p-2 rounded-xl group-active:scale-90 transition-transform">
-                <i data-lucide="home" class="w-5 h-5 stroke-[1.5] text-slate-700"></i>
-            </div>
-            <span class="text-[10px] font-semibold mt-1">Início</span>
-        </button>
-
-        <button onclick="window.openCart()" class="nav-btn-item group relative">
-            <div class="bg-slate-100 p-2 rounded-xl group-active:scale-90 transition-transform">
-                <i data-lucide="shopping-bag" class="w-5 h-5 stroke-[1.5] text-slate-700"></i>
-                <span id="cartBadgeBottom" class="absolute -top-1 -right-1 bg-red-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full hidden">0</span>
-            </div>
-            <span class="text-[10px] font-semibold mt-1">Sacola</span>
-        </button>
-
-        <button onclick="window.openDeliveryModal()" class="nav-btn-item group">
-            <div class="bg-slate-100 p-2 rounded-xl group-active:scale-90 transition-transform">
-                <i data-lucide="map-pin" class="w-5 h-5 stroke-[1.5] text-slate-700"></i>
-            </div>
-            <span class="text-[10px] font-semibold mt-1">Bairros</span>
-        </button>
-    `;
-
-    // Recria os ícones do Lucide para os novos botões aparecerem
-    if (window.lucide) window.lucide.createIcons();
-}
