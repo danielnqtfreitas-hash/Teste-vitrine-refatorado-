@@ -100,40 +100,12 @@ body {
    MODAIS & OVERLAYS
    ========================================= */
 
-/* --- MODAL DETALHES (AJUSTADO PARA CLIQUE E TELA CHEIA) --- */
-#modalDetails {
-    z-index: 99999 !important;
-    pointer-events: none; /* Por padrão, o container pai não bloqueia o fundo */
-}
-
-#modalDetails:not(.hidden) {
-    pointer-events: auto !important; /* Quando aberto, ele captura todos os cliques */
-}
-
-/* Seletor específico para o conteúdo interno do modal */
+/* Modal Detalhes */
 #modalDetails .bg-white {
-    /* No modo restaurante (inset-0), removemos as margens que causam o erro de clique */
-    margin-top: 0 !important;
-    max-height: 100vh !important;
-    height: 100% !important;
-    width: 100% !important;
-    display: flex;
-    flex-direction: column;
+    margin-top: env(safe-area-inset-top, 20px);
+    max-height: calc(100vh - 80px) !important;
 }
-
-/* Ajuste para não bugar em iPhones com notch */
-@supports (padding-top: env(safe-area-inset-top)) {
-    #modalDetails .animate-slide-up {
-        padding-top: env(safe-area-inset-top);
-        background-color: white;
-    }
-}
-
-.modal-close-btn { 
-    pointer-events: auto !important; 
-    z-index: 10000 !important; 
-    cursor: pointer;
-}
+.modal-close-btn { pointer-events: auto !important; z-index: 9999 !important; }
 
 /* Modal Zoom */
 #modalImageZoom {
@@ -1021,16 +993,4 @@ body[data-theme="restaurante"] #catalogContainer {
 
 body[data-theme="restaurante"] .product-card-restaurante {
     border-bottom: 1px solid #f1f5f9;
-}
-
-/* Garante que o modal detalhes fique acima de TUDO */
-#modalDetails {
-    position: relative;
-    z-index: 9999 !important;
-}
-
-/* Evita que o corpo da página role enquanto o modal está aberto */
-body.modal-open {
-    overflow: hidden;
-    height: 100vh;
 }
