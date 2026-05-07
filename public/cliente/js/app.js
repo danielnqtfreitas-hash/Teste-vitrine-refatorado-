@@ -155,14 +155,11 @@ async function initFlow() {
         // --- 1. BLOCO DE SINCRONIZAÇÃO DE VERSÃO (ROBUSTO) ---
         const configRef = doc(db, "stores", state.STORE_ID, "config", "store");
         
-        // Forçamos a busca do servidor para obter o timestamp de comparação
+        // Buscamos o dado real do servidor para comparação de cache
         const serverSnap = await getDocFromServer(configRef);
         const serverData = serverSnap.exists() ? serverSnap.data() : {};
         
-        // Conversão segura: Garantimos que seja um número puro
         const serverLastUpdate = Number(serverData.lastUpdate) || 0;
-        
-        // Chaves dinâmicas baseadas na loja atual
         const cacheKey = `cache_produtos_${state.STORE_ID}`;
         const updateKey = `lastUpdate_${state.STORE_ID}`;
 
@@ -174,7 +171,7 @@ async function initFlow() {
 
         let data;
 
-        // LÓGICA DE DECISÃO: Só usa cache se o timestamp bater e não for zero
+        // LÓGICA: Só usa cache se o timestamp local for IGUAL ao do servidor e maior que zero
         if (cachedProducts && serverLastUpdate > 0 && localLastUpdate === serverLastUpdate) {
             console.log("🚀 Cache validado. Carregando dados locais...");
             try {
@@ -188,17 +185,14 @@ async function initFlow() {
         // Se o cache falhou ou está desatualizado, buscamos na API
         if (!data) {
             console.log("📡 Versão nova ou divergente. Baixando via API...");
-            
-            // Adicionamos v e t para quebrar cache de rede do navegador
             const response = await fetch(`/api/produtos/${state.STORE_ID}?v=${serverLastUpdate}&t=${Date.now()}`);
-            if (!response.ok) throw new Error("Loja não encontrada na API ou erro no servidor");
+            if (!response.ok) throw new Error("Loja não encontrada na API");
             
             data = await response.json(); 
 
-            // Persistência: Salvamos os novos dados e o NOVO timestamp
+            // Atualiza o localStorage com os novos dados e o novo timestamp
             localStorage.setItem(cacheKey, JSON.stringify(data));
             localStorage.setItem(updateKey, serverLastUpdate.toString());
-            console.log(`✅ Cache atualizado para a versão: ${serverLastUpdate}`);
         }
 
         updatePremiumLoader(40); 
@@ -212,11 +206,24 @@ async function initFlow() {
             const viewsData = (analyticsSnap && analyticsSnap.exists()) ? analyticsSnap.data() : {};
             const statsMap = viewsData.stats || {};
 
+            // Mescla os produtos com as visualizações vindas do servidor
             state.allProducts = data.produtos.map(p => {
                 const productStats = statsMap[p.id]; 
                 const vCount = (productStats && typeof productStats.views === 'number') ? productStats.views : 0;
                 return { ...p, views: vCount };
             });
+
+            // --- APLICAÇÃO DO TEMA DE RESTAURANTE ---
+            if (state.storeConfigGlobal && state.storeConfigGlobal.tipoNegocio === 'restaurante') {
+                // 1. Inicia o setup do tema (header iFood, esconde menus desnecessários)
+                RestauranteTheme.setup(); 
+                
+                // 2. Ajusta o grid para lista única vertical
+                const productsGrid = document.getElementById('productsGrid');
+                if (productsGrid) {
+                    productsGrid.className = "flex flex-col w-full bg-white gap-0";
+                }
+            }
 
             // Lógica de interface (Provador vs Bairros)
             const temProdutosProvador = state.allProducts.some(p => 
@@ -237,11 +244,6 @@ async function initFlow() {
             }
 
             if (typeof setupBotoesAlternados === 'function') setupBotoesAlternados();
-            
-            if (state.storeConfigGlobal?.tipoNegocio === 'restaurante') {
-                RestauranteTheme.setup(); 
-            }
-           
             if (typeof updateCartUI === 'function') updateCartUI(); 
 
         } catch (e) {
@@ -273,7 +275,7 @@ async function initFlow() {
         renderHeroCarousel(state.banners);
         renderCategoryTabs();
         
-        await renderCatalog(); 
+        await renderCatalog(); // O catálogo usará o modo lista ou grade dependendo do config
         
         updatePremiumLoader(100);
         if (window.updateNavigationBadges) window.updateNavigationBadges();
@@ -283,7 +285,6 @@ async function initFlow() {
 
     } catch (error) {
         console.error("❌ Erro fatal no initFlow:", error);
-        // Em caso de erro crítico, limpamos o timestamp para forçar atualização na próxima recarga
         localStorage.removeItem(`lastUpdate_${state.STORE_ID}`);
         const loader = document.getElementById('initialLoader');
         if(loader) loader.style.display = 'none';
