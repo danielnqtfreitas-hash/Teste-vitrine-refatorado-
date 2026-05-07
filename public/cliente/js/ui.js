@@ -491,29 +491,39 @@ function renderRestauranteModal(p) {
     `;
 
     // Ação do Botão
-    document.getElementById('detailAddBtn').onclick = () => {
-        const selectedComps = [];
-        document.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => {
-            selectedComps.push({
-                group: cb.dataset.groupName,
-                name: cb.dataset.itemName,
-                price: parseFloat(cb.dataset.price)
+   const btnAdd = document.getElementById('detailAddBtn');
+if (btnAdd) {
+    btnAdd.onclick = () => {
+        // 1. Coleta todos os complementos marcados
+        const complementosSelecionados = [];
+        document.querySelectorAll('input[name^="comp_"]:checked').forEach(cb => {
+            complementosSelecionados.push({
+                grupo: cb.dataset.groupName,
+                nome: cb.dataset.itemName,
+                preco: parseFloat(cb.dataset.price || 0)
             });
         });
 
+        // 2. Cria o objeto de seleção formatado para Restaurante
         const selection = {
             isRestaurante: true,
-            obs: document.getElementById('productObs').value,
-            complementos: selectedComps,
-            image: p.images?.[0]
+            complementos: complementosSelecionados,
+            observacao: document.getElementById('productObs')?.value || "",
+            image: p.images?.[0] || '',
+            // Mantemos campos vazios para não quebrar a lógica de varejo no banco
+            size: null,
+            color: 'Padrão' 
         };
 
+        // 3. Envia para o carrinho
+        console.log("Enviando pedido de restaurante:", selection);
         window.addToCart(p, state.currentDetailQty, selection);
+        
+        // 4. Fecha o modal após adicionar
+        if (typeof window.closeModalDetails === 'function') {
+            window.closeModalDetails();
+        }
     };
-
-    modal.classList.remove('hidden');
-    if(window.lucide) window.lucide.createIcons();
-    validateAndTotalRestaurante(); // Roda uma vez para validar grupos sem obrigatoriedade
 }
 
 // --- VALIDAÇÃO E CÁLCULO (ESTILO IFOOD) ---
