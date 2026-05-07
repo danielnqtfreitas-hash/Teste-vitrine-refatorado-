@@ -56,26 +56,29 @@ export const RestauranteTheme = {
     },
 
     // 3. Card Horizontal (Informação na esquerda, foto na direita)
-    renderCard(p) {
-        const preco = p.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-        const img = p.images?.[0] || 'https://placehold.co/200?text=Sem+Foto';
-        
-        return `
-            <div onclick="window.openProductModal('${p.id}')" class="flex items-center p-4 border-b border-gray-50 bg-white active:bg-gray-50 transition-all cursor-pointer">
-                <div class="flex-1 pr-3">
-                    <h3 class="font-bold text-gray-800 text-[14px] leading-tight mb-1">${p.name}</h3>
-                    <p class="text-[11px] text-gray-500 line-clamp-2 mb-2 leading-relaxed">${p.description || 'Sem descrição.'}</p>
-                    <div class="flex items-center gap-2">
-                        <span class="text-green-600 font-bold text-sm">${preco}</span>
-                        ${p.promoValue ? `<span class="text-[10px] text-gray-400 line-through">R$ ${p.promoValue}</span>` : ''}
-                    </div>
-                </div>
-                <div class="w-24 h-24 flex-shrink-0">
-                    <img src="${img}" class="w-full h-full object-cover rounded-xl shadow-sm" loading="lazy">
+   // js/theme-restaurante.js
+renderCard(p) {
+    // Garantindo que o preço seja lido corretamente (price ou value)
+    const precoNumerico = p.price || p.value || 0;
+    const precoFormatado = precoNumerico.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    const img = (p.images && p.images.length > 0) ? p.images[0] : 'https://placehold.co/200?text=Sem+Foto';
+    
+    return `
+        <div onclick="window.openProductModal('${p.id}')" class="flex items-center p-4 border-b border-gray-100 bg-white active:bg-gray-50 transition-all cursor-pointer">
+            <div class="flex-1 pr-3">
+                <h3 class="font-bold text-gray-800 text-[15px] leading-tight mb-1">${p.name}</h3>
+                <p class="text-[12px] text-gray-500 line-clamp-2 mb-2 leading-relaxed">${p.description || 'Delicioso prato preparado com ingredientes selecionados.'}</p>
+                <div class="flex items-center gap-2">
+                    <span class="text-green-600 font-bold text-sm">${precoFormatado}</span>
+                    ${p.promoValue ? `<span class="text-[10px] text-gray-400 line-through">R$ ${p.promoValue}</span>` : ''}
                 </div>
             </div>
-        `;
-    },
+            <div class="w-20 h-20 flex-shrink-0">
+                <img src="${img}" class="w-full h-full object-cover rounded-lg shadow-sm" loading="lazy">
+            </div>
+        </div>
+    `;
+},
 
     // 4. Barra de Sacola Flutuante (Botão Vermelho)
     renderFloatingCart() {
