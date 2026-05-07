@@ -29,18 +29,20 @@ const els = {
 // --- RENDERIZAÇÃO DE CARDS (PRODUTO) ---
 
 export function mkProductCard(p) {
-    const tipoNegocio = state.storeConfig?.tipoNegocio || 'varejo';
+    const tipoNegocio = state.storeConfigGlobal?.tipoNegocio || 'varejo';
     const img = p.images?.[0] || 'https://placehold.co/600?text=Sem+Imagem';
     const isFav = state.favorites.includes(p.id);
     const outOfStock = (parseInt(p.stock) || 0) <= 0;
     const agora = Date.now();
 
-    // Lógica de Promoção e Preços
+    // Lógica de Promoção e Preços (Unificada para ambos os layouts)
     const isPromoValid = p.promoValue && p.promoValue < p.value && (p.promoUntil ? p.promoUntil > agora : true);
     const hasPromo = !!isPromoValid;
-    const precoPixBase = p.priceCash || p.value;
-    const precoCardBase = p.priceCard || p.value;
+    
+    const precoPixBase = p.priceCash || p.value || 0;
+    const precoCardBase = p.priceCard || p.value || 0;
     const diferencaCartao = precoCardBase - precoPixBase;
+    
     const bestPrice = hasPromo ? p.promoValue : precoPixBase;
     const cardPriceAdaptado = hasPromo ? (p.promoValue + diferencaCartao) : precoCardBase;
 
@@ -75,22 +77,19 @@ export function mkProductCard(p) {
         `;
     }
 
-    // --- LAYOUT 2: VAREJO (Original - Grade) ---
+    // --- LAYOUT 2: VAREJO (Grade original) ---
     const disc = hasPromo && !outOfStock ? `<span class="absolute top-0 right-0 bg-red-600 text-white text-[10px] font-black px-2 py-1 rounded-bl-lg z-10">-${Math.round(((p.value - p.promoValue) / p.value) * 100)}%</span>` : '';
     const stockBadge = outOfStock ? `<span class="absolute inset-0 bg-white/60 flex items-center justify-center text-red-600 font-black text-xs uppercase z-20">Esgotado</span>` : '';
+    
     const tamanhosHTML = (p.sizes && p.sizes.length > 0) 
         ? `<div class="flex flex-wrap gap-1 mt-1 mb-1">
-            ${p.sizes.map(s => `
-                <span class="text-[9px] font-bold bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded border border-gray-200 uppercase leading-none">
-                    ${s}
-                </span>
-            `).join('')}
+            ${p.sizes.map(s => `<span class="text-[9px] font-bold bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded border border-gray-200 uppercase leading-none">${s}</span>`).join('')}
            </div>`
         : `<div class="h-4"></div>`;
 
     return `
     <div onclick="${outOfStock ? '' : `window.openProductModal('${p.id}')`}" class="product-card cursor-pointer group flex flex-col h-full relative ${outOfStock ? 'opacity-70 grayscale' : ''}">
-        <div class="aspect-square bg-white relative overflow-hidden border-b border-slate-50">
+        <div class="aspect-square bg-white relative overflow-hidden border-b border-slate-50 rounded-t-2xl">
             ${stockBadge}
             <img src="${img}" class="w-full h-full object-cover transition-transform duration-500 ${outOfStock ? '' : 'group-hover:scale-105'}" loading="lazy">
             ${disc}
@@ -99,14 +98,8 @@ export function mkProductCard(p) {
             </button>
         </div>
         
-                <div class="p-3 md:p-4 flex flex-col flex-grow bg-white">
-            <div class="product-timer hidden mb-2 py-1 px-2 rounded-lg flex items-center gap-1.5 timer-accent animate-pulse" data-pid="${p.id}">
-                <i data-lucide="clock" class="w-3 h-3"></i>
-                <span class="text-[9px] font-black uppercase tracking-tighter countdown-text">Carregando...</span>
-            </div>
-            
+        <div class="p-3 md:p-4 flex flex-col flex-grow bg-white rounded-b-2xl shadow-sm border border-t-0 border-gray-100">
             <h4 class="text-sm font-semibold text-slate-700 leading-snug line-clamp-2 mb-1">${p.name}</h4>
-
             ${tamanhosHTML}
             
             <div class="mt-auto pt-1">
@@ -115,11 +108,11 @@ export function mkProductCard(p) {
                         ${hasPromo ? 'Oferta Especial' : 'À vista no Pix'}
                     </span>
                     <div class="flex items-center justify-between">
-                        <span class="text-lg md:text-xl font-display font-black text-slate-900 tracking-tight">
+                        <span class="text-lg md:text-xl font-black text-slate-900 tracking-tight">
                             R$ ${bestPrice.toFixed(2).replace('.',',')}
                         </span>
                         ${outOfStock ? '' : `
-                        <button onclick="event.stopPropagation(); window.quickAdd('${p.id}')" class="w-8 h-8 rounded-full bg-primary/10 hover:bg-primary text-primary hover:text-white flex items-center justify-center transition-colors active-scale">
+                        <button onclick="event.stopPropagation(); window.quickAdd('${p.id}')" class="w-8 h-8 rounded-full bg-primary/10 hover:bg-primary text-primary hover:text-white flex items-center justify-center transition-colors">
                             <i data-lucide="plus" class="w-5 h-5"></i>
                         </button>`}
                     </div>
