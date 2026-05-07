@@ -345,7 +345,7 @@ function generateMagicSectionHTML(title, products, colorClass) {
 }
 
 
-// --- MODAL DE DETALHES DO PRODUTO (BIFURCADO: VAREJO vs RESTAURANTE) ---
+// --- MODAL DE DETALHES DO PRODUTO ---
 
 export function openProductModal(id) {
     els.modalTimer()?.classList.add('hidden');
@@ -356,27 +356,21 @@ export function openProductModal(id) {
         window.reportarMetrica(id, 'view');
     }
 
-    // Configurações básicas de SEO e Histórico
     const newURL = window.location.pathname + `?id=${state.STORE_ID}&p=${p.id}`;
     window.history.pushState({ path: newURL }, '', newURL);
     document.title = `${p.name} | ${state.storeConfigGlobal.storeName || 'Vitrine'}`;
-    
     state.currentDetailId = id; 
     state.currentDetailQty = 1; 
-    const isRestaurante = state.storeConfigGlobal?.tipoNegocio === 'restaurante';
-
-    // 1. SE FOR RESTAURANTE -> USA LAYOUT IFOOD (MODAL FULLSCREEN)
-    if (isRestaurante) {
-        renderRestauranteModal(p);
-        return; // Interrompe aqui para não executar a lógica de varejo
-    }
-
-    // 2. SE FOR VAREJO -> MANTÉM SUA LÓGICA ORIGINAL
+    
+    // --- LÓGICA DE IMAGENS REFORÇADA ---
     const mainImages = (p.images?.length) ? p.images : ['https://placehold.co/600?text=Sem+Imagem'];
+    
+    // Coleta imagens das variações (filtramos as que já estão nas principais para não repetir)
     const variationImages = (p.variations || [])
         .map(v => v.image)
         .filter(img => img && !mainImages.includes(img));
 
+    // Array final com TUDO
     state.currentDetailImages = [...mainImages, ...variationImages];
     state.currentDetailImageIndex = 0;
     
@@ -386,6 +380,10 @@ export function openProductModal(id) {
         image: state.currentDetailImages[0] 
     }; 
 
+    console.log("Imagens detectadas para o modal:", state.currentDetailImages);
+
+    // --- RENDERIZAÇÃO ---
+    // Certifique-se que renderThumbnails use o state.currentDetailImages
     renderThumbnails(); 
     updateDetailImageDisplay();
     
@@ -405,128 +403,6 @@ export function openProductModal(id) {
     els.modalDetails().classList.remove('hidden'); 
     if(window.lucide) window.lucide.createIcons();
 }
-
-// --- MOTOR DE CÁLCULO E VALIDAÇÃO PARA RESTAURANTE ---
-window.validateAndTotalRestaurante = function() {
-    const p = state.allProducts.find(x => x.id === state.currentDetailId);
-    if (!p) return;
-
-    let allGroupsValid = true;
-    let extraPrice = 0;
-
-    // 1. Percorre cada grupo de complementos (ex: "cremes", "frutas")
-    document.querySelectorAll('.complement-group').forEach(groupEl => {
-        const min = parseInt(groupEl.dataset.min) || 0;
-        const max = parseInt(groupEl.dataset.max) || 99;
-        const gid = groupEl.dataset.groupId;
-        
-        // Seleciona apenas os marcados DESTE grupo
-        const checked = groupEl.querySelectorAll(`input[name="comp_${gid}"]:checked`);
-        
-        // Lógica de Trava (iFood): Se atingiu o máximo, desabilita os outros checkboxes do grupo
-        const notChecked = groupEl.querySelectorAll(`input[name="comp_${gid}"]:not(:checked)`);
-        notChecked.forEach(input => {
-            input.disabled = (checked.length >= max);
-            input.parentElement.style.opacity = (checked.length >= max) ? '0.5' : '1';
-        });
-
-        // Validação: Verifica se atingiu o mínimo exigido
-        if (checked.length < min) {
-            allGroupsValid = false;
-        }
-
-        // Soma o preço dos itens marcados
-        checked.forEach(cb => {
-            extraPrice += parseFloat(cb.dataset.price || 0);
-        });
-    });
-
-    // 2. Cálculo do Total (Preço Base + Extras) * Quantidade
-    const basePrice = (p.promoValue && p.promoValue < p.value) ? p.promoValue : (p.priceCash || p.value);
-    const total = (basePrice + extraPrice) * (state.currentDetailQty || 1);
-    
-    // 3. Atualiza o Visual do Botão
-    const priceDisplay = document.getElementById('totalPriceModal');
-    const addBtn = document.getElementById('detailAddBtn');
-
-    if (priceDisplay) priceDisplay.innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
-
-    if (allGroupsValid) {
-        addBtn.disabled = false;
-        addBtn.className = "flex-1 bg-[#EA1D2C] text-white h-14 rounded-xl font-bold flex items-center justify-between px-6 active:scale-95 transition-transform cursor-pointer";
-    } else {
-        addBtn.disabled = true;
-        addBtn.className = "flex-1 bg-gray-300 text-gray-500 h-14 rounded-xl font-bold flex items-center justify-between px-6 cursor-not-allowed";
-    }
-};
-
-// --- AJUSTE NA FUNÇÃO DE QUANTIDADE ---
-window.adjustDetailQty = function(val) {
-    state.currentDetailQty = Math.max(1, (state.currentDetailQty || 1) + val);
-    const display = document.getElementById('detailQtyDisplay');
-    if (display) display.innerText = state.currentDetailQty;
-    
-    // Se estiver no modo restaurante, atualiza o preço total do botão
-    if (state.storeConfigGlobal?.tipoNegocio === 'restaurante') {
-        window.validateAndTotalRestaurante();
-    }
-};
-
-// --- VALIDAÇÃO E CÁLCULO (ESTILO IFOOD) ---
-// Função para validar se os requisitos mínimos de cada grupo foram atingidos
-window.validateAndTotalRestaurante = () => {
-    const p = state.allProducts.find(x => x.id === state.currentDetailId);
-    if (!p) return;
-
-    let allGroupsValid = true;
-    let extraPrice = 0;
-
-    // Varre todos os grupos de complementos
-    document.querySelectorAll('.complement-group').forEach(groupEl => {
-        const min = parseInt(groupEl.dataset.min) || 0;
-        const max = parseInt(groupEl.dataset.max) || 99;
-        const gid = groupEl.dataset.groupId;
-        const checked = groupEl.querySelectorAll(`input[name="comp_${gid}"]:checked`);
-        
-        // Desabilita outros checkboxes se atingir o máximo (estilo iFood)
-        const notChecked = groupEl.querySelectorAll(`input[name="comp_${gid}"]:not(:checked)`);
-        notChecked.forEach(input => {
-            input.disabled = (checked.length >= max);
-            input.parentElement.style.opacity = (checked.length >= max) ? '0.5' : '1';
-        });
-
-        // Se não atingiu o mínimo, o modal todo é considerado inválido
-        if (checked.length < min) {
-            allGroupsValid = false;
-        }
-
-        // Soma o valor dos adicionais selecionados
-        checked.forEach(cb => extraPrice += parseFloat(cb.dataset.price || 0));
-    });
-
-    // Atualiza o preço no botão
-    const basePrice = (p.promoValue && p.promoValue < p.value) ? p.promoValue : (p.priceCash || p.value);
-    const total = (basePrice + extraPrice) * (state.currentDetailQty || 1);
-    
-    const priceDisplay = document.getElementById('totalPriceModal');
-    const addBtn = document.getElementById('detailAddBtn');
-
-    if (priceDisplay) priceDisplay.innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
-
-    // Ativa/Desativa o botão de adicionar
-    if (allGroupsValid) {
-        addBtn.disabled = false;
-        addBtn.classList.replace('bg-gray-300', 'bg-[#EA1D2C]');
-        addBtn.classList.replace('text-gray-500', 'text-white');
-        addBtn.classList.remove('cursor-not-allowed');
-    } else {
-        addBtn.disabled = true;
-        addBtn.classList.replace('bg-[#EA1D2C]', 'bg-gray-300');
-        addBtn.classList.replace('text-white', 'text-gray-500');
-        addBtn.classList.add('cursor-not-allowed');
-    }
-};
-
 function renderVariationUI(p) {
     const matrix = p.variations || [];
     const hasS = p.sizes?.length > 0, hasC = p.colors?.length > 0;
