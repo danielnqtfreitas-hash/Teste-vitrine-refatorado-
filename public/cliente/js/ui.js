@@ -1212,7 +1212,6 @@ export function checkProvadorVisibility() {
     }
 }
 
-
 export function setupMenuRestaurante() {
     const nav = document.querySelector('nav.fixed.bottom-0');
     if (!nav) return;
