@@ -64,7 +64,7 @@ window.renderRestauranteModal = function(p) {
 
     // 2. Injeta o HTML no Modal
     modal.innerHTML = `
-        <div class="fixed inset-0 z-[1000] bg-white flex flex-col animate-slide-up">
+        <div class="fixed inset-0 z-[9999] bg-white flex flex-col animate-slide-up">
             <div class="relative h-64 w-full shrink-0">
                 <button onclick="window.closeModalDetails()" class="absolute top-4 left-4 z-20 bg-black/40 text-white p-2 rounded-full backdrop-blur-md">
                     <i data-lucide="chevron-left"></i>
