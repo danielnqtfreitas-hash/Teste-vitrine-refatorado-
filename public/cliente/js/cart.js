@@ -491,3 +491,10 @@ export function alertaEstoquePreso(nome) {
         confirmButtonText: 'ENTENDIDO'
     }).then(() => window.location.reload());
 }
+
+// No final do cart.js
+window.updateCartUI = updateCartUI;
+window.toggleCart = () => {
+    const drawer = document.getElementById('cartDrawer') || document.getElementById('cartSection');
+    if (drawer) drawer.classList.remove('hidden');
+};
