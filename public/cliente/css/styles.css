@@ -100,12 +100,40 @@ body {
    MODAIS & OVERLAYS
    ========================================= */
 
-/* Modal Detalhes */
-#modalDetails .bg-white {
-    margin-top: env(safe-area-inset-top, 20px);
-    max-height: calc(100vh - 80px) !important;
+/* --- MODAL DETALHES (AJUSTADO PARA CLIQUE E TELA CHEIA) --- */
+#modalDetails {
+    z-index: 99999 !important;
+    pointer-events: none; /* Por padrão, o container pai não bloqueia o fundo */
 }
-.modal-close-btn { pointer-events: auto !important; z-index: 9999 !important; }
+
+#modalDetails:not(.hidden) {
+    pointer-events: auto !important; /* Quando aberto, ele captura todos os cliques */
+}
+
+/* Seletor específico para o conteúdo interno do modal */
+#modalDetails .bg-white {
+    /* No modo restaurante (inset-0), removemos as margens que causam o erro de clique */
+    margin-top: 0 !important;
+    max-height: 100vh !important;
+    height: 100% !important;
+    width: 100% !important;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Ajuste para não bugar em iPhones com notch */
+@supports (padding-top: env(safe-area-inset-top)) {
+    #modalDetails .animate-slide-up {
+        padding-top: env(safe-area-inset-top);
+        background-color: white;
+    }
+}
+
+.modal-close-btn { 
+    pointer-events: auto !important; 
+    z-index: 10000 !important; 
+    cursor: pointer;
+}
 
 /* Modal Zoom */
 #modalImageZoom {
