@@ -483,15 +483,6 @@ export function toggleAddressFields() {
     updateCartTotals();
 }
 
-export function alertaEstoquePreso(nome) {
-    Swal.fire({
-        title: 'Item Esgotado ou Reservado',
-        html: `O item <b>${nome}</b> acabou de ser reservado. Se a compra não for concluída, ele voltará ao estoque.`,
-        icon: 'info',
-        confirmButtonText: 'ENTENDIDO'
-    }).then(() => window.location.reload());
-}
-
 // --- EXPOSIÇÃO GLOBAL PARA O MENU E MODAL DE RESTAURANTE ---
 
 // Função para abrir a sacola (usada pelo botão central do menu)
