@@ -217,6 +217,8 @@ async function initFlow() {
             if (state.storeConfigGlobal && state.storeConfigGlobal.tipoNegocio === 'restaurante') {
                 // 1. Inicia o setup do tema (header iFood, esconde menus desnecessários)
                 RestauranteTheme.setup(); 
+
+                setupMenuRestaurante();
                 
                 // 2. Ajusta o grid para lista única vertical
                 const productsGrid = document.getElementById('productsGrid');
