@@ -492,39 +492,25 @@ export function alertaEstoquePreso(nome) {
     }).then(() => window.location.reload());
 }
 
-// --- EXPOSIÇÃO GLOBAL (MOTOR DE INTEGRAÇÃO) ---
+// --- EXPOSIÇÃO GLOBAL PARA O MENU E MODAL DE RESTAURANTE ---
 
-// 1. Função para abrir/fechar a sacola (usada pelo menu inferior)
+// Função para abrir a sacola (usada pelo botão central do menu)
 window.openCart = function() {
-    // Tenta encontrar o container da sacola pelos IDs comuns no seu projeto
     const drawer = document.getElementById('cartDrawer') || document.getElementById('cartSection');
-    
     if (drawer) {
         drawer.classList.remove('hidden');
-        // Sempre que abrir, garante que a lista de itens está atualizada
+        // Atualiza a lista de itens sempre que abrir
         if (typeof updateCartUI === 'function') updateCartUI();
     } else {
-        console.error("Erro: Container 'cartDrawer' não encontrado no index.html");
+        console.error("Erro: Container da sacola não encontrado.");
     }
 };
 
-// 2. Atalho para o toggle (usado no app.js como fallback)
-window.toggleCart = window.openCart;
-
-// 3. Garante que o addToCart seja visto pelo Modal de Restaurante (ui.js)
+// Garante que o addToCart seja visto pelo modal de restaurante
 window.addToCart = addToCart;
 
-// 4. Garante que a atualização de badge/contador funcione globalmente
+// Garante que a atualização da interface seja global
 window.updateCartUI = updateCartUI;
 
-// Mantemos as exportações para o sistema de módulos (app.js)
-export { 
-    addToCart, 
-    updateCartUI, 
-    updateCartTotals, 
-    goToStep1, 
-    goToStep2, 
-    toggleAddressFields, 
-    modQty, 
-
-};
+// Exportações normais para o sistema de módulos
+export { addToCart, updateCartUI };
