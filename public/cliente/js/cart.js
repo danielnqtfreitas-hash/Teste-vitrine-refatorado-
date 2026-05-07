@@ -492,9 +492,25 @@ export function alertaEstoquePreso(nome) {
     }).then(() => window.location.reload());
 }
 
-// No final do cart.js
-window.updateCartUI = updateCartUI;
-window.toggleCart = () => {
+// --- EXPOSIÇÃO GLOBAL PARA O MENU E MODAL DE RESTAURANTE ---
+
+// Função para abrir a sacola (usada pelo botão central do menu)
+window.openCart = function() {
     const drawer = document.getElementById('cartDrawer') || document.getElementById('cartSection');
-    if (drawer) drawer.classList.remove('hidden');
+    if (drawer) {
+        drawer.classList.remove('hidden');
+        // Atualiza a lista de itens sempre que abrir
+        if (typeof updateCartUI === 'function') updateCartUI();
+    } else {
+        console.error("Erro: Container da sacola não encontrado.");
+    }
 };
+
+// Garante que o addToCart seja visto pelo modal de restaurante
+window.addToCart = addToCart;
+
+// Garante que a atualização da interface seja global
+window.updateCartUI = updateCartUI;
+
+// Exportações normais para o sistema de módulos
+export { addToCart, updateCartUI };
