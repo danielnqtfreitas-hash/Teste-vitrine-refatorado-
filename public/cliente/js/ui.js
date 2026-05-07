@@ -527,52 +527,57 @@ if (btnAdd) {
 }
 
 // --- VALIDAÇÃO E CÁLCULO (ESTILO IFOOD) ---
-window.validateAndTotalRestaurante = (groupId = null) => {
+// Função para validar se os requisitos mínimos de cada grupo foram atingidos
+window.validateAndTotalRestaurante = () => {
     const p = state.allProducts.find(x => x.id === state.currentDetailId);
+    if (!p) return;
+
     let allGroupsValid = true;
     let extraPrice = 0;
 
-    // 1. Validar cada grupo de complementos
+    // Varre todos os grupos de complementos
     document.querySelectorAll('.complement-group').forEach(groupEl => {
-        const min = parseInt(groupEl.dataset.min);
-        const max = parseInt(groupEl.dataset.max);
+        const min = parseInt(groupEl.dataset.min) || 0;
+        const max = parseInt(groupEl.dataset.max) || 99;
         const gid = groupEl.dataset.groupId;
         const checked = groupEl.querySelectorAll(`input[name="comp_${gid}"]:checked`);
         
-        // Bloqueia novos cliques se atingir o máximo
+        // Desabilita outros checkboxes se atingir o máximo (estilo iFood)
         const notChecked = groupEl.querySelectorAll(`input[name="comp_${gid}"]:not(:checked)`);
         notChecked.forEach(input => {
             input.disabled = (checked.length >= max);
             input.parentElement.style.opacity = (checked.length >= max) ? '0.5' : '1';
         });
 
-        // Verifica se a regra de mínimo foi atingida
-        if (checked.length < min || checked.length > max) {
+        // Se não atingiu o mínimo, o modal todo é considerado inválido
+        if (checked.length < min) {
             allGroupsValid = false;
         }
 
-        // Soma preços dos marcados
-        checked.forEach(cb => extraPrice += parseFloat(cb.dataset.price));
+        // Soma o valor dos adicionais selecionados
+        checked.forEach(cb => extraPrice += parseFloat(cb.dataset.price || 0));
     });
 
-    // 2. Atualizar Preço Total no Botão
+    // Atualiza o preço no botão
     const basePrice = (p.promoValue && p.promoValue < p.value) ? p.promoValue : (p.priceCash || p.value);
-    const total = (basePrice + extraPrice) * state.currentDetailQty;
+    const total = (basePrice + extraPrice) * (state.currentDetailQty || 1);
     
     const priceDisplay = document.getElementById('totalPriceModal');
     const addBtn = document.getElementById('detailAddBtn');
 
     if (priceDisplay) priceDisplay.innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
 
-    // 3. Liberar ou Bloquear o Botão de Adicionar
+    // Ativa/Desativa o botão de adicionar
     if (allGroupsValid) {
         addBtn.disabled = false;
-        addBtn.classList.remove('bg-gray-300', 'text-gray-500', 'cursor-not-allowed');
-        addBtn.classList.add('bg-[#EA1D2C]', 'text-white');
+        addBtn.classList.replace('bg-gray-300', 'bg-[#EA1D2C]');
+        addBtn.classList.replace('text-gray-500', 'text-white');
+        addBtn.classList.remove('cursor-not-allowed');
     } else {
         addBtn.disabled = true;
-        addBtn.classList.add('bg-gray-300', 'text-gray-500', 'cursor-not-allowed');
-        addBtn.classList.remove('bg-[#EA1D2C]', 'text-white');
+        addBtn.classList.replace('bg-[#EA1D2C]', 'bg-gray-300');
+        addBtn.classList.replace('text-white', 'text-gray-500');
+        addBtn.classList.add('cursor-not-allowed');
     }
 };
 
