@@ -483,25 +483,18 @@ export function toggleAddressFields() {
     updateCartTotals();
 }
 
-// --- EXPOSIÇÃO GLOBAL PARA O MENU E MODAL DE RESTAURANTE ---
+export function alertaEstoquePreso(nome) {
+    Swal.fire({
+        title: 'Item Esgotado ou Reservado',
+        html: `O item <b>${nome}</b> acabou de ser reservado. Se a compra não for concluída, ele voltará ao estoque.`,
+        icon: 'info',
+        confirmButtonText: 'ENTENDIDO'
+    }).then(() => window.location.reload());
+}
 
-// Função para abrir a sacola (usada pelo botão central do menu)
-window.openCart = function() {
-    const drawer = document.getElementById('cartDrawer') || document.getElementById('cartSection');
-    if (drawer) {
-        drawer.classList.remove('hidden');
-        // Atualiza a lista de itens sempre que abrir
-        if (typeof updateCartUI === 'function') updateCartUI();
-    } else {
-        console.error("Erro: Container da sacola não encontrado.");
-    }
-};
-
-// Garante que o addToCart seja visto pelo modal de restaurante
-window.addToCart = addToCart;
-
-// Garante que a atualização da interface seja global
+// No final do cart.js
 window.updateCartUI = updateCartUI;
-
-// Exportações normais para o sistema de módulos
-export { addToCart, updateCartUI };
+window.toggleCart = () => {
+    const drawer = document.getElementById('cartDrawer') || document.getElementById('cartSection');
+    if (drawer) drawer.classList.remove('hidden');
+};
