@@ -628,10 +628,12 @@ function updatePremiumLoader(progress, logoUrl = null) {
 }
 
 // --- FUNÇÃO PARA ADAPTAR O MENU PARA RESTAURANTE ---
+// --- FUNÇÃO PARA ADAPTAR O MENU PARA RESTAURANTE (NO APP.JS) ---
 window.setupMenuRestaurante = function() {
     const nav = document.querySelector('nav.fixed.bottom-0');
     if (!nav) return;
 
+    // Injetamos o HTML garantindo que o onclick chame a função global correta
     nav.innerHTML = `
         <button onclick="window.location.reload()" class="nav-btn-item group flex flex-col items-center">
             <div class="bg-slate-100 p-2 rounded-xl active:scale-90 transition-transform">
@@ -640,7 +642,7 @@ window.setupMenuRestaurante = function() {
             <span class="text-[10px] font-semibold mt-1">Início</span>
         </button>
 
-        <button onclick="window.openCart()" class="nav-btn-item group relative flex flex-col items-center">
+        <button onclick="window.toggleCart?.() || (document.getElementById('cartDrawer')?.classList.remove('hidden'))" class="nav-btn-item group relative flex flex-col items-center">
             <div class="bg-slate-100 p-2 rounded-xl active:scale-90 transition-transform">
                 <i data-lucide="shopping-bag" class="w-5 h-5 text-slate-700"></i>
                 <span id="cartBadgeBottom" class="absolute -top-1 -right-1 bg-red-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full hidden">0</span>
@@ -658,7 +660,7 @@ window.setupMenuRestaurante = function() {
 
     if (window.lucide) window.lucide.createIcons();
     
-    // Atualiza o contador de itens na sacola imediatamente
+    // Força a atualização do contador (badge) da sacola assim que o menu carregar
     if (typeof window.updateCartUI === 'function') {
         window.updateCartUI();
     }
