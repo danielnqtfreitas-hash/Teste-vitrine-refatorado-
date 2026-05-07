@@ -146,38 +146,53 @@ async function initFlow() {
     try {
         updatePremiumLoader(10); 
 
-        // --- 1. BLOCO DE SINCRONIZAÇÃO DE VERSÃO (CORRIGIDO) ---
+        // Garante que temos um ID de loja antes de prosseguir
+        if (!state.STORE_ID) {
+            console.error("❌ STORE_ID não definido. Abortando initFlow.");
+            return;
+        }
+
+        // --- 1. BLOCO DE SINCRONIZAÇÃO DE VERSÃO (ROBUSTO) ---
         const configRef = doc(db, "stores", state.STORE_ID, "config", "store");
         
-        // Buscamos o dado real do servidor para garantir que o lastUpdate seja o mais recente
+        // Buscamos o dado real do servidor para comparação de cache
         const serverSnap = await getDocFromServer(configRef);
         const serverData = serverSnap.exists() ? serverSnap.data() : {};
         
-        // Converte o int64 do Firestore para Number do JS para comparação segura
         const serverLastUpdate = Number(serverData.lastUpdate) || 0;
-        const localLastUpdate = Number(localStorage.getItem(`lastUpdate_${state.STORE_ID}`)) || 0;
-        const cachedProducts = localStorage.getItem(`cache_produtos_${state.STORE_ID}`);
+        const cacheKey = `cache_produtos_${state.STORE_ID}`;
+        const updateKey = `lastUpdate_${state.STORE_ID}`;
 
-        console.log(`[Cache Debug] Servidor: ${serverLastUpdate} | Local: ${localLastUpdate}`);
+        const localLastUpdateRaw = localStorage.getItem(updateKey);
+        const localLastUpdate = localLastUpdateRaw ? Number(localLastUpdateRaw) : 0;
+        const cachedProducts = localStorage.getItem(cacheKey);
+
+        console.log(`[Cache Debug] Loja: ${state.STORE_ID} | Servidor: ${serverLastUpdate} | Local: ${localLastUpdate}`);
 
         let data;
 
         // LÓGICA: Só usa cache se o timestamp local for IGUAL ao do servidor e maior que zero
-        if (cachedProducts && localLastUpdate > 0 && localLastUpdate === serverLastUpdate) {
+        if (cachedProducts && serverLastUpdate > 0 && localLastUpdate === serverLastUpdate) {
             console.log("🚀 Cache validado. Carregando dados locais...");
-            data = JSON.parse(cachedProducts);
-        } else {
+            try {
+                data = JSON.parse(cachedProducts);
+            } catch (e) {
+                console.warn("⚠️ Erro ao parsear cache, buscando novos dados...");
+                data = null;
+            }
+        }
+
+        // Se o cache falhou ou está desatualizado, buscamos na API
+        if (!data) {
             console.log("📡 Versão nova ou divergente. Baixando via API...");
-            
-            // Adicionamos o timestamp na URL para evitar que o navegador sirva um cache antigo da própria API[cite: 1]
             const response = await fetch(`/api/produtos/${state.STORE_ID}?v=${serverLastUpdate}&t=${Date.now()}`);
             if (!response.ok) throw new Error("Loja não encontrada na API");
             
             data = await response.json(); 
 
-            // Atualiza o localStorage com os novos dados e o novo timestamp para a próxima conferência[cite: 1]
-            localStorage.setItem(`cache_produtos_${state.STORE_ID}`, JSON.stringify(data));
-            localStorage.setItem(`lastUpdate_${state.STORE_ID}`, serverLastUpdate.toString());
+            // Atualiza o localStorage com os novos dados e o novo timestamp
+            localStorage.setItem(cacheKey, JSON.stringify(data));
+            localStorage.setItem(updateKey, serverLastUpdate.toString());
         }
 
         updatePremiumLoader(40); 
@@ -198,6 +213,20 @@ async function initFlow() {
                 return { ...p, views: vCount };
             });
 
+            // --- APLICAÇÃO DO TEMA DE RESTAURANTE ---
+            if (state.storeConfigGlobal && state.storeConfigGlobal.tipoNegocio === 'restaurante') {
+                // 1. Inicia o setup do tema (header iFood, esconde menus desnecessários)
+                RestauranteTheme.setup(); 
+
+                setupMenuRestaurante();
+                
+                // 2. Ajusta o grid para lista única vertical
+                const productsGrid = document.getElementById('productsGrid');
+                if (productsGrid) {
+                    productsGrid.className = "flex flex-col w-full bg-white gap-0";
+                }
+            }
+
             // Lógica de interface (Provador vs Bairros)
             const temProdutosProvador = state.allProducts.some(p => 
                 p.posicaoProvador === 'superior' || p.posicaoProvador === 'inferior'
@@ -216,17 +245,8 @@ async function initFlow() {
                 }
             }
 
-            if (typeof setupBotoesAlternados === 'function') {
-                setupBotoesAlternados();
-            } 
-            
-            if (state.storeConfigGlobal && state.storeConfigGlobal.tipoNegocio === 'restaurante') {
-                RestauranteTheme.setup(); 
-            }
-           
-            if (typeof updateCartUI === 'function') {
-                updateCartUI(); 
-            }
+            if (typeof setupBotoesAlternados === 'function') setupBotoesAlternados();
+            if (typeof updateCartUI === 'function') updateCartUI(); 
 
         } catch (e) {
             console.warn("⚠️ Erro ao processar analytics:", e);
@@ -242,13 +262,14 @@ async function initFlow() {
             state.bottoms = state.allProducts.filter(p => p.disponivelProvador && p.posicaoProvador === 'inferior');
 
             const isFashionStore = state.tops.length > 0 && state.bottoms.length > 0;
-            setupFooterButton(isFashionStore);
+            if (typeof setupFooterButton === 'function') setupFooterButton(isFashionStore);
         } catch (e) {
             console.error("Erro no setup do provador:", e);
         }
 
         // --- 4. PROCESSAMENTO FINAL E RENDERIZAÇÃO ---
-        checkStoreStatus(state.storeConfigGlobal);
+        if (typeof checkStoreStatus === 'function') checkStoreStatus(state.storeConfigGlobal);
+        
         state.banners = data.banners || [];
         state.categories = Array.from(new Set(data.produtos.map(p => p.category).filter(Boolean))).sort();
 
@@ -256,12 +277,11 @@ async function initFlow() {
         renderHeroCarousel(state.banners);
         renderCategoryTabs();
         
-        await renderCatalog(); // O catálogo agora limpa o container antes de desenhar
+        await renderCatalog(); // O catálogo usará o modo lista ou grade dependendo do config
         
         updatePremiumLoader(100);
-        if (window.updateNavigationBadges) {
-            window.updateNavigationBadges();
-        }
+        if (window.updateNavigationBadges) window.updateNavigationBadges();
+        
         registerVisit(); 
         checkDeepLink();
 
@@ -606,6 +626,40 @@ function updatePremiumLoader(progress, logoUrl = null) {
         }, 500);
     }
 }
+
+// --- FUNÇÃO PARA ADAPTAR O MENU PARA RESTAURANTE ---
+window.setupMenuRestaurante = function() {
+    const nav = document.querySelector('nav.fixed.bottom-0');
+    if (!nav) return;
+
+    // Limpa o menu de moda e injeta o de delivery
+    nav.innerHTML = `
+        <button onclick="window.location.reload()" class="nav-btn-item group flex flex-col items-center">
+            <div class="bg-slate-100 p-2 rounded-xl active:scale-90 transition-transform">
+                <i data-lucide="home" class="w-5 h-5 text-slate-700"></i>
+            </div>
+            <span class="text-[10px] font-semibold mt-1">Início</span>
+        </button>
+
+        <button onclick="window.openCart()" class="nav-btn-item group relative flex flex-col items-center">
+            <div class="bg-slate-100 p-2 rounded-xl active:scale-90 transition-transform">
+                <i data-lucide="shopping-bag" class="w-5 h-5 text-slate-700"></i>
+                <span id="cartBadgeBottom" class="absolute -top-1 -right-1 bg-red-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full hidden">0</span>
+            </div>
+            <span class="text-[10px] font-semibold mt-1">Sacola</span>
+        </button>
+
+        <button onclick="window.openDeliveryModal()" class="nav-btn-item group flex flex-col items-center">
+            <div class="bg-slate-100 p-2 rounded-xl active:scale-90 transition-transform">
+                <i data-lucide="map-pin" class="w-5 h-5 text-slate-700"></i>
+            </div>
+            <span class="text-[10px] font-semibold mt-1">Bairros</span>
+        </button>
+    `;
+
+    // Re-renderiza os ícones do Lucide
+    if (window.lucide) window.lucide.createIcons();
+};
 
 // EXPOSIÇÃO DE FUNÇÕES PARA O DISCOVERY/REELS (Escopo Global)
 window.addToCart = addToCart;
