@@ -141,10 +141,10 @@ export function mkProductCard(p) {
 }
 
 
-/// --- RENDERIZAÇÃO DO CATÁLOGO PRINCIPAL (ATUALIZADA) ---
+/// --- RENDERIZAÇÃO DO CATÁLOGO PRINCIPAL (FORMA FINAL) ---
 
 export async function renderCatalog() {
-    // 1. Renderiza seções especiais (Novidades/Vistos)
+    // 1. Renderiza seções especiais (Novidades/Vistos) - Preservado
     if (typeof renderMagicCategories === 'function') {
         await renderMagicCategories(state.allProducts, state.storeConfigGlobal);
     }
@@ -154,16 +154,19 @@ export async function renderCatalog() {
     
     if (!container) return; 
     
-    // Reset visual inicial: oculta erro e limpa o container para refletir exclusões
+    // Reset visual inicial
     empty.classList.add('hidden');
     container.innerHTML = '';
 
-    // 2. Filtra produtos (Mantendo toda a sua lógica de SKUs, Variações e Atributos)
+    // Variável de controle do tema
+    const isRestaurante = state.storeConfigGlobal?.tipoNegocio === 'restaurante';
+
+    // 2. Filtra produtos (Toda a sua lógica original de Busca, Categoria, Preço e Variações mantida)
     let filtered = state.allProducts.filter(p => {
         // Filtro de Favoritos
         if(state.isFavoritesView) return state.favorites.includes(p.id);
         
-        // Filtro de Busca (Nome e SKU)
+        // Filtro de Busca
         if(state.filters.search) {
             const searchLower = state.filters.search.toLowerCase();
             const nameMatch = p.name?.toLowerCase().includes(searchLower);
@@ -176,11 +179,11 @@ export async function renderCatalog() {
             if(!(p.promoValue && p.promoValue < p.value)) return false; 
         } else if(state.filters.category && p.category !== state.filters.category) return false;
 
-        // Filtro de Preço dinâmico
+        // Filtro de Preço
         const price = (p.promoValue && p.promoValue < p.value) ? p.promoValue : p.value;
         if(state.filters.maxPrice && price > state.filters.maxPrice) return false;
 
-        // Filtros Complexos de Tamanhos e Cores (Variações)
+        // Filtros de Variações (Tamanhos/Cores)
         if(state.filters.sizes.length > 0 || state.filters.colors.length > 0) {
             const selectedSizesLower = state.filters.sizes.map(s => s.toLowerCase());
             const selectedColorsLower = state.filters.colors.map(c => c.toLowerCase());
@@ -202,13 +205,13 @@ export async function renderCatalog() {
         return true;
     });
 
-    // 3. Exibe mensagem de vazio se nenhum produto passar pelos filtros
+    // 3. Exibe mensagem de vazio
     if (filtered.length === 0) {
         empty.classList.remove('hidden');
         return;
     }
 
-    // 4. Agrupa por Categoria (Lógica de agrupamento preservada)
+    // 4. Agrupa por Categoria
     const groups = {};
     const hasActiveFilters = state.isFavoritesView || state.filters.search || 
                            (state.filters.category && state.filters.category !== 'offers') || 
@@ -225,12 +228,12 @@ export async function renderCatalog() {
         });
     }
 
-    // 5. Renderiza os Grupos e Seções[cite: 5]
+    // 5. Renderiza os Grupos e Seções
     Object.keys(groups).sort().forEach(key => {
         const section = document.createElement('section');
         section.className = "animate-fade-in mb-8";
         
-        // Cabeçalho da Categoria
+        // Cabeçalho da Categoria estilizado
         section.innerHTML = `
             <h3 class="font-bold text-slate-800 mb-4 px-1 text-lg flex items-center gap-2">
                 <div class="w-1 h-5 bg-primary rounded-full"></div> 
@@ -239,25 +242,37 @@ export async function renderCatalog() {
         `;
         
         const grid = document.createElement('div');
-        grid.className = "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-5";
+
+        // AJUSTE DINÂMICO DE LAYOUT:
+        if (isRestaurante) {
+            // Se for restaurante, vira uma lista vertical com divisores (estilo iFood)
+            grid.className = "flex flex-col w-full bg-white divide-y divide-gray-100";
+        } else {
+            // Se for varejo, mantém o grid de colunas original
+            grid.className = "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-5";
+        }
         
-        // Renderiza cada card de produto
+        // Renderiza cada card usando o molde específico
         groups[key].forEach(p => {
-            grid.innerHTML += mkProductCard(p);
+            if (isRestaurante && typeof RestauranteTheme !== 'undefined') {
+                grid.innerHTML += RestauranteTheme.renderCard(p);
+            } else {
+                grid.innerHTML += mkProductCard(p);
+            }
         });
         
         section.appendChild(grid); 
         container.appendChild(section);
     });
 
-    // 6. Funções Específicas de Tema e Interface[cite: 5]
-    if (state.storeConfigGlobal?.tipoNegocio === 'restaurante') {
+    // 6. Funções Específicas de Tema e Interface
+    if (isRestaurante) {
         if (typeof RestauranteTheme !== 'undefined') {
             RestauranteTheme.renderFloatingCart();
         }
     }
     
-    // Reinicializa componentes globais
+    // Reinicializa ícones e contadores
     if(window.lucide) window.lucide.createIcons();
     if(typeof initGlobalCountdowns === 'function') initGlobalCountdowns(); 
 }
