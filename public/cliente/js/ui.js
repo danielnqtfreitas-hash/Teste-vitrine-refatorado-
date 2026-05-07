@@ -24,7 +24,92 @@ const els = {
     deliveryModal: () => document.getElementById('modalDelivery')
 };
 
-// --- RENDERIZAÇÃO DE CARDS (PRODUTO) ---
+// --- FUNÇÃO GLOBAL DO MODAL RESTAURANTE ---
+window.renderRestauranteModal = function(p) {
+    const modal = document.getElementById('modalDetails');
+    if (!modal) return;
+
+    const bestPrice = (p.promoValue && p.promoValue < p.value) ? p.promoValue : (p.priceCash || p.value);
+    
+    // 1. Gera o HTML dos Complementos
+    const complementosHTML = (p.complements || []).map(group => {
+        const isRequired = group.min > 0;
+        return `
+            <div class="complement-group mb-6" data-group-id="${group.id}" data-min="${group.min}" data-max="${group.max}">
+                <div class="bg-gray-50 px-6 py-3 border-y border-gray-100 flex justify-between items-center">
+                    <div>
+                        <h3 class="text-sm font-black text-gray-800 uppercase tracking-wide">${group.name}</h3>
+                        <p class="text-[10px] text-gray-400 font-bold uppercase">
+                            ${isRequired ? `Obrigatório • ` : ''} Escolha de ${group.min} a ${group.max}
+                        </p>
+                    </div>
+                </div>
+                <div class="px-6">
+                    ${group.items.filter(it => it.status === 'active').map(item => `
+                        <label class="flex items-center justify-between py-4 border-b border-gray-50 cursor-pointer">
+                            <div class="flex flex-col">
+                                <span class="font-medium text-gray-700 text-sm">${item.name}</span>
+                                <span class="text-xs text-green-600">+ R$ ${(item.price || 0).toFixed(2).replace('.', ',')}</span>
+                            </div>
+                            <input type="checkbox" name="comp_${group.id}" 
+                                   data-price="${item.price || 0}" data-item-name="${item.name}" data-group-name="${group.name}"
+                                   onchange="window.validateAndTotalRestaurante()"
+                                   class="w-6 h-6 rounded-full border-gray-300 text-red-600">
+                        </label>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    // 2. Injeta o HTML no Modal
+    modal.innerHTML = `
+        <div class="fixed inset-0 z-[1000] bg-white flex flex-col animate-slide-up">
+            <div class="relative h-64 w-full shrink-0">
+                <button onclick="window.closeModalDetails()" class="absolute top-4 left-4 z-20 bg-black/40 text-white p-2 rounded-full backdrop-blur-md">
+                    <i data-lucide="chevron-left"></i>
+                </button>
+                <img src="${p.images?.[0] || ''}" class="w-full h-full object-cover">
+            </div>
+            <div class="flex-1 overflow-y-auto pb-32">
+                <div class="p-6">
+                    <h2 class="text-2xl font-black text-gray-900 mb-1">${p.name}</h2>
+                    <p class="text-gray-500 text-sm mb-4">${p.description || ''}</p>
+                    <span class="text-xl font-bold text-gray-900">R$ ${bestPrice.toFixed(2).replace('.', ',')}</span>
+                </div>
+                ${complementosHTML}
+                <div class="p-6">
+                    <textarea id="productObs" placeholder="Alguma observação?" class="w-full bg-gray-50 border rounded-xl p-4 text-sm h-24 outline-none"></textarea>
+                </div>
+            </div>
+            <div class="fixed bottom-0 left-0 right-0 p-4 bg-white border-t flex items-center gap-4 shadow-lg">
+                <div class="flex items-center gap-4 bg-gray-100 px-4 py-2 rounded-xl">
+                    <button onclick="window.adjustDetailQty(-1)" class="text-red-600 font-black text-xl">-</button>
+                    <span id="detailQtyDisplay" class="font-bold text-gray-800">1</span>
+                    <button onclick="window.adjustDetailQty(1)" class="text-red-600 font-black text-xl">+</button>
+                </div>
+                <button id="detailAddBtn" class="flex-1 bg-gray-300 text-gray-500 h-14 rounded-xl font-bold flex items-center justify-between px-6" disabled>
+                    <span>Adicionar</span>
+                    <span id="totalPriceModal">R$ ${bestPrice.toFixed(2).replace('.', ',')}</span>
+                </button>
+            </div>
+        </div>
+    `;
+
+    // 3. Define a ação do botão Adicionar
+    document.getElementById('detailAddBtn').onclick = () => {
+        const selectedComps = [];
+        document.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => {
+            selectedComps.push({ grupo: cb.dataset.groupName, nome: cb.dataset.itemName, preco: parseFloat(cb.dataset.price) });
+        });
+        window.addToCart(p, state.currentDetailQty, { isRestaurante: true, complementos: selectedComps, observacao: document.getElementById('productObs').value });
+        window.closeModalDetails();
+    };
+
+    modal.classList.remove('hidden');
+    if(window.lucide) window.lucide.createIcons();
+    window.validateAndTotalRestaurante(); // Inicializa o estado do botão
+};
 
 // --- RENDERIZAÇÃO DE CARDS (PRODUTO) ---
 
@@ -363,6 +448,10 @@ export function openProductModal(id) {
     
     state.currentDetailId = id; 
     state.currentDetailQty = 1; 
+    if (state.storeConfigGlobal?.tipoNegocio === 'restaurante') {
+        window.renderRestauranteModal(p); 
+        return;
+    }
     const isRestaurante = state.storeConfigGlobal?.tipoNegocio === 'restaurante';
 
     // 1. SE FOR RESTAURANTE -> USA LAYOUT IFOOD (MODAL FULLSCREEN)
