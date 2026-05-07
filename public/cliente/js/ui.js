@@ -29,9 +29,12 @@ window.renderRestauranteModal = function(p) {
     const modal = document.getElementById('modalDetails');
     if (!modal) return;
 
+    // Garante que o scroll da página de trás fique travado
+    document.body.style.overflow = 'hidden';
+
     const bestPrice = (p.promoValue && p.promoValue < p.value) ? p.promoValue : (p.priceCash || p.value);
     
-    // 1. Gera o HTML dos Complementos
+    // 1. Gera o HTML dos Grupos de Complementos
     const complementosHTML = (p.complements || []).map(group => {
         const isRequired = group.min > 0;
         return `
@@ -40,21 +43,23 @@ window.renderRestauranteModal = function(p) {
                     <div>
                         <h3 class="text-sm font-black text-gray-800 uppercase tracking-wide">${group.name}</h3>
                         <p class="text-[10px] text-gray-400 font-bold uppercase">
-                            ${isRequired ? `Obrigatório • ` : ''} Escolha de ${group.min} a ${group.max}
+                            ${isRequired ? `<span class="text-red-500">Obrigatório</span> • ` : ''} Escolha de ${group.min} a ${group.max}
                         </p>
                     </div>
                 </div>
                 <div class="px-6">
                     ${group.items.filter(it => it.status === 'active').map(item => `
-                        <label class="flex items-center justify-between py-4 border-b border-gray-50 cursor-pointer">
+                        <label class="flex items-center justify-between py-4 border-b border-gray-50 cursor-pointer active:bg-gray-50 tap-highlight-transparent">
                             <div class="flex flex-col">
                                 <span class="font-medium text-gray-700 text-sm">${item.name}</span>
                                 <span class="text-xs text-green-600">+ R$ ${(item.price || 0).toFixed(2).replace('.', ',')}</span>
                             </div>
                             <input type="checkbox" name="comp_${group.id}" 
-                                   data-price="${item.price || 0}" data-item-name="${item.name}" data-group-name="${group.name}"
+                                   data-price="${item.price || 0}" 
+                                   data-item-name="${item.name}" 
+                                   data-group-name="${group.name}"
                                    onchange="window.validateAndTotalRestaurante()"
-                                   class="w-6 h-6 rounded-full border-gray-300 text-red-600">
+                                   class="w-6 h-6 rounded-full border-gray-300 text-red-600 focus:ring-red-600 pointer-events-auto">
                         </label>
                     `).join('')}
                 </div>
@@ -62,34 +67,47 @@ window.renderRestauranteModal = function(p) {
         `;
     }).join('');
 
-    // 2. Injeta o HTML no Modal
+    // 2. Injeta o HTML no Modal com Overlay de bloqueio e Pointer Events ativo
     modal.innerHTML = `
-        <div class="fixed inset-0 z-[9999] bg-white flex flex-col animate-slide-up">
+        <div class="fixed inset-0 bg-black/60 z-[9998]" onclick="window.closeModalDetails()"></div>
+
+        <div class="fixed inset-0 z-[9999] bg-white flex flex-col animate-slide-up pointer-events-auto shadow-2xl" 
+             style="pointer-events: auto !important;">
+            
             <div class="relative h-64 w-full shrink-0">
-                <button onclick="window.closeModalDetails()" class="absolute top-4 left-4 z-20 bg-black/40 text-white p-2 rounded-full backdrop-blur-md">
+                <button onclick="window.closeModalDetails()" class="absolute top-4 left-4 z-[10001] bg-black/40 text-white p-2 rounded-full backdrop-blur-md active:scale-90 transition-transform">
                     <i data-lucide="chevron-left"></i>
                 </button>
-                <img src="${p.images?.[0] || ''}" class="w-full h-full object-cover">
+                <img src="${p.images?.[0] || 'https://placehold.co/600?text=Sem+Foto'}" class="w-full h-full object-cover">
             </div>
-            <div class="flex-1 overflow-y-auto pb-32">
+
+            <div class="flex-1 overflow-y-auto pb-32 pointer-events-auto">
                 <div class="p-6">
                     <h2 class="text-2xl font-black text-gray-900 mb-1">${p.name}</h2>
-                    <p class="text-gray-500 text-sm mb-4">${p.description || ''}</p>
-                    <span class="text-xl font-bold text-gray-900">R$ ${bestPrice.toFixed(2).replace('.', ',')}</span>
+                    <p class="text-gray-500 text-sm mb-4 leading-relaxed">${p.description || ''}</p>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xl font-bold text-gray-900">R$ ${bestPrice.toFixed(2).replace('.', ',')}</span>
+                    </div>
                 </div>
+
                 ${complementosHTML}
+
                 <div class="p-6">
-                    <textarea id="productObs" placeholder="Alguma observação?" class="w-full bg-gray-50 border rounded-xl p-4 text-sm h-24 outline-none"></textarea>
+                    <label class="block text-xs font-black uppercase text-gray-400 mb-2">Alguma observação?</label>
+                    <textarea id="productObs" placeholder="Ex: tirar cebola, ponto da carne..." 
+                        class="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 text-sm h-24 outline-none focus:border-red-200 pointer-events-auto"></textarea>
                 </div>
             </div>
-            <div class="fixed bottom-0 left-0 right-0 p-4 bg-white border-t flex items-center gap-4 shadow-lg">
+
+            <div class="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 flex items-center gap-4 shadow-[0_-10px_20px_rgba(0,0,0,0.05)] z-[10000] pointer-events-auto">
                 <div class="flex items-center gap-4 bg-gray-100 px-4 py-2 rounded-xl">
-                    <button onclick="window.adjustDetailQty(-1)" class="text-red-600 font-black text-xl">-</button>
-                    <span id="detailQtyDisplay" class="font-bold text-gray-800">1</span>
-                    <button onclick="window.adjustDetailQty(1)" class="text-red-600 font-black text-xl">+</button>
+                    <button onclick="window.adjustDetailQty(-1)" class="text-red-600 font-black text-xl w-8 h-8 flex items-center justify-center active:scale-75 transition-transform">-</button>
+                    <span id="detailQtyDisplay" class="font-bold text-gray-800 min-w-[20px] text-center">1</span>
+                    <button onclick="window.adjustDetailQty(1)" class="text-red-600 font-black text-xl w-8 h-8 flex items-center justify-center active:scale-75 transition-transform">+</button>
                 </div>
-                <button id="detailAddBtn" class="flex-1 bg-gray-300 text-gray-500 h-14 rounded-xl font-bold flex items-center justify-between px-6" disabled>
-                    <span>Adicionar</span>
+                
+                <button id="detailAddBtn" class="flex-1 bg-gray-300 text-gray-500 h-14 rounded-xl font-bold flex items-center justify-between px-6 transition-all duration-300" disabled>
+                    <span class="uppercase tracking-tight">Adicionar</span>
                     <span id="totalPriceModal">R$ ${bestPrice.toFixed(2).replace('.', ',')}</span>
                 </button>
             </div>
@@ -97,20 +115,50 @@ window.renderRestauranteModal = function(p) {
     `;
 
     // 3. Define a ação do botão Adicionar
-    document.getElementById('detailAddBtn').onclick = () => {
-        const selectedComps = [];
-        document.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => {
-            selectedComps.push({ grupo: cb.dataset.groupName, nome: cb.dataset.itemName, preco: parseFloat(cb.dataset.price) });
-        });
-        window.addToCart(p, state.currentDetailQty, { isRestaurante: true, complementos: selectedComps, observacao: document.getElementById('productObs').value });
-        window.closeModalDetails();
-    };
+    const btnAdd = document.getElementById('detailAddBtn');
+    if (btnAdd) {
+        btnAdd.onclick = (e) => {
+            e.stopPropagation(); // Evita que o clique passe para baixo
+            const selectedComps = [];
+            document.querySelectorAll('input[name^="comp_"]:checked').forEach(cb => {
+                selectedComps.push({ 
+                    grupo: cb.dataset.groupName, 
+                    nome: cb.dataset.itemName, 
+                    preco: parseFloat(cb.dataset.price || 0) 
+                });
+            });
 
+            window.addToCart(p, state.currentDetailQty, { 
+                isRestaurante: true, 
+                complementos: selectedComps, 
+                observacao: document.getElementById('productObs').value,
+                image: p.images?.[0] || ''
+            });
+
+            window.closeModalDetails();
+        };
+    }
+
+    // Inicialização Visual
     modal.classList.remove('hidden');
+    modal.style.zIndex = "9999";
+    
     if(window.lucide) window.lucide.createIcons();
-    window.validateAndTotalRestaurante(); // Inicializa o estado do botão
+    
+    // Executa a validação inicial para conferir se o botão deve começar desativado
+    if (window.validateAndTotalRestaurante) {
+        window.validateAndTotalRestaurante();
+    }
 };
 
+// --- FUNÇÃO PARA FECHAR (ADICIONE OU ATUALIZE) ---
+window.closeModalDetails = function() {
+    const modal = document.getElementById('modalDetails');
+    if (modal) {
+        modal.classList.add('hidden');
+        document.body.style.overflow = ''; // Libera o scroll da página
+    }
+};
 // --- RENDERIZAÇÃO DE CARDS (PRODUTO) ---
 
 export function mkProductCard(p) {
