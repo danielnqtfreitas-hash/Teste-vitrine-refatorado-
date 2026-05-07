@@ -526,5 +526,5 @@ export {
     goToStep2, 
     toggleAddressFields, 
     modQty, 
-    alertaEstoquePreso 
+
 };
