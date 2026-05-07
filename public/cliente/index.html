@@ -237,10 +237,12 @@
         </div>
     </footer>
 
-    <div id="modalDetails" class="fixed inset-0 z-[60] hidden flex items-end md:items-center justify-center pointer-events-none p-0 md:p-4">
-        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm pointer-events-auto" onclick="window.closeModalDetails()"></div>
-        <div class="bg-white w-full max-w-2xl md:rounded-2xl rounded-t-[2.5rem] shadow-2xl pointer-events-auto relative flex flex-col max-h-[92vh] md:max-h-[85vh] overflow-hidden animate-slide-up">
-            
+    <div id="modalDetails" class="fixed inset-0 z-[99999] hidden flex items-end md:items-center justify-center p-0">
+    <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="window.closeModalDetails()"></div>
+    <div id="modalContentWrapper" class="bg-white w-full max-w-2xl md:rounded-2xl rounded-t-[2.5rem] shadow-2xl relative flex flex-col h-full md:h-[85vh] overflow-hidden animate-slide-up">
+        </div>
+</div>
+    
             <div class="sticky top-0 right-0 z-50 flex justify-end gap-2 p-4 h-0 overflow-visible">
                 <button onclick="window.shareProduct()" class="bg-white/90 hover:bg-white p-2 rounded-full shadow-lg backdrop-blur-sm border border-slate-100 active-scale">
                     <i data-lucide="share-2" class="w-5 h-5 text-slate-700"></i>
