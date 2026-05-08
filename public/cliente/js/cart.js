@@ -514,3 +514,26 @@ window.toggleCart = () => {
     const drawer = document.getElementById('cartDrawer') || document.getElementById('cartSection');
     if (drawer) drawer.classList.remove('hidden');
 };
+
+// js/cart.js
+
+// 1. Crie ou verifique a função openCart
+export function openCart() {
+    const drawer = document.getElementById('cartDrawer');
+    if (drawer) {
+        drawer.classList.remove('hidden');
+        // Opcional: trava o scroll da página ao abrir a sacola
+        document.body.style.overflow = 'hidden';
+    }
+    
+    // Garante que a sacola abra no passo 1 (lista de itens)
+    if (typeof goToStep1 === 'function') goToStep1();
+    
+    // Atualiza a interface da sacola
+    updateCartUI();
+}
+
+// 2. NO FINAL DO ARQUIVO (Muito importante para o HTML enxergar)
+window.openCart = openCart;
+window.updateCartUI = updateCartUI;
+window.modQty = modQty;
