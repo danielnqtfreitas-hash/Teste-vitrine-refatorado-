@@ -28,6 +28,20 @@ export const RestauranteTheme = {
         this.renderFloatingCart();
     },
 
+renderModal(p) {
+        console.log("Abrindo modal de restaurante para:", p.nome);
+        // Aqui você pode inserir a lógica para abrir o modal estilo iFood
+        // Ou, se quiser usar o modal padrão por enquanto, apenas ignore o 'return' no ui.js
+        
+        // Exemplo de preenchimento básico:
+        const modal = document.getElementById('modalDetails');
+        if (modal) {
+            document.getElementById('detailName').innerText = p.nome;
+            document.getElementById('detailPrice').innerText = `R$ ${p.preco}`;
+            modal.classList.remove('hidden');
+        }
+    },
+    
     // 2. Header estilo iFood com Busca
     renderDeliveryHeader() {
         if (document.getElementById('deliveryHeader')) return;
