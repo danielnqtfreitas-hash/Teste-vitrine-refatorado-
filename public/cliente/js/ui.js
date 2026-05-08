@@ -366,10 +366,11 @@ export function openProductModal(id) {
     const isRestaurante = state.storeConfigGlobal?.tipoNegocio === 'restaurante';
 
     // 1. SE FOR RESTAURANTE -> USA LAYOUT IFOOD (MODAL FULLSCREEN)
-    if (isRestaurante) {
-        renderRestauranteModal(p);
-        return; // Interrompe aqui para não executar a lógica de varejo
-    }
+   if (isRestaurante) {
+    // Chama a função que está dentro do objeto RestauranteTheme
+    RestauranteTheme.renderModal(p); 
+    return;
+}
 
     // 2. SE FOR VAREJO -> MANTÉM SUA LÓGICA ORIGINAL
     const mainImages = (p.images?.length) ? p.images : ['https://placehold.co/600?text=Sem+Imagem'];
