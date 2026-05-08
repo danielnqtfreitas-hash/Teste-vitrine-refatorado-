@@ -1,6 +1,6 @@
 // js/theme-restaurante.js
-
 export const RestauranteTheme = {
+    // 1. Injeta a casca do iFood
     setup() {
         const tipoNegocio = window.state?.storeConfig?.tipoNegocio || 'varejo';
         if (tipoNegocio !== 'restaurante') return;
@@ -21,18 +21,16 @@ export const RestauranteTheme = {
         this.renderFloatingCart();
     },
 
+    // 2. Modal estilo Restaurante
     renderModal(p) {
         const modal = document.getElementById('modalDetails');
         if (!modal) return;
 
-        // MAPEAMENTO EXATO COM SEU FIREBASE:
-        // O valor base no seu banco está na chave 'value'
         const precoBase = parseFloat(p.value || p.price || p.preco || 0);
         const nomeProd = p.name || p.nome || 'Produto';
         const descProd = p.description || p.descricao || '';
         const imagemProd = (p.images && p.images.length > 0) ? p.images[0] : 'https://placehold.co/400?text=Sem+Foto';
         
-        // A lista de complementos no seu banco está na chave 'complements'
         const listaComplementos = Array.isArray(p.complements) ? p.complements : [];
 
         window.currentProductSelection = {
@@ -88,12 +86,9 @@ export const RestauranteTheme = {
 
     renderComplementGroups(groups) {
         if (!groups || groups.length === 0) return '';
-        
         return groups.map(group => {
-            // Mapeando chaves do seu banco: 'name' do grupo e 'items'
             const tituloGrupo = group.name || group.titulo || "Opcionais";
             const itensDoGrupo = group.items || group.itens || [];
-
             return `
                 <div class="bg-gray-50 p-4 border-b border-gray-100 mt-4">
                     <div class="flex flex-col">
@@ -108,7 +103,6 @@ export const RestauranteTheme = {
                     ${itensDoGrupo.map(item => {
                         const precoItem = parseFloat(item.price || item.preco || 0);
                         const nomeItem = item.name || item.nome;
-
                         return `
                         <label class="flex items-center justify-between p-4 border-b border-gray-50 active:bg-gray-50 cursor-pointer">
                             <div class="flex flex-col">
@@ -130,9 +124,7 @@ export const RestauranteTheme = {
         if (!window.currentProductSelection.selectedComplements[groupTitle]) {
             window.currentProductSelection.selectedComplements[groupTitle] = [];
         }
-
         let selected = window.currentProductSelection.selectedComplements[groupTitle];
-
         if (input.type === 'radio') {
             window.currentProductSelection.selectedComplements[groupTitle] = [{ nome: itemName, preco: itemPrice }];
         } else {
@@ -148,7 +140,6 @@ export const RestauranteTheme = {
                 window.currentProductSelection.selectedComplements[groupTitle] = selected.filter(i => i.nome !== itemName);
             }
         }
-        
         this.calculateTotal();
     },
 
@@ -165,10 +156,8 @@ export const RestauranteTheme = {
         Object.values(window.currentProductSelection.selectedComplements).forEach(group => {
             group.forEach(item => sumComplements += item.preco);
         });
-
         const unitPrice = window.currentProductSelection.basePrice + sumComplements;
         window.currentProductSelection.totalPrice = unitPrice * window.currentProductSelection.quantity;
-        
         document.getElementById('modalTotalPrice').innerText = `R$ ${window.currentProductSelection.totalPrice.toFixed(2).replace('.', ',')}`;
         this.validateSelection();
     },
@@ -176,65 +165,44 @@ export const RestauranteTheme = {
     validateSelection() {
         const p = window.currentProductSelection;
         let isValid = true;
-
-        // Validação baseada no array 'complements' do seu banco
         const listaComp = p.complements || [];
         listaComp.forEach(group => {
             const titulo = group.name || group.titulo;
             const count = (p.selectedComplements[titulo] || []).length;
             if (count < (group.min || 0)) isValid = false;
         });
-
         document.getElementById('btnAddRestaurante').disabled = !isValid;
     },
 
-   addToCartWithComplements() {
-    const p = window.currentProductSelection;
-    
-    // 1. Gera o Hash para diferenciar itens iguais com complementos diferentes
-    const compHash = btoa(JSON.stringify(p.selectedComplements)).substring(0, 8);
-    
-    // 2. SINCRONIZAÇÃO COM O cart.js (Usando uid, q e img)
-    const uniqueCartId = `res_${p.id}_${compHash}`;
+    addToCartWithComplements() {
+        const p = window.currentProductSelection;
+        const compHash = btoa(JSON.stringify(p.selectedComplements)).substring(0, 8);
+        const uniqueCartId = `res_${p.id}_${compHash}`;
 
-    const cartItem = {
-        uid: uniqueCartId,       // O cart.js usa 'uid' e não 'id'
-        productId: p.id,
-        name: p.name || p.nome,
-        price: (p.totalPrice / p.quantity),
-        q: p.quantity,           // O cart.js usa 'q' e não 'qty'
-        img: (p.images && p.images.length > 0) ? p.images[0] : (p.imagem || ''), // O cart.js usa 'img'
-        complements: p.selectedComplements,
-        v: null // Garante que o campo de variações (moda) exista mas esteja vazio
-    };
+        const cartItem = {
+            uid: uniqueCartId,       // Sincronizado com cart.js
+            productId: p.id,
+            name: p.name || p.nome,
+            price: (p.totalPrice / p.quantity),
+            q: p.quantity,           // Sincronizado com cart.js (usa q, não qty)
+            img: (p.images && p.images.length > 0) ? p.images[0] : (p.imagem || ''), // Sincronizado com cart.js (usa img)
+            complements: p.selectedComplements,
+            v: null 
+        };
 
-    if (window.state && window.state.cart) {
-        // 3. Verifica se já existe na sacola
-        const existingIndex = window.state.cart.findIndex(item => item.uid === uniqueCartId);
-        
-        if (existingIndex > -1) {
-            window.state.cart[existingIndex].q += p.quantity;
-        } else {
-            window.state.cart.push(cartItem);
+        if (window.state && window.state.cart) {
+            const existingIndex = window.state.cart.findIndex(item => item.uid === uniqueCartId);
+            if (existingIndex > -1) {
+                window.state.cart[existingIndex].q += p.quantity;
+            } else {
+                window.state.cart.push(cartItem);
+            }
+            if (window.saveCart) window.saveCart();
+            if (window.updateCartUI) window.updateCartUI();
+            window.closeModalDetails();
+            this.renderFloatingCart(); // Atualiza a barra vermelha
         }
-
-        // 4. Salva e atualiza
-        if (window.saveCart) window.saveCart();
-        if (window.updateCartUI) window.updateCartUI();
-        
-        window.closeModalDetails();
-        this.renderFloatingCart();
-        
-        Swal.fire({
-            title: 'Adicionado!',
-            icon: 'success',
-            timer: 1000,
-            showConfirmButton: false,
-            toast: true,
-            position: 'bottom'
-        });
-    }
-}
+    },
 
     renderDeliveryHeader() {
         if (document.getElementById('deliveryHeader')) return;
@@ -265,7 +233,6 @@ export const RestauranteTheme = {
     renderCard(p) {
         const preco = parseFloat(p.value || p.price || 0);
         const img = (p.images && p.images.length > 0) ? p.images[0] : 'https://placehold.co/200?text=Produto';
-        
         return `
             <div onclick="window.openProductModal('${p.id}')" class="flex items-center p-4 border-b border-gray-50 bg-white active:bg-gray-50 transition-all cursor-pointer">
                 <div class="flex-1 pr-3">
@@ -289,8 +256,9 @@ export const RestauranteTheme = {
             document.body.appendChild(btn);
         }
 
-        const count = window.state.cart.reduce((acc, i) => acc + i.qty, 0);
-        const total = window.state.cart.reduce((acc, i) => acc + (i.price * i.qty), 0);
+        // CORREÇÃO AQUI: Mudado de i.qty para i.q e sincronizado com o cart.js
+        const count = window.state.cart.reduce((acc, i) => acc + (i.q || 0), 0);
+        const total = window.state.cart.reduce((acc, i) => acc + (i.price * (i.q || 0)), 0);
 
         if (count > 0) {
             btn.innerHTML = `
