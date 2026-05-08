@@ -1,4 +1,5 @@
 import { state } from './state.js';
+import { RestauranteTheme } from './theme-restaurante.js';
 import { formatarTempo, showToast, doc, db, getDocFromServer } from './config.js';
 
 // --- ELEMENTOS DO DOM (Cache simples) ---
@@ -368,7 +369,7 @@ export function openProductModal(id) {
     // 1. SE FOR RESTAURANTE -> USA LAYOUT IFOOD (MODAL FULLSCREEN)
    if (isRestaurante) {
     // Chama a função que está dentro do objeto RestauranteTheme
-    RestauranteTheme.renderModal(p); 
+  RestauranteTheme.renderModal(p); 
     return;
 }
 
