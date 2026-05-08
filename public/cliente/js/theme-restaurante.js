@@ -188,31 +188,53 @@ export const RestauranteTheme = {
         document.getElementById('btnAddRestaurante').disabled = !isValid;
     },
 
-    addToCartWithComplements() {
-        const p = window.currentProductSelection;
-        const compHash = btoa(JSON.stringify(p.selectedComplements)).substring(0, 8);
-        const uniqueCartId = `${p.id}_${compHash}`;
+   addToCartWithComplements() {
+    const p = window.currentProductSelection;
+    
+    // 1. Gera o Hash para diferenciar itens iguais com complementos diferentes
+    const compHash = btoa(JSON.stringify(p.selectedComplements)).substring(0, 8);
+    
+    // 2. SINCRONIZAÇÃO COM O cart.js (Usando uid, q e img)
+    const uniqueCartId = `res_${p.id}_${compHash}`;
 
-        const cartItem = {
-            id: uniqueCartId,
-            productId: p.id,
-            name: p.name || p.nome,
-            price: (p.totalPrice / p.quantity),
-            qty: p.quantity,
-            image: (p.images && p.images.length > 0) ? p.images[0] : '',
-            complements: p.selectedComplements
-        };
+    const cartItem = {
+        uid: uniqueCartId,       // O cart.js usa 'uid' e não 'id'
+        productId: p.id,
+        name: p.name || p.nome,
+        price: (p.totalPrice / p.quantity),
+        q: p.quantity,           // O cart.js usa 'q' e não 'qty'
+        img: (p.images && p.images.length > 0) ? p.images[0] : (p.imagem || ''), // O cart.js usa 'img'
+        complements: p.selectedComplements,
+        v: null // Garante que o campo de variações (moda) exista mas esteja vazio
+    };
 
-        if (window.state && window.state.cart) {
+    if (window.state && window.state.cart) {
+        // 3. Verifica se já existe na sacola
+        const existingIndex = window.state.cart.findIndex(item => item.uid === uniqueCartId);
+        
+        if (existingIndex > -1) {
+            window.state.cart[existingIndex].q += p.quantity;
+        } else {
             window.state.cart.push(cartItem);
-            if (window.saveCart) window.saveCart();
-            if (window.updateCartUI) window.updateCartUI();
-            window.closeModalDetails();
-            this.renderFloatingCart();
-            
-            Swal.fire({ title: 'Adicionado!', icon: 'success', timer: 1000, showConfirmButton: false, toast: true, position: 'bottom' });
         }
-    },
+
+        // 4. Salva e atualiza
+        if (window.saveCart) window.saveCart();
+        if (window.updateCartUI) window.updateCartUI();
+        
+        window.closeModalDetails();
+        this.renderFloatingCart();
+        
+        Swal.fire({
+            title: 'Adicionado!',
+            icon: 'success',
+            timer: 1000,
+            showConfirmButton: false,
+            toast: true,
+            position: 'bottom'
+        });
+    }
+}
 
     renderDeliveryHeader() {
         if (document.getElementById('deliveryHeader')) return;
