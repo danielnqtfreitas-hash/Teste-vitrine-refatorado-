@@ -28,21 +28,36 @@ export const RestauranteTheme = {
         this.renderFloatingCart();
     },
 
-renderModal(p) {
-        console.log("Abrindo modal de restaurante para:", p.nome);
-        // Aqui você pode inserir a lógica para abrir o modal estilo iFood
-        // Ou, se quiser usar o modal padrão por enquanto, apenas ignore o 'return' no ui.js
+    // 2. Modal estilo Restaurante
+    renderModal(p) {
+        console.log("Abrindo modal de restaurante para:", p.name || p.nome);
         
-        // Exemplo de preenchimento básico:
         const modal = document.getElementById('modalDetails');
-        if (modal) {
-            document.getElementById('detailName').innerText = p.nome;
-            document.getElementById('detailPrice').innerText = `R$ ${p.preco}`;
-            modal.classList.remove('hidden');
-        }
+        if (!modal) return;
+
+        // Referências dos elementos internos
+        const nameEl = document.getElementById('detailName');
+        const priceEl = document.getElementById('detailPrice');
+        const descEl = document.getElementById('detailDesc');
+        const imgEl = document.getElementById('detailImg');
+
+        // Mapeamento de dados (suporta 'nome' ou 'name', 'preco' ou 'price')
+        const nome = p.name || p.nome || 'Produto';
+        const preco = p.price || p.preco || 0;
+        const descricao = p.description || p.descricao || '';
+        const imagem = (p.images && p.images.length > 0) ? p.images[0] : (p.imagem || 'https://placehold.co/400?text=Sem+Foto');
+
+        if (nameEl) nameEl.innerText = nome;
+        if (priceEl) priceEl.innerText = `R$ ${parseFloat(preco).toFixed(2).replace('.', ',')}`;
+        if (descEl) descEl.innerText = descricao;
+        if (imgEl) imgEl.src = imagem;
+
+        // Abre o modal e trava o scroll
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
     },
     
-    // 2. Header estilo iFood com Busca
+    // 3. Header estilo iFood com Busca
     renderDeliveryHeader() {
         if (document.getElementById('deliveryHeader')) return;
         const app = document.getElementById('app');
@@ -69,32 +84,31 @@ renderModal(p) {
         if(window.lucide) window.lucide.createIcons();
     },
 
-    // 3. Card Horizontal (Informação na esquerda, foto na direita)
-   // js/theme-restaurante.js
-renderCard(p) {
-    // Garantindo que o preço seja lido corretamente (price ou value)
-    const precoNumerico = p.price || p.value || 0;
-    const precoFormatado = precoNumerico.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-    const img = (p.images && p.images.length > 0) ? p.images[0] : 'https://placehold.co/200?text=Sem+Foto';
-    
-    return `
-        <div onclick="window.openProductModal('${p.id}')" class="flex items-center p-4 border-b border-gray-100 bg-white active:bg-gray-50 transition-all cursor-pointer">
-            <div class="flex-1 pr-3">
-                <h3 class="font-bold text-gray-800 text-[15px] leading-tight mb-1">${p.name}</h3>
-                <p class="text-[12px] text-gray-500 line-clamp-2 mb-2 leading-relaxed">${p.description || 'Delicioso prato preparado com ingredientes selecionados.'}</p>
-                <div class="flex items-center gap-2">
-                    <span class="text-green-600 font-bold text-sm">${precoFormatado}</span>
-                    ${p.promoValue ? `<span class="text-[10px] text-gray-400 line-through">R$ ${p.promoValue}</span>` : ''}
+    // 4. Card Horizontal (Informação na esquerda, foto na direita)
+    renderCard(p) {
+        const precoNumerico = p.price || p.preco || 0;
+        const precoFormatado = precoNumerico.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        const img = (p.images && p.images.length > 0) ? p.images[0] : (p.imagem || 'https://placehold.co/200?text=Sem+Foto');
+        
+        // Importante: Passamos o p.id para o window.openProductModal
+        return `
+            <div onclick="window.openProductModal('${p.id}')" class="flex items-center p-4 border-b border-gray-100 bg-white active:bg-gray-50 transition-all cursor-pointer">
+                <div class="flex-1 pr-3">
+                    <h3 class="font-bold text-gray-800 text-[15px] leading-tight mb-1">${p.name || p.nome}</h3>
+                    <p class="text-[12px] text-gray-500 line-clamp-2 mb-2 leading-relaxed">${p.description || p.descricao || 'Prato preparado com ingredientes selecionados.'}</p>
+                    <div class="flex items-center gap-2">
+                        <span class="text-green-600 font-bold text-sm">${precoFormatado}</span>
+                        ${p.promoValue ? `<span class="text-[10px] text-gray-400 line-through">R$ ${p.promoValue}</span>` : ''}
+                    </div>
+                </div>
+                <div class="w-20 h-20 flex-shrink-0">
+                    <img src="${img}" class="w-full h-full object-cover rounded-lg shadow-sm" loading="lazy">
                 </div>
             </div>
-            <div class="w-20 h-20 flex-shrink-0">
-                <img src="${img}" class="w-full h-full object-cover rounded-lg shadow-sm" loading="lazy">
-            </div>
-        </div>
-    `;
-},
+        `;
+    },
 
-    // 4. Barra de Sacola Flutuante (Botão Vermelho)
+    // 5. Barra de Sacola Flutuante (Botão Vermelho)
     renderFloatingCart() {
         let btn = document.getElementById('deliveryCartBar');
         if (!btn) {
