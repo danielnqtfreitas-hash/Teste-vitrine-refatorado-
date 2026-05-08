@@ -357,21 +357,21 @@ export function openProductModal(id) {
         window.reportarMetrica(id, 'view');
     }
 
-    // Configurações básicas de SEO e Histórico
+    // Histórico e SEO
     const newURL = window.location.pathname + `?id=${state.STORE_ID}&p=${p.id}`;
     window.history.pushState({ path: newURL }, '', newURL);
-    document.title = `${p.name} | ${state.storeConfigGlobal.storeName || 'Vitrine'}`;
+    document.title = `${p.name} | ${state.storeConfigGlobal?.storeName || 'Vitrine'}`;
     
     state.currentDetailId = id; 
     state.currentDetailQty = 1; 
+
     const isRestaurante = state.storeConfigGlobal?.tipoNegocio === 'restaurante';
 
-    // 1. SE FOR RESTAURANTE -> USA LAYOUT IFOOD (MODAL FULLSCREEN)
-   if (isRestaurante) {
-    // Chama a função que está dentro do objeto RestauranteTheme
-  RestauranteTheme.renderModal(p); 
-    return;
-}
+    // 1. SE FOR RESTAURANTE -> USA O TEMA IFOOD
+    if (isRestaurante) {
+        RestauranteTheme.renderModal(p); 
+        return;
+    }
 
     // 2. SE FOR VAREJO -> MANTÉM SUA LÓGICA ORIGINAL
     const mainImages = (p.images?.length) ? p.images : ['https://placehold.co/600?text=Sem+Imagem'];
@@ -1174,3 +1174,11 @@ export function checkProvadorVisibility() {
         }
     }
 }
+
+
+// --- EXPOSIÇÃO PARA O WINDOW (Necessário para onclick em Módulos) ---
+window.openProductModal = openProductModal;
+window.closeModalDetails = closeModalDetails;
+
+// Importante: Expor o tema para que os cliques nos complementos funcionem
+window.RestauranteTheme = RestauranteTheme;
