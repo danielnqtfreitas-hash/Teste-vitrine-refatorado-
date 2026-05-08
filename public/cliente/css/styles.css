@@ -101,9 +101,15 @@ body {
    ========================================= */
 
 /* Modal Detalhes */
-#modalDetails .bg-white {
-    margin-top: env(safe-area-inset-top, 20px);
-    max-height: calc(100vh - 80px) !important;
+/* Garante que o modal de detalhes ganhe de qualquer outro elemento */
+#modalDetails {
+    z-index: 999999 !important;
+    pointer-events: auto !important;
+}
+
+/* Garante que o conteúdo do iFood dentro do modal também seja clicável */
+.animate-slide-up {
+    pointer-events: auto !important;
 }
 .modal-close-btn { pointer-events: auto !important; z-index: 9999 !important; }
 
