@@ -517,23 +517,37 @@ window.toggleCart = () => {
 
 // js/cart.js
 
-// 1. Crie ou verifique a função openCart
+// js/cart.js
+
 export function openCart() {
     const drawer = document.getElementById('cartDrawer');
-    if (drawer) {
-        drawer.classList.remove('hidden');
-        // Opcional: trava o scroll da página ao abrir a sacola
-        document.body.style.overflow = 'hidden';
+    if (!drawer) return;
+
+    drawer.classList.remove('hidden');
+    
+    // 1. Trava a rolagem do fundo (body) para não bugar no mobile
+    document.body.style.overflow = 'hidden'; 
+    
+    // 2. Garante que o container da lista de itens tenha rolagem interna
+    const list = document.getElementById('cartList');
+    if (list) {
+        list.style.maxHeight = '70vh'; // Define uma altura máxima
+        list.style.overflowY = 'auto'; // Ativa o scroll
     }
-    
-    // Garante que a sacola abra no passo 1 (lista de itens)
-    if (typeof goToStep1 === 'function') goToStep1();
-    
-    // Atualiza a interface da sacola
+
     updateCartUI();
 }
 
-// 2. NO FINAL DO ARQUIVO (Muito importante para o HTML enxergar)
+export function closeCart() {
+    const drawer = document.getElementById('cartDrawer');
+    if (drawer) drawer.classList.add('hidden');
+    
+    // 3. IMPORTANTÍSSIMO: Devolve a rolagem ao site
+    document.body.style.overflow = 'auto'; 
+}
+
+// Exponha para o HTML
 window.openCart = openCart;
+window.closeCart = closeCart;
 window.updateCartUI = updateCartUI;
 window.modQty = modQty;
