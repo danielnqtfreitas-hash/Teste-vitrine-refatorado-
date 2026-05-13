@@ -151,34 +151,58 @@ export function updateCartTotals() {
 
     const method = document.getElementById('checkPayment')?.value || "";
     const deliveryFee = parseFloat(document.getElementById('cartDeliverySelect')?.value) || 0; 
-    let subtotalCalculado = 0;
+    let subtotalGeral = 0;
 
     state.cart.forEach(item => {
-        const pOriginal = state.allProducts.find(x => x.id === item.id);
+        // 1. Busca o produto original para pegar o preço base (Pix/Cartão/Promo)
+        const pOriginal = state.allProducts.find(x => x.id === (item.productId || item.id));
+        
         if (pOriginal) {
-            const precoCerto = getActivePrice(pOriginal, method);
-            const valorLinha = precoCerto * item.q;
-            subtotalCalculado += valorLinha;
+            // 2. Calcula Preço Base
+            const precoBase = getActivePrice(pOriginal, method);
+            
+            // 3. Soma Adicionais (Modo Restaurante)
+            let precoAdicionais = 0;
+            if (item.complements) {
+                // Percorre o objeto de categorias de complementos
+                Object.values(item.complements).forEach(escolhas => {
+                    escolhas.forEach(c => {
+                        precoAdicionais += parseFloat(c.preco || c.price || 0);
+                    });
+                });
+            }
 
+            const precoFinalUnitario = precoBase + precoAdicionais;
+            const valorTotalLinha = precoFinalUnitario * item.q;
+            subtotalGeral += valorTotalLinha;
+
+            // 4. Atualiza o preço visual da linha na sacola (se o elemento existir)
             const priceEl = document.getElementById(`cart-item-price-${item.uid}`);
-            if(priceEl) priceEl.textContent = `R$ ${valorLinha.toFixed(2).replace('.', ',')}`;
+            if(priceEl) {
+                priceEl.textContent = `R$ ${valorTotalLinha.toFixed(2).replace('.', ',')}`;
+            }
         }
     });
 
-    // Atualiza os textos de subtotal e total
+    // 5. Atualiza os textos de subtotal em todos os lugares (.subtotal-display)
     document.querySelectorAll('.subtotal-display').forEach(d => {
-        d.textContent = `R$ ${subtotalCalculado.toFixed(2).replace('.', ',')}`;
+        d.textContent = `R$ ${subtotalGeral.toFixed(2).replace('.', ',')}`;
     });
     
+    // 6. Atualiza o Total Final (Subtotal + Frete)
     const totalDisplay = document.getElementById('cartFinalTotal');
     if(totalDisplay) {
-        totalDisplay.textContent = `R$ ${(subtotalCalculado + deliveryFee).toFixed(2).replace('.', ',')}`; 
+        const valorFinal = subtotalGeral + deliveryFee;
+        totalDisplay.textContent = `R$ ${valorFinal.toFixed(2).replace('.', ',')}`; 
     }
 
-    // --- ESSENCIAL: Atualiza o contador da barra inferior sempre que o total mudar ---
+    // 7. Sincroniza badges e parcelamento
     if (window.updateNavigationBadges) window.updateNavigationBadges();
     
-    renderInstallments();
+    // Se tiver função de renderizar parcelas (Varejo), ela lerá o subtotal atualizado
+    if (typeof renderInstallments === 'function') {
+        renderInstallments();
+    }
 }
 
 // Gera as parcelas baseadas no subtotal atual
@@ -211,7 +235,7 @@ export function updateCartUI() {
     const currentMethod = document.getElementById('checkPayment')?.value || "";
 
     // 1. Contador de Itens
-    const totalItens = state.cart.reduce((a, b) => a + b.q, 0); 
+    const totalItens = state.cart.reduce((a, b) => a + (b.q || 0), 0); 
     if(badge) {
         badge.textContent = totalItens; 
         badge.classList.toggle('scale-0', totalItens === 0);
@@ -228,7 +252,6 @@ export function updateCartUI() {
 
     // 3. Aguarda Catálogo
     if (!state.allProducts || state.allProducts.length === 0) {
-        console.log("Aguardando carregamento do catálogo...");
         return; 
     }
 
@@ -236,36 +259,43 @@ export function updateCartUI() {
     if(footer) footer.classList.remove('hidden');
 
     list.innerHTML = state.cart.map(i => {
-        // Busca o produto original (usa o i.productId se for restaurante ou i.id se for varejo)
         const pOriginal = state.allProducts.find(x => x.id === (i.productId || i.id));
         
-        const precoDinamico = pOriginal ? getActivePrice(pOriginal, currentMethod) : i.price;
-        const nomeFinal = pOriginal ? pOriginal.name : i.name;
+        // LÓGICA DE PREÇO: Preço Base + Adicionais
+        const precoBase = pOriginal ? getActivePrice(pOriginal, currentMethod) : (i.price || 0);
         
-        // --- Lógica de Opções (Moda vs Restaurante) ---
+        let precoAdicionais = 0;
         let detalhesHtml = '';
         
-        if (i.v) {
-            // Layout Varejo/Moda
-            detalhesHtml = [i.v.size, i.v.color].filter(Boolean).join(' / ') || 'PADRÃO';
-        } else if (i.complements) {
-            // Layout Restaurante (Mostra os opcionais escolhidos)
-            detalhesHtml = Object.entries(i.complements).map(([grupo, escolhas]) => {
-                const nomes = escolhas.map(e => e.nome).join(', ');
+        if (i.complements) {
+            // Layout Restaurante: Soma preços e gera HTML dos opcionais
+            const grupos = Object.entries(i.complements);
+            detalhesHtml = grupos.map(([grupo, escolhas]) => {
+                const nomes = escolhas.map(e => {
+                    // Soma o preço de cada escolha ao total de adicionais
+                    precoAdicionais += parseFloat(e.preco || e.price || 0);
+                    return e.nome || e.name;
+                }).join(', ');
                 return `<div class="lowercase text-slate-500 not-italic"><b class="capitalize">${grupo}:</b> ${nomes}</div>`;
             }).join('');
+        } else if (i.v) {
+            // Layout Varejo/Moda
+            detalhesHtml = [i.v.size, i.v.color].filter(Boolean).join(' / ') || 'PADRÃO';
         } else {
             detalhesHtml = 'PADRÃO';
         }
 
+        const precoFinalUnitario = precoBase + precoAdicionais;
+        const nomeFinal = pOriginal ? pOriginal.name : i.name;
+        
         return `
         <div class="flex gap-3 bg-white p-3 rounded-xl border border-slate-200">
-            <img src="${i.img}" class="w-16 h-16 rounded-lg object-cover bg-slate-50">
+            <img src="${i.img || i.image}" class="w-16 h-16 rounded-lg object-cover bg-slate-50">
             <div class="flex-1 min-w-0">
                 <div class="flex justify-between font-bold text-xs text-slate-800">
                     <span class="truncate pr-2">${nomeFinal}</span>
                     <span class="shrink-0">
-                        R$ ${(precoDinamico * i.q).toFixed(2).replace('.', ',')}
+                        R$ ${(precoFinalUnitario * i.q).toFixed(2).replace('.', ',')}
                     </span>
                 </div>
                 
@@ -273,12 +303,13 @@ export function updateCartUI() {
                     ${detalhesHtml}
                 </div>
 
-                <div class="flex items-center gap-4 mt-2">
+                <div class="flex items-center justify-between mt-2">
                     <div class="flex items-center bg-slate-100 rounded h-7 border border-slate-200">
                         <button onclick="window.modQty('${i.uid}', -1)" class="w-7 h-full flex items-center justify-center text-slate-500 font-bold">-</button>
                         <span class="w-8 text-center text-xs font-black text-slate-700">${i.q}</span>
                         <button onclick="window.modQty('${i.uid}', 1)" class="w-7 h-full flex items-center justify-center text-slate-500 font-bold">+</button>
                     </div>
+                    <span class="text-[10px] text-slate-400">un. R$ ${precoFinalUnitario.toFixed(2).replace('.', ',')}</span>
                 </div>
             </div>
         </div>`;
@@ -412,27 +443,33 @@ export async function checkoutWhatsApp() {
         let infoPagamento = pagamento;
         if(pagamento === 'Dinheiro' && trocoPara) infoPagamento += ` (Troco para R$ ${trocoPara})`;
 
-        // 6. PERSISTÊNCIA NO FIREBASE (Enviando complements para o Gerenciador)
-        const orderData = {
-            customer: { name: nome, phone: telefone, addressString: enderecoCompleto, addressDetails: dadosEndereco },
-            items: state.cart.map(i => ({
-                id: i.id,
-                name: i.name,
-                q: i.q,
-                price: i.price,
-                v: i.v || {},
-                sku: i.sku || '',
-                complements: i.complements || [] // Importante para o Gerenciador ler
-            })),
-            paymentMethod: infoPagamento,
-            deliveryFee: taxaEntrega,
-            total: totalFinal,
-            createdAt: serverTimestamp(),
-            status: 'pending_whatsapp',
-            tipo: tipoNegocio
-        };
+       // 6. PERSISTÊNCIA NO FIREBASE (Protegida contra campos undefined)
+const orderData = {
+    customer: { 
+        name: nome || "Cliente", 
+        phone: telefone || "", 
+        addressString: enderecoCompleto || "Não informado", 
+        addressDetails: dadosEndereco || {} 
+    },
+    items: state.cart.map(i => ({
+        id: i.id || "",
+        name: i.name || "Produto sem nome",
+        q: parseInt(i.q) || 1,
+        price: parseFloat(i.price) || 0,
+        v: i.v || {}, // Variações (tamanho/cor)
+        sku: i.sku || "",
+        complements: i.complements || [] // Garante que nunca seja undefined
+    })),
+    paymentMethod: infoPagamento || "Não informado",
+    deliveryFee: parseFloat(taxaEntrega) || 0,
+    total: parseFloat(totalFinal) || 0,
+    createdAt: serverTimestamp(),
+    status: 'pending_whatsapp',
+    tipo: tipoNegocio || 'varejo' // Identifica se foi pedido de restaurante ou loja
+};
 
-        const docRef = await addDoc(collection(db, `stores/${state.STORE_ID}/orders`), orderData);
+// Agora o addDoc não vai falhar por causa de 'undefined'
+const docRef = await addDoc(collection(db, `stores/${state.STORE_ID}/orders`), orderData);
         const shortId = docRef.id.slice(-5).toUpperCase();
 
         // 7. CONSTRUÇÃO DA MENSAGEM WHATSAPP (Ajustado para Restaurante)
