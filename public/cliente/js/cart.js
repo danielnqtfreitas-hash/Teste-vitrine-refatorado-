@@ -326,6 +326,7 @@ export async function checkoutWhatsApp() {
     const trocoPara = document.getElementById('checkChange').value;
     const deliverySelect = document.getElementById('cartDeliverySelect');
     const isRetirada = deliverySelect.value === "0";
+    const tipoNegocio = window.state?.storeConfig?.tipoNegocio || 'varejo';
     
     if(!nome || !pagamento || !telefone || telefone.length < 10) {
         showToast("⚠️ Preencha nome, WhatsApp e pagamento.");
@@ -349,23 +350,21 @@ export async function checkoutWhatsApp() {
         dadosEndereco = { street: rua, number: numero, neighborhood: bairro, reference: ref };
     }
 
-    // 2. INTERFACE DE CONFIRMAÇÃO (UX DEFENSIVA)
-    // O SweetAlert interrompe aqui antes de mexer no banco de dados ou estoque
+    // 2. INTERFACE DE CONFIRMAÇÃO
     const { isConfirmed } = await Swal.fire({
         title: 'Confirmar Pedido?',
-        html: `Você será redirecionado para o WhatsApp.<br><br><b>⚠️ IMPORTANTE:</b> Para sua segurança, apenas envie a mensagem que já aparecerá escrita. <br><br><span style="color: #e11d48; font-weight: bold;">NÃO APAGUE NEM ALTERE O TEXTO!</span>`,
+        html: `Você será redirecionado para o WhatsApp.<br><br><b>⚠️ IMPORTANTE:</b> Apenas envie a mensagem sem alterar o texto!`,
         icon: 'question',
         showCancelButton: true,
-        confirmButtonColor: 'var(--color-primary)',
+        confirmButtonColor: '#EA1D2C',
         cancelButtonColor: '#64748b',
-        confirmButtonText: 'Sim, finalizar no WhatsApp!',
-        cancelButtonText: 'Revisar Pedido',
+        confirmButtonText: 'Sim, finalizar!',
+        cancelButtonText: 'Revisar',
         reverseButtons: true
     });
 
-    if (!isConfirmed) return; // Usuário desistiu ou quer revisar
+    if (!isConfirmed) return;
 
-    // 3. ESTADO DE CARREGAMENTO NO BOTÃO
     const btn = document.querySelector('button[onclick="window.checkoutWhatsApp()"]');
     if(btn) { 
         btn.innerHTML = `<span class="animate-spin inline-block w-4 h-4 border-2 border-white/20 border-t-white rounded-full mr-2"></span> Processando...`;
@@ -373,31 +372,38 @@ export async function checkoutWhatsApp() {
     }
 
     try {
-        // 4. VALIDAÇÃO DE ESTOQUE (SERVER-SIDE CHECK)
-        for (const item of state.cart) {
-            const productRef = doc(db, `stores/${state.STORE_ID}/products/${item.id}`);
-            const pSnap = await getDocFromServer(productRef);
-            if (pSnap.exists()) {
-                const pData = pSnap.data();
-                let estoquePainel = parseInt(pData.stock) || 0;
-                if (item.v.size || item.v.color) {
-                    const v = pData.variations?.find(v => v.size === item.v.size && v.color === item.v.color);
-                    if (v) estoquePainel = parseInt(v.stock) || 0;
-                }
-                if (estoquePainel < item.q) {
-                    alertaEstoquePreso(item.name);
-                    throw new Error("Estoque insuficiente");
+        // 4. VALIDAÇÃO DE ESTOQUE (Mantida para Modo Loja)
+        if (tipoNegocio !== 'restaurante') {
+            for (const item of state.cart) {
+                const productRef = doc(db, `stores/${state.STORE_ID}/products/${item.id}`);
+                const pSnap = await getDocFromServer(productRef);
+                if (pSnap.exists()) {
+                    const pData = pSnap.data();
+                    let estoquePainel = parseInt(pData.stock) || 0;
+                    if (item.v?.size || item.v?.color) {
+                        const v = pData.variations?.find(v => v.size === item.v.size && v.color === item.v.color);
+                        if (v) estoquePainel = parseInt(v.stock) || 0;
+                    }
+                    if (estoquePainel < item.q) {
+                        alertaEstoquePreso(item.name);
+                        throw new Error("Estoque insuficiente");
+                    }
                 }
             }
         }
 
-        // 5. CÁLCULOS FINANCEIROS FINAL
-        // Assume-se a existência de getActivePrice no escopo ou importada
+        // 5. CÁLCULOS FINANCEIROS (Ajustado para Adicionais)
         const subtotal = state.cart.reduce((total, item) => {
             const pOrig = state.allProducts.find(x => x.id === item.id);
-            // Fallback caso getActivePrice não esteja disponível globalmente
-            const precoItem = typeof getActivePrice === 'function' ? getActivePrice(pOrig, pagamento) : item.price;
-            return total + (precoItem * item.q);
+            let precoItem = typeof getActivePrice === 'function' ? getActivePrice(pOrig, pagamento) : item.price;
+            
+            // Soma adicionais se for restaurante
+            let adicionaisSum = 0;
+            if (tipoNegocio === 'restaurante' && item.complements) {
+                adicionaisSum = item.complements.reduce((s, c) => s + parseFloat(c.price || 0), 0);
+            }
+            
+            return total + ((precoItem + adicionaisSum) * item.q);
         }, 0);
 
         const taxaEntrega = isRetirada ? 0 : parseFloat(deliverySelect.value);
@@ -405,44 +411,49 @@ export async function checkoutWhatsApp() {
 
         let infoPagamento = pagamento;
         if(pagamento === 'Dinheiro' && trocoPara) infoPagamento += ` (Troco para R$ ${trocoPara})`;
-        if(pagamento === 'Cartão') {
-            const parc = document.getElementById('checkInstallments')?.value || 1;
-            if(parc > 1) infoPagamento += ` (${parc}x)`;
-        }
 
-        // 6. PERSISTÊNCIA NO FIREBASE (PEDIDO + SHADOW STOCK)
+        // 6. PERSISTÊNCIA NO FIREBASE (Enviando complements para o Gerenciador)
         const orderData = {
             customer: { name: nome, phone: telefone, addressString: enderecoCompleto, addressDetails: dadosEndereco },
-            items: state.cart,
+            items: state.cart.map(i => ({
+                id: i.id,
+                name: i.name,
+                q: i.q,
+                price: i.price,
+                v: i.v || {},
+                sku: i.sku || '',
+                complements: i.complements || [] // Importante para o Gerenciador ler
+            })),
             paymentMethod: infoPagamento,
             deliveryFee: taxaEntrega,
             total: totalFinal,
             createdAt: serverTimestamp(),
-            status: 'pending_whatsapp'
+            status: 'pending_whatsapp',
+            tipo: tipoNegocio
         };
 
         const docRef = await addDoc(collection(db, `stores/${state.STORE_ID}/orders`), orderData);
         const shortId = docRef.id.slice(-5).toUpperCase();
 
-        const reserveBatch = writeBatch(db);
-        state.cart.forEach(item => {
-            const resId = `res_${shortId}_${item.uid.replace(/-/g,'_')}`;
-            const resRef = doc(db, `stores/${state.STORE_ID}/stock_reserves`, resId);
-            reserveBatch.set(resRef, {
-                productId: item.id, qty: item.q, variation: item.v,
-                createdAt: serverTimestamp(), orderId: shortId, status: 'pending'
-            });
-        });
-        await reserveBatch.commit();
-
-                    // 7. CONSTRUÇÃO DA MENSAGEM WHATSAPP
+        // 7. CONSTRUÇÃO DA MENSAGEM WHATSAPP (Ajustado para Restaurante)
         let msg = `*PEDIDO: #${shortId}*\n---------------------------\n`;
         msg += `👤 *Cliente:* ${nome}\n*ITENS:*\n`;
+        
         state.cart.forEach(item => {
-            const vars = [item.v.size, item.v.color].filter(Boolean).join('/');
+            const vars = [item.v?.size, item.v?.color].filter(Boolean).join('/');
             msg += `• ${item.q}x ${item.name} ${vars ? '('+vars+')' : ''}\n`;
-            msg += `  Sub: R$ ${(item.price * item.q).toFixed(2).replace('.',',')} | _SKU: ${item.sku}_\n`;
+            
+            // Lista os complementos na mensagem
+            if (tipoNegocio === 'restaurante' && item.complements?.length > 0) {
+                item.complements.forEach(c => {
+                    msg += `  └ ${c.name} (R$ ${parseFloat(c.price).toFixed(2)})\n`;
+                });
+            }
+            
+            const itemTotal = (item.price + (item.complements?.reduce((a,b)=>a+parseFloat(b.price),0) || 0)) * item.q;
+            msg += `  Sub: R$ ${itemTotal.toFixed(2).replace('.',',')}\n`;
         });
+
         msg += `\n*VALORES:*\nSubtotal: R$ ${subtotal.toFixed(2).replace('.',',')}\n`;
         if(!isRetirada) msg += `Taxa: R$ ${taxaEntrega.toFixed(2).replace('.',',')}\n`;
         msg += `Total: *R$ ${totalFinal.toFixed(2).replace('.',',')}*\n\n`;
@@ -450,28 +461,16 @@ export async function checkoutWhatsApp() {
 
         const link = `https://wa.me/${state.lojaZapDestino}?text=${encodeURIComponent(msg)}`;
         
-        // 8. FINALIZAÇÃO E LIMPEZA
+        // 8. FINALIZAÇÃO
         state.cart = [];
-        if (typeof saveCart === 'function') saveCart(); // Se existir no state.js
-        
-        // Abre o WhatsApp
+        if (typeof saveCart === 'function') saveCart();
         window.open(link, '_blank');
-        
-        // Pequeno delay para garantir que o window.open não seja bloqueado antes do reload
-        setTimeout(() => {
-            window.location.reload();
-        }, 500);
+        setTimeout(() => { window.location.reload(); }, 500);
 
     } catch (e) {
         console.error("Erro no checkout:", e);
-        if(btn) { 
-            btn.disabled = false; 
-            btn.innerHTML = "Finalizar Pedido"; 
-        }
-        // Se não for erro de estoque (já tratado pelo alertaEstoquePreso), mostra toast genérico
-        if(e.message !== "Estoque insuficiente") {
-            showToast("❌ Erro ao processar pedido. Tente novamente.");
-        }
+        if(btn) { btn.disabled = false; btn.innerHTML = "Finalizar Pedido"; }
+        if(e.message !== "Estoque insuficiente") showToast("❌ Erro ao processar pedido.");
     }
 }
 
@@ -525,20 +524,31 @@ export function alertaEstoquePreso(nome) {
     }
 }
 
+// --- FUNÇÕES DE INTERFACE DA SACOLA ---
+
 export function openCart() {
-    const modal = document.getElementById('modalCart'); // O pai
-    const drawer = document.getElementById('cartDrawer'); // O conteúdo
+    const modal = document.getElementById('modalCart'); // O container pai (escurecimento)
+    const drawer = document.getElementById('cartDrawer'); // O painel lateral
     
     if (modal && drawer) {
-        modal.classList.remove('hidden'); // Mostra o fundo escuro
-        // Pequeno delay para a transição de slide funcionar
+        // 1. Mostra o modal pai
+        modal.classList.remove('hidden'); 
+        
+        // 2. Pequeno delay para a animação de slide (CSS translate) funcionar
         setTimeout(() => {
             drawer.classList.remove('translate-x-full');
             drawer.classList.add('translate-x-0');
         }, 10);
         
-        document.body.style.overflow = 'hidden'; // Trava o scroll
-        if (typeof updateCartUI === 'function') updateCartUI();
+        // 3. Trava o scroll do site ao fundo
+        document.body.style.overflow = 'hidden'; 
+        
+        // 4. Força a atualização dos itens e valores (Aqui corrigiremos os valores zerados no próximo bloco)
+        if (typeof updateCartUI === 'function') {
+            updateCartUI();
+        }
+    } else {
+        console.warn("Elementos 'modalCart' ou 'cartDrawer' não encontrados no HTML.");
     }
 }
 
@@ -547,10 +557,11 @@ export function closeCart() {
     const drawer = document.getElementById('cartDrawer');
 
     if (modal && drawer) {
+        // 1. Inicia animação de saída
         drawer.classList.add('translate-x-full');
         drawer.classList.remove('translate-x-0');
         
-        // Espera a animação terminar para esconder tudo
+        // 2. Espera a animação (300ms) para esconder o fundo e destravar o scroll
         setTimeout(() => {
             modal.classList.add('hidden');
             document.body.style.overflow = ''; 
@@ -558,10 +569,11 @@ export function closeCart() {
     }
 }
 
-// Garanta as exposições globais no final do arquivo:
+// --- EXPOSIÇÃO GLOBAL ---
+// Necessário para que os botões "onclick" (inclusive do Modo Restaurante) funcionem
 window.openCart = openCart;
 window.closeCart = closeCart;
-window.closeCartModal = closeCart; // Adicione este atalho para bater com seu HTML
+window.closeCartModal = closeCart; // Atalho para compatibilidade com o seu HTML
 
 // --- EXPOSIÇÃO GLOBAL (Obrigatório para módulos/onclick) ---
 window.goToStep1 = goToStep1;
