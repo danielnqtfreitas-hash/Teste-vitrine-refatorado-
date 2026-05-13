@@ -445,8 +445,13 @@ const subtotal = state.cart.reduce((totalGeral, item) => {
 }, 0);
 
 const taxaEntrega = isRetirada ? 0 : parseFloat(deliverySelect.value);
-const totalFinalCalculado = subtotal + taxaEntrega;
+const totalFinal = subtotal + taxaEntrega;
 
+let infoPagamento = pagamento; 
+if(pagamento === 'Dinheiro' && trocoPara) {
+    infoPagamento += ` (Troco para R$ ${trocoPara})`;
+}
+        
 // 6. PERSISTÊNCIA NO FIREBASE
 const orderData = {
     customer: { 
@@ -460,12 +465,12 @@ const orderData = {
         name: i.name,
         q: parseInt(i.q),
         price: parseFloat(i.price),
-        complements: i.complements || {}, // Envia o mapa de complementos
+        complements: i.complements || {},
         img: i.img || ""
     })),
-    paymentMethod: infoPagamento,
+    paymentMethod: infoPagamento, // Agora ela existe aqui!
     deliveryFee: taxaEntrega,
-    total: totalFinalCalculado, // Aqui o valor deixará de ser 0
+    total: totalFinal,
     createdAt: serverTimestamp(),
     status: 'pending_whatsapp',
     tipo: tipoNegocio
