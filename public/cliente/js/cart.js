@@ -526,50 +526,47 @@ export function alertaEstoquePreso(nome) {
 }
 
 export function openCart() {
-    // Busca os dois IDs possíveis (Varejo e Restaurante)
-    const drawer = document.getElementById('cartDrawer') || document.getElementById('cartSection');
+    const modal = document.getElementById('modalCart'); // O pai
+    const drawer = document.getElementById('cartDrawer'); // O conteúdo
     
-    if (!drawer) {
-        console.warn("Elemento da sacola não encontrado.");
-        return;
+    if (modal && drawer) {
+        modal.classList.remove('hidden'); // Mostra o fundo escuro
+        // Pequeno delay para a transição de slide funcionar
+        setTimeout(() => {
+            drawer.classList.remove('translate-x-full');
+            drawer.classList.add('translate-x-0');
+        }, 10);
+        
+        document.body.style.overflow = 'hidden'; // Trava o scroll
+        if (typeof updateCartUI === 'function') updateCartUI();
     }
-
-    drawer.classList.remove('hidden');
-    drawer.style.display = 'block'; // Força exibição caso o CSS falhe
-    
-    // 1. Trava a rolagem do fundo (body)
-    document.body.style.overflow = 'hidden'; 
-    
-    // 2. Configura a rolagem interna da lista
-    const list = document.getElementById('cartList');
-    if (list) {
-        list.style.maxHeight = '70vh';
-        list.style.overflowY = 'auto';
-    }
-
-    // Sempre garante que começa no passo 1
-    goToStep1();
-    
-    if (typeof updateCartUI === 'function') updateCartUI();
 }
 
 export function closeCart() {
-    const drawer = document.getElementById('cartDrawer') || document.getElementById('cartSection');
-    if (drawer) {
-        drawer.classList.add('hidden');
-        drawer.style.display = 'none';
+    const modal = document.getElementById('modalCart');
+    const drawer = document.getElementById('cartDrawer');
+
+    if (modal && drawer) {
+        drawer.classList.add('translate-x-full');
+        drawer.classList.remove('translate-x-0');
+        
+        // Espera a animação terminar para esconder tudo
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            document.body.style.overflow = ''; 
+        }, 300);
     }
-    
-    // 3. Devolve a rolagem ao site
-    document.body.style.overflow = 'auto'; 
 }
+
+// Garanta as exposições globais no final do arquivo:
+window.openCart = openCart;
+window.closeCart = closeCart;
+window.closeCartModal = closeCart; // Adicione este atalho para bater com seu HTML
 
 // --- EXPOSIÇÃO GLOBAL (Obrigatório para módulos/onclick) ---
 window.goToStep1 = goToStep1;
 window.goToStep2 = goToStep2;
 window.toggleAddressFields = toggleAddressFields;
-window.openCart = openCart;
-window.closeCart = closeCart;
 window.toggleCart = openCart; // Atalho usado em alguns temas
 window.alertaEstoquePreso = alertaEstoquePreso;
 
