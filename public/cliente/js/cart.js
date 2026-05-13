@@ -476,78 +476,104 @@ export async function checkoutWhatsApp() {
 }
 
 
-// --- NAVEGAÇÃO E ALERTAS ---
+// --- NAVEGAÇÃO, CONTROLE DA SACOLA E ALERTAS (VERSÃO UNIFICADA) ---
 
 export function goToStep1() {
-    document.getElementById('step1')?.classList.remove('hidden');
-    document.getElementById('step2')?.classList.add('hidden');
-    document.getElementById('cartTitle').textContent = "Minha Sacola";
+    const s1 = document.getElementById('step1');
+    const s2 = document.getElementById('step2');
+    const title = document.getElementById('cartTitle');
+
+    if (s1) s1.classList.remove('hidden');
+    if (s2) s2.classList.add('hidden');
+    if (title) title.textContent = "Minha Sacola";
 }
 
 export function goToStep2() {
-    if (!state.cart.length) return showToast("Sua sacola está vazia!");
-    document.getElementById('step1').classList.add('hidden');
-    document.getElementById('step2').classList.remove('hidden');
-    document.getElementById('cartTitle').textContent = "Dados de Entrega";
+    if (!state.cart || !state.cart.length) return showToast("Sua sacola está vazia!");
+    
+    const s1 = document.getElementById('step1');
+    const s2 = document.getElementById('step2');
+    const title = document.getElementById('cartTitle');
+
+    if (s1) s1.classList.add('hidden');
+    if (s2) s2.classList.remove('hidden');
+    if (title) title.textContent = "Dados de Entrega";
+    
     toggleAddressFields();
 }
 
 export function toggleAddressFields() {
     const sel = document.getElementById('cartDeliverySelect');
     const fields = document.getElementById('addressFields');
-    if (sel && fields) sel.value === "0" ? fields.classList.add('hidden') : fields.classList.remove('hidden');
-    updateCartTotals();
+    if (sel && fields) {
+        sel.value === "0" ? fields.classList.add('hidden') : fields.classList.remove('hidden');
+    }
+    if (typeof updateCartTotals === 'function') updateCartTotals();
 }
 
 export function alertaEstoquePreso(nome) {
-    Swal.fire({
-        title: 'Item Esgotado ou Reservado',
-        html: `O item <b>${nome}</b> acabou de ser reservado. Se a compra não for concluída, ele voltará ao estoque.`,
-        icon: 'info',
-        confirmButtonText: 'ENTENDIDO'
-    }).then(() => window.location.reload());
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: 'Item Esgotado ou Reservado',
+            html: `O item <b>${nome}</b> acabou de ser reservado. Se a compra não for concluída, ele voltará ao estoque.`,
+            icon: 'info',
+            confirmButtonText: 'ENTENDIDO'
+        }).then(() => window.location.reload());
+    } else {
+        alert("O item " + nome + " está reservado.");
+        window.location.reload();
+    }
 }
 
-// No final do cart.js
-window.updateCartUI = updateCartUI;
-window.toggleCart = () => {
-    const drawer = document.getElementById('cartDrawer') || document.getElementById('cartSection');
-    if (drawer) drawer.classList.remove('hidden');
-};
-
-// js/cart.js
-
-// js/cart.js
-
 export function openCart() {
-    const drawer = document.getElementById('cartDrawer');
-    if (!drawer) return;
-
-    drawer.classList.remove('hidden');
+    // Busca os dois IDs possíveis (Varejo e Restaurante)
+    const drawer = document.getElementById('cartDrawer') || document.getElementById('cartSection');
     
-    // 1. Trava a rolagem do fundo (body) para não bugar no mobile
-    document.body.style.overflow = 'hidden'; 
-    
-    // 2. Garante que o container da lista de itens tenha rolagem interna
-    const list = document.getElementById('cartList');
-    if (list) {
-        list.style.maxHeight = '70vh'; // Define uma altura máxima
-        list.style.overflowY = 'auto'; // Ativa o scroll
+    if (!drawer) {
+        console.warn("Elemento da sacola não encontrado.");
+        return;
     }
 
-    updateCartUI();
+    drawer.classList.remove('hidden');
+    drawer.style.display = 'block'; // Força exibição caso o CSS falhe
+    
+    // 1. Trava a rolagem do fundo (body)
+    document.body.style.overflow = 'hidden'; 
+    
+    // 2. Configura a rolagem interna da lista
+    const list = document.getElementById('cartList');
+    if (list) {
+        list.style.maxHeight = '70vh';
+        list.style.overflowY = 'auto';
+    }
+
+    // Sempre garante que começa no passo 1
+    goToStep1();
+    
+    if (typeof updateCartUI === 'function') updateCartUI();
 }
 
 export function closeCart() {
-    const drawer = document.getElementById('cartDrawer');
-    if (drawer) drawer.classList.add('hidden');
+    const drawer = document.getElementById('cartDrawer') || document.getElementById('cartSection');
+    if (drawer) {
+        drawer.classList.add('hidden');
+        drawer.style.display = 'none';
+    }
     
-    // 3. IMPORTANTÍSSIMO: Devolve a rolagem ao site
+    // 3. Devolve a rolagem ao site
     document.body.style.overflow = 'auto'; 
 }
 
-// Exponha para o HTML
+// --- EXPOSIÇÃO GLOBAL (Obrigatório para módulos/onclick) ---
+window.goToStep1 = goToStep1;
+window.goToStep2 = goToStep2;
+window.toggleAddressFields = toggleAddressFields;
 window.openCart = openCart;
 window.closeCart = closeCart;
-window.updateCartUI = updateCartUI;
-window.modQty = modQty;
+window.toggleCart = openCart; // Atalho usado em alguns temas
+window.alertaEstoquePreso = alertaEstoquePreso;
+
+// Garante que funções externas de outros arquivos também sejam globais
+if (typeof updateCartUI === 'function') window.updateCartUI = updateCartUI;
+if (typeof modQty === 'function') window.modQty = modQty;
+if (typeof addToCart === 'function') window.addToCart = addToCart;
