@@ -423,49 +423,53 @@ export async function checkoutWhatsApp() {
             }
         }
 
-        // 5. CÁLCULOS FINANCEIROS (Corrigido para Objeto de Complementos)
-        const subtotal = state.cart.reduce((total, item) => {
-            const pOrig = state.allProducts.find(x => x.id === (item.productId || item.id));
-            let precoBase = typeof getActivePrice === 'function' ? getActivePrice(pOrig, pagamento) : (item.price || 0);
-            
-            let adicionaisSum = 0;
-            if (tipoNegocio === 'restaurante' && item.complements) {
-                // Percorre as categorias do objeto de complementos
-                Object.values(item.complements).forEach(escolhas => {
-                    escolhas.forEach(c => {
-                        adicionaisSum += parseFloat(c.preco || c.price || 0);
-                    });
+       // 5. CÁLCULOS FINANCEIROS (Ajustado para o Mapa de Complementos do Restaurante)
+const subtotal = state.cart.reduce((totalGeral, item) => {
+    const pOrig = state.allProducts.find(x => x.id === (item.productId || item.id));
+    let precoBase = typeof getActivePrice === 'function' ? getActivePrice(pOrig, pagamento) : (item.price || 0);
+    
+    let somaAdicionais = 0;
+    if (item.complements && typeof item.complements === 'object') {
+        // Percorre cada categoria (ex: "cremes")
+        Object.values(item.complements).forEach(listaDeEscolhas => {
+            if (Array.isArray(listaDeEscolhas)) {
+                listaDeEscolhas.forEach(c => {
+                    // Soma usando 'preco', conforme consta nos seus dados
+                    somaAdicionais += parseFloat(c.preco || 0);
                 });
             }
-            
-            return total + ((precoBase + adicionaisSum) * item.q);
-        }, 0);
+        });
+    }
+    
+    return totalGeral + ((precoBase + somaAdicionais) * item.q);
+}, 0);
 
-        const taxaEntrega = isRetirada ? 0 : parseFloat(deliverySelect.value);
-        const totalFinal = subtotal + taxaEntrega;
+const taxaEntrega = isRetirada ? 0 : parseFloat(deliverySelect.value);
+const totalFinalCalculado = subtotal + taxaEntrega;
 
-        let infoPagamento = pagamento;
-        if(pagamento === 'Dinheiro' && trocoPara) infoPagamento += ` (Troco para R$ ${trocoPara})`;
-
-        // 6. PERSISTÊNCIA NO FIREBASE
-        const orderData = {
-            customer: { name: nome, phone: telefone, addressString: enderecoCompleto, addressDetails: dadosEndereco },
-            items: state.cart.map(i => ({
-                id: i.id || "",
-                name: i.name || "Produto",
-                q: parseInt(i.q) || 1,
-                price: parseFloat(i.price) || 0,
-                v: i.v || {},
-                sku: i.sku || "",
-                complements: i.complements || {} 
-            })),
-            paymentMethod: infoPagamento,
-            deliveryFee: taxaEntrega,
-            total: totalFinal,
-            createdAt: serverTimestamp(),
-            status: 'pending_whatsapp',
-            tipo: tipoNegocio
-        };
+// 6. PERSISTÊNCIA NO FIREBASE
+const orderData = {
+    customer: { 
+        name: nome, 
+        phone: telefone, 
+        addressString: enderecoCompleto, 
+        addressDetails: dadosEndereco 
+    },
+    items: state.cart.map(i => ({
+        productId: i.productId || i.id,
+        name: i.name,
+        q: parseInt(i.q),
+        price: parseFloat(i.price),
+        complements: i.complements || {}, // Envia o mapa de complementos
+        img: i.img || ""
+    })),
+    paymentMethod: infoPagamento,
+    deliveryFee: taxaEntrega,
+    total: totalFinalCalculado, // Aqui o valor deixará de ser 0
+    createdAt: serverTimestamp(),
+    status: 'pending_whatsapp',
+    tipo: tipoNegocio
+};
 
         const docRef = await addDoc(collection(db, `stores/${state.STORE_ID}/orders`), orderData);
         const shortId = docRef.id.slice(-5).toUpperCase();
