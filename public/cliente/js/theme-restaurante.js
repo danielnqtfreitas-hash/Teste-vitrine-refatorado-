@@ -258,7 +258,7 @@ renderFloatingCart() {
 
         const tipoNegocio = window.state?.storeConfig?.tipoNegocio || 'varejo';
         
-        // 1. Quantidade total de itens (seja loja ou restaurante)
+        // 1. Quantidade total de itens
         const count = window.state.cart.reduce((acc, i) => acc + (i.q || 0), 0);
 
         // 2. Cálculo do Total com lógica de Adicionais para Restaurante
@@ -288,4 +288,5 @@ renderFloatingCart() {
         } else {
             btn.style.display = 'none';
         }
-    }
+    } // Aqui fecha a função renderFloatingCart
+};
