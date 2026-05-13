@@ -247,7 +247,7 @@ export const RestauranteTheme = {
         `;
     },
 
-    renderFloatingCart() {
+renderFloatingCart() {
         let btn = document.getElementById('deliveryCartBar');
         if (!btn) {
             btn = document.createElement('div');
@@ -256,9 +256,23 @@ export const RestauranteTheme = {
             document.body.appendChild(btn);
         }
 
-        // CORREÇÃO AQUI: Mudado de i.qty para i.q e sincronizado com o cart.js
+        const tipoNegocio = window.state?.storeConfig?.tipoNegocio || 'varejo';
+        
+        // 1. Quantidade total de itens (seja loja ou restaurante)
         const count = window.state.cart.reduce((acc, i) => acc + (i.q || 0), 0);
-        const total = window.state.cart.reduce((acc, i) => acc + (i.price * (i.q || 0)), 0);
+
+        // 2. Cálculo do Total com lógica de Adicionais para Restaurante
+        const total = window.state.cart.reduce((acc, i) => {
+            const precoBase = parseFloat(i.price || 0);
+            
+            // Se for restaurante, somamos os complementos ao preço unitário
+            let precoAdicionais = 0;
+            if (tipoNegocio === 'restaurante' && i.complements) {
+                precoAdicionais = i.complements.reduce((sum, c) => sum + parseFloat(c.price || 0), 0);
+            }
+            
+            return acc + ((precoBase + precoAdicionais) * (i.q || 0));
+        }, 0);
 
         if (count > 0) {
             btn.innerHTML = `
@@ -275,4 +289,3 @@ export const RestauranteTheme = {
             btn.style.display = 'none';
         }
     }
-};
