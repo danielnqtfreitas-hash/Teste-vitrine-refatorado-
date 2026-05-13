@@ -403,7 +403,7 @@ export async function checkoutWhatsApp() {
     }
 
     try {
-        // 4. VALIDAÇÃO DE ESTOQUE (Mantida para Modo Loja)
+        // 4. VALIDAÇÃO DE ESTOQUE (Ignorada para Restaurante)
         if (tipoNegocio !== 'restaurante') {
             for (const item of state.cart) {
                 const productRef = doc(db, `stores/${state.STORE_ID}/products/${item.id}`);
@@ -423,18 +423,22 @@ export async function checkoutWhatsApp() {
             }
         }
 
-        // 5. CÁLCULOS FINANCEIROS (Ajustado para Adicionais)
+        // 5. CÁLCULOS FINANCEIROS (Corrigido para Objeto de Complementos)
         const subtotal = state.cart.reduce((total, item) => {
-            const pOrig = state.allProducts.find(x => x.id === item.id);
-            let precoItem = typeof getActivePrice === 'function' ? getActivePrice(pOrig, pagamento) : item.price;
+            const pOrig = state.allProducts.find(x => x.id === (item.productId || item.id));
+            let precoBase = typeof getActivePrice === 'function' ? getActivePrice(pOrig, pagamento) : (item.price || 0);
             
-            // Soma adicionais se for restaurante
             let adicionaisSum = 0;
             if (tipoNegocio === 'restaurante' && item.complements) {
-                adicionaisSum = item.complements.reduce((s, c) => s + parseFloat(c.price || 0), 0);
+                // Percorre as categorias do objeto de complementos
+                Object.values(item.complements).forEach(escolhas => {
+                    escolhas.forEach(c => {
+                        adicionaisSum += parseFloat(c.preco || c.price || 0);
+                    });
+                });
             }
             
-            return total + ((precoItem + adicionaisSum) * item.q);
+            return total + ((precoBase + adicionaisSum) * item.q);
         }, 0);
 
         const taxaEntrega = isRetirada ? 0 : parseFloat(deliverySelect.value);
@@ -443,36 +447,30 @@ export async function checkoutWhatsApp() {
         let infoPagamento = pagamento;
         if(pagamento === 'Dinheiro' && trocoPara) infoPagamento += ` (Troco para R$ ${trocoPara})`;
 
-       // 6. PERSISTÊNCIA NO FIREBASE (Protegida contra campos undefined)
-const orderData = {
-    customer: { 
-        name: nome || "Cliente", 
-        phone: telefone || "", 
-        addressString: enderecoCompleto || "Não informado", 
-        addressDetails: dadosEndereco || {} 
-    },
-    items: state.cart.map(i => ({
-        id: i.id || "",
-        name: i.name || "Produto sem nome",
-        q: parseInt(i.q) || 1,
-        price: parseFloat(i.price) || 0,
-        v: i.v || {}, // Variações (tamanho/cor)
-        sku: i.sku || "",
-        complements: i.complements || [] // Garante que nunca seja undefined
-    })),
-    paymentMethod: infoPagamento || "Não informado",
-    deliveryFee: parseFloat(taxaEntrega) || 0,
-    total: parseFloat(totalFinal) || 0,
-    createdAt: serverTimestamp(),
-    status: 'pending_whatsapp',
-    tipo: tipoNegocio || 'varejo' // Identifica se foi pedido de restaurante ou loja
-};
+        // 6. PERSISTÊNCIA NO FIREBASE
+        const orderData = {
+            customer: { name: nome, phone: telefone, addressString: enderecoCompleto, addressDetails: dadosEndereco },
+            items: state.cart.map(i => ({
+                id: i.id || "",
+                name: i.name || "Produto",
+                q: parseInt(i.q) || 1,
+                price: parseFloat(i.price) || 0,
+                v: i.v || {},
+                sku: i.sku || "",
+                complements: i.complements || {} 
+            })),
+            paymentMethod: infoPagamento,
+            deliveryFee: taxaEntrega,
+            total: totalFinal,
+            createdAt: serverTimestamp(),
+            status: 'pending_whatsapp',
+            tipo: tipoNegocio
+        };
 
-// Agora o addDoc não vai falhar por causa de 'undefined'
-const docRef = await addDoc(collection(db, `stores/${state.STORE_ID}/orders`), orderData);
+        const docRef = await addDoc(collection(db, `stores/${state.STORE_ID}/orders`), orderData);
         const shortId = docRef.id.slice(-5).toUpperCase();
 
-        // 7. CONSTRUÇÃO DA MENSAGEM WHATSAPP (Ajustado para Restaurante)
+        // 7. CONSTRUÇÃO DA MENSAGEM WHATSAPP
         let msg = `*PEDIDO: #${shortId}*\n---------------------------\n`;
         msg += `👤 *Cliente:* ${nome}\n*ITENS:*\n`;
         
@@ -480,14 +478,18 @@ const docRef = await addDoc(collection(db, `stores/${state.STORE_ID}/orders`), o
             const vars = [item.v?.size, item.v?.color].filter(Boolean).join('/');
             msg += `• ${item.q}x ${item.name} ${vars ? '('+vars+')' : ''}\n`;
             
-            // Lista os complementos na mensagem
-            if (tipoNegocio === 'restaurante' && item.complements?.length > 0) {
-                item.complements.forEach(c => {
-                    msg += `  └ ${c.name} (R$ ${parseFloat(c.price).toFixed(2)})\n`;
+            let somaAdicionaisItem = 0;
+            if (tipoNegocio === 'restaurante' && item.complements) {
+                Object.entries(item.complements).forEach(([categoria, escolhas]) => {
+                    escolhas.forEach(c => {
+                        const vAdicional = parseFloat(c.preco || c.price || 0);
+                        msg += `  └ ${c.nome || c.name} (R$ ${vAdicional.toFixed(2)})\n`;
+                        somaAdicionaisItem += vAdicional;
+                    });
                 });
             }
             
-            const itemTotal = (item.price + (item.complements?.reduce((a,b)=>a+parseFloat(b.price),0) || 0)) * item.q;
+            const itemTotal = (parseFloat(item.price || 0) + somaAdicionaisItem) * item.q;
             msg += `  Sub: R$ ${itemTotal.toFixed(2).replace('.',',')}\n`;
         });
 
@@ -498,7 +500,6 @@ const docRef = await addDoc(collection(db, `stores/${state.STORE_ID}/orders`), o
 
         const link = `https://wa.me/${state.lojaZapDestino}?text=${encodeURIComponent(msg)}`;
         
-        // 8. FINALIZAÇÃO
         state.cart = [];
         if (typeof saveCart === 'function') saveCart();
         window.open(link, '_blank');
