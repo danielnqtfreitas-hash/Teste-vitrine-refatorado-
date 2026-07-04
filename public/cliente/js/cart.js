@@ -126,6 +126,10 @@ export async function addToCart(p, q, v) {
         naSacola.sku = skuFinal;
         naSacola.img = imagemFinal;
         naSacola.price = price; 
+     if (naSacola.variationDetails) {
+            naSacola.variationDetails.image = imagemFinal;
+            naSacola.variationDetails.sku = skuFinal;
+        }
     } else {
         state.cart.push({
             uid, id: p.id, sku: skuFinal, name: pAtualizado.name, price: price, q, img: imagemFinal, 
@@ -463,11 +467,12 @@ const orderData = {
     items: state.cart.map(i => ({
         productId: i.productId || i.id,
         name: i.name,
-        sku: i.sku || 'N/A',
+        sku: i.sku || 'N/A', // SKU agora será enviado corretamente
         q: parseInt(i.q),
         price: parseFloat(i.price),
         complements: i.complements || {},
-        img: i.img || ""
+        // Garante que a imagem da variação seja priorizada se existir
+        img: (i.variationDetails && i.variationDetails.image) ? i.variationDetails.image : (i.img || "")
     })),
     paymentMethod: infoPagamento,
     deliveryFee: taxaEntrega,
@@ -477,8 +482,8 @@ const orderData = {
     tipo: tipoNegocio
 };
 
-        const docRef = await addDoc(collection(db, `stores/${state.STORE_ID}/orders`), orderData);
-        const shortId = docRef.id.slice(-5).toUpperCase();
+const docRef = await addDoc(collection(db, `stores/${state.STORE_ID}/orders`), orderData);
+const shortId = docRef.id.slice(-5).toUpperCase();
 
         // 7. CONSTRUÇÃO DA MENSAGEM WHATSAPP
         let msg = `*PEDIDO: #${shortId}*\n---------------------------\n`;
