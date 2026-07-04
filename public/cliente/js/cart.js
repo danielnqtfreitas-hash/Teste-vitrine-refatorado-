@@ -463,12 +463,13 @@ const orderData = {
     items: state.cart.map(i => ({
         productId: i.productId || i.id,
         name: i.name,
+        sku: i.sku || 'N/A',
         q: parseInt(i.q),
         price: parseFloat(i.price),
         complements: i.complements || {},
         img: i.img || ""
     })),
-    paymentMethod: infoPagamento, // Agora ela existe aqui!
+    paymentMethod: infoPagamento,
     deliveryFee: taxaEntrega,
     total: totalFinal,
     createdAt: serverTimestamp(),
